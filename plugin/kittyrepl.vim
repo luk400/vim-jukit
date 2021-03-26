@@ -1,5 +1,6 @@
 fun! ReplSplit()
-    silent exec "!kitty @ launch --title Output --keep-focus xonsh"
+    let b:output_title=strftime("%Y%m%d%H%M%S")
+    silent exec "!kitty @ launch --title " . b:output_title . " --keep-focus xonsh"
 endfun
 
 fun! ParseRegister()
@@ -20,7 +21,7 @@ escaped = reg.translate(str.maketrans({
  
 vim.command("let text = shellescape({})".format(json.dumps(escaped)))
 EOF
-    let command = '!kitty @ send-text --match title:Output ' . text
+    let command = '!kitty @ send-text --match title:' . b:output_title . ' ' . text
     return command
 endfun
 
@@ -69,8 +70,10 @@ nnoremap <cr> 0v$"xy:silent exec ParseRegister()<cr>j:redraw!<cr>
 vnoremap <cr> "xy:silent exec ParseRegister()<cr>:redraw!<cr>
 " send section
 nmap <leader><space> :call SelectSection()<cr><cr>
-" create new marker
-nnoremap <leader>mm :exec "normal! o" . b:comment_mark . " \|%%--%%\|"<cr>j
+" create new marker in new line below
+nnoremap <leader>mm :exec "normal! o" . b:comment_mark . " \|%%--%%\|"<cr>j:nohl<cr>
 " run all up until and including current section
-nmap <leader>all :exec "/" . b:comment_mark . ' \|%%--%%\|'<cr>k$vgg<cr><c-o>k:nohl<cr>
+nmap <leader>cc :exec "/" . b:comment_mark . ' \|%%--%%\|'<cr>k$vgg<cr><c-o>k:nohl<cr>
+" run everything
+nmap <leader>all ggvG$<cr>
 
