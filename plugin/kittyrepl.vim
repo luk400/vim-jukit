@@ -3,9 +3,7 @@ fun! ReplSplit()
     silent exec "!kitty @ launch --title Output --keep-focus xonsh"
 endfun
 
-fun! SendLine()
-    normal! 0v$"xy
-
+fun! ParseRegister()
 python3 << EOF
 import vim 
 import json
@@ -22,12 +20,11 @@ escaped = reg.translate(str.maketrans({
  
 vim.command("let text = shellescape({})".format(json.dumps(escaped)))
 EOF
-
     let command = '!kitty @ send-text --match title:Output ' . text
-    silent! exec command
-    redraw!
+    return command
 endfun
 
 nnoremap <leader>sp :call ReplSplit()<cr>
-nnoremap <leader>send :call SendLine()<cr>
+nnoremap <cr> 0v$"xy:silent exec ParseRegister()<cr>:redraw!<cr>
+vnoremap <cr> "xy:silent exec ParseRegister()<cr>:redraw!<cr>
 
