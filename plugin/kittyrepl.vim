@@ -28,25 +28,49 @@ endfun
 fun! SelectSection()
     set nowrapscan
     let line_before_search = line(".")
-    silent! exec "?# %%"
+    silent! exec '/^' . b:comment_mark . ' |%%--%%|'
     if line(".")!=line_before_search
-        normal! j0v
+        normal! k$v
     else
-        normal! ggv
+        normal! G$v
     endif
     let line_before_search = line(".")
-    silent! exec "/# %%"
+    silent! exec '?^' . b:comment_mark . ' |%%--%%|'
     if line(".")!=line_before_search
-        normal! k$
+        normal! j0
     else
-        normal! G
+        normal! gg
     endif
     set nowrapscan!
 endfun
 
 
+fun! HighlightMarkers()
+    call getline(1, '$')->map({l, v -> [l+1, v =~ "^" . b:comment_mark . " |%%--%%|\s*$"]})->filter({k,v -> v[1]})->map({k,v -> v[0]})->map({k,v -> HighlightSepLines(k,v)})
+    return
+endfun
+
+fun! HighlightSepLines(key, val)
+    exe "sign place 1 line=" . a:val . " group=seperators name=seperators buffer=" . bufnr() | nohl
+    " return 1
+    return
+endfun
+
+highlight seperation ctermbg=22 ctermfg=22
+sign define seperators linehl=seperation
+autocmd BufEnter * let b:comment_mark = "#"
+autocmd BufEnter,TextChangedI,TextChanged * exe "sign unplace * group=seperators buffer=" . bufnr()
+autocmd BufEnter,TextChangedI,TextChanged * call HighlightMarkers()
+
 nnoremap <leader>sp :call ReplSplit()<cr>
-nnoremap <cr> 0v$"xy:silent exec ParseRegister()<cr>:redraw!<cr>
+" send line
+nnoremap <cr> 0v$"xy:silent exec ParseRegister()<cr>j:redraw!<cr>
+" send selection
 vnoremap <cr> "xy:silent exec ParseRegister()<cr>:redraw!<cr>
+" send section
 nmap <leader><space> :call SelectSection()<cr><cr>
+" create new marker
+nnoremap <leader>mm :exec "normal! o" . b:comment_mark . " \|%%--%%\|"<cr>j
+" run all up until and including current section
+nmap <leader>all :exec "/" . b:comment_mark . ' \|%%--%%\|'<cr>k$vgg<cr><c-o>k:nohl<cr>
 
