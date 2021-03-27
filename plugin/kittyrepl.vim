@@ -34,7 +34,6 @@ EOF
     return command
 endfun
 
-
 fun! SelectSection()
     set nowrapscan
     let line_before_search = line(".")
@@ -68,27 +67,47 @@ function! GetVisualSelection()
     return join(lines, "\n")
 endfunction
 
-fun! SendLine()
-    normal! 0v$"xy
+fun! SendLine(ipython)
+    if a:ipython==1
+        normal! 0v$"+y
+        let @x = '%paste'
+    else
+        normal! 0v$"xy
+    endif
     silent exec ParseRegister()
     normal! j
     redraw!
 endfun
 
-fun! SendSelection()
-    let @x = GetVisualSelection() 
+fun! SendSelection(ipython)
+    if a:ipython==1
+        let @+ = GetVisualSelection() 
+        let @x = '%paste'
+    else
+        let @x = GetVisualSelection() 
+    endif
     silent exec ParseRegister()
     redraw!
 endfun
 
-fun! SendAllUntilCurrent()
+fun! SendAllUntilCurrent(ipython)
     silent! exec '/^' . b:comment_mark . ' |%%--%%|'
-    normal! k$vggj"xy
+    if a:ipython==1
+        normal! k$vggj"+y
+        let @x = '%paste'
+    else
+        normal! k$vggj"xy
+    endif
     silent exec ParseRegister()
 endfun
 
-fun! SendAll()
-    normal! ggvG$"xy
+fun! SendAll(ipython)
+    if a:ipython==1
+        normal! ggvG$"+y
+        let @x = '%paste'
+    else
+        normal! ggvG$"xy
+    endif
     silent exec ParseRegister()
 endfun
 
@@ -107,6 +126,15 @@ fun! NewMarkerBelow()
     normal! j
 endfun
 
+fun! ToggleIPython()
+    let b:ipython = (b:ipython==0)
+    nnoremap <cr> :call SendLine(b:ipython)<cr>
+    vnoremap <cr> :<C-U>call SendSelection(b:ipython)<cr>
+    nnoremap <leader>all :call SendAll(b:ipython)<cr>
+    nnoremap <leader>cc :call SendAllUntilCurrent(b:ipython)<cr>
+endfun
+
+
 highlight seperation ctermbg=22 ctermfg=22
 sign define seperators linehl=seperation
 autocmd BufEnter * let b:comment_mark = "#"
@@ -114,11 +142,15 @@ autocmd BufEnter,TextChangedI,TextChanged * exe "sign unplace * group=seperators
 autocmd BufEnter,TextChangedI,TextChanged * call HighlightMarkers()
 
 nnoremap <leader>sp :call ReplSplit()<cr>
-nnoremap <cr> :call SendLine()<cr>
-vnoremap <cr> :<C-U>call SendSelection()<cr>
+nnoremap <leader>mm :call NewMarkerBelow()<cr>
+nnoremap <leader>ipy :call ToggleIPython()<cr>
+
+let b:ipython = 0
+nnoremap <cr> :call SendLine(b:ipython)<cr>
+vnoremap <cr> :<C-U>call SendSelection(b:ipython)<cr>
+nnoremap <leader>all :call SendAll(b:ipython)<cr>
+nnoremap <leader>cc :call SendAllUntilCurrent(b:ipython)<cr>
 nmap <leader><space> :call SelectSection()<cr><cr>:silent! exec '/\|%%--%%\|'<cr>:nohl<cr>j
 
-nnoremap <leader>mm :call NewMarkerBelow()<cr>
-nnoremap <leader>cc :call SendAllUntilCurrent()<cr>
-nmap <leader>all :call SendAll()<cr>
+
 
