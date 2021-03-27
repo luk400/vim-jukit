@@ -149,7 +149,7 @@ let b:ipython = 0
 nnoremap <cr> :call SendLine(b:ipython)<cr>
 vnoremap <cr> :<C-U>call SendSelection(b:ipython)<cr>
 nnoremap <leader>all :call SendAll(b:ipython)<cr>
-nnoremap <leader>cc :call SendAllUntilCurrent(b:ipython)<cr>
+nnoremap <leader>cc :call SendAllUntilCurrent(b:ipython)<cr><c-o>
 nmap <leader><space> :call SelectSection()<cr><cr>:silent! exec '/\|%%--%%\|'<cr>:nohl<cr>j
 
 
