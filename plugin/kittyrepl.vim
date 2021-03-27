@@ -1,6 +1,6 @@
 fun! ReplSplit()
     let b:output_title=strftime("%Y%m%d%H%M%S")
-    silent exec "!kitty @ launch --title " . b:output_title . " --keep-focus xonsh"
+    silent exec "!kitty @ launch  --title " . b:output_title . " --keep-focus --cwd=current"
 endfun
 
 fun! ParseRegister()
