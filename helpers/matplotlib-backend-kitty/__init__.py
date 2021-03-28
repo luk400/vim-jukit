@@ -31,25 +31,17 @@ class FigureManagerICat(FigureManagerBase):
         return f
     
     def show(self):
-        tput = __class__._run('tput')
         icat = __class__._run('kitty', '+kitten', 'icat')
         
         # gather terminal dimensions
-        ##########################
-        #rows = int(tput('lines'))
-        ##########################
-        rows = 10
         px = icat('--print-window-size')
         px = list(map(int, px.split('x')))
-        
-        # account for post-display prompt scrolling
-        # 3 line shift for [\n, <matplotlib.axes…, >>>] after the figure
-        px[1] -= int(3*(px[1]/rows))
-        
+
         # resize figure to terminal size & aspect ratio
         dpi = self.canvas.figure.dpi
-        self.canvas.figure.set_size_inches((px[0] / dpi, px[1] / dpi))
-        
+        size = min(px[0], px[1]) / dpi
+        self.canvas.figure.set_size_inches((size, size))
+                
         with BytesIO() as buf:
             self.canvas.figure.savefig(buf, format='png', facecolor='#888888')
             icat('--align', 'left', output=False, input=buf.getbuffer())
@@ -71,10 +63,7 @@ class _BackendICatAgg(_Backend):
             Gcf.destroy(manager)
     
     def show(*args, **kwargs):
-        ###############################
-        #_Backend.show(*args, **kwargs)
-        ###############################
-        _Backend.show(*args)
+        _Backend.show(*args, **kwargs)
         Gcf.destroy_all()
     
     trigger_manager_draw = _trigger_manager_draw
