@@ -7,26 +7,17 @@
 fun! IPythonSplit(...)
     let b:ipython = 1
     let b:output_title=strftime("%Y%m%d%H%M%S")
-    silent exec "!kitty @ launch --keep-focus --title " . b:output_title . " --cwd=current"
 python3 << EOF
-import vim 
-import os
-import sys
-plugin_path = vim.eval('b:kittyrepl_plugin_path')
-path_split = plugin_path.split('/')
-
-# add plugin path so python module can be imported
-sys.path.append('/'.join(path_split[:-1]))
-from get_backend import get_path
-
-backend_dir = '/'.join(path_split[:-2]) + '/helpers/matplotlib-backend-kitty'
-path = get_path() + '/'
-if not "matplotlib-backend-kitty" in os.listdir(path):
-    os.system(f"cp -r {backend_dir} {path}")
+import vim
+script_path = vim.eval('b:kittyrepl_script_path')
+path = '/'.join(script_path.split('/')[:-2])
+vim.command(f"let l:plugin_path = '{path}'")
 EOF
+    silent exec "!kitty @ launch --keep-focus --title " . b:output_title . " --cwd=current"
     if a:0 > 0
         silent exec '!kitty @ send-text --match title:' . b:output_title . " " . a:1 . "\x0d"
     endif
+    silent exec '!kitty @ send-text --match title:' . b:output_title . " python " . l:plugin_path . "/helpers/check_matplotlib_backend.py " . l:plugin_path . "\x0d"
     silent exec '!kitty @ send-text --match title:' . b:output_title . " ipython -i -c \"\\\"import matplotlib; matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\x0d"
 endfun
 
@@ -169,7 +160,6 @@ fun! ToggleIPython()
 endfun
 
 
-
 highlight seperation ctermbg=22 ctermfg=22
 sign define seperators linehl=seperation
 autocmd BufEnter * let b:comment_mark = "#"
@@ -177,7 +167,7 @@ autocmd BufEnter,TextChangedI,TextChanged * exe "sign unplace * group=seperators
 autocmd BufEnter,TextChangedI,TextChanged * call HighlightMarkers()
 
 let b:ipython = 1
-let b:kittyrepl_plugin_path=expand("<sfile>")
+let b:kittyrepl_script_path=expand("<sfile>")
 nnoremap <leader>tpy :call ToggleIPython()<cr>
 nnoremap <leader>mm :call NewMarkerBelow()<cr>
 
