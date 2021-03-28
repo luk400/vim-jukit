@@ -30,8 +30,9 @@ plugin_path = str(sys.argv[1])
 
 backend_dir = plugin_path + '/helpers/matplotlib-backend-kitty'
 path = get_path() + '/'
-print(backend_dir)
-print(path)
 if not "matplotlib-backend-kitty" in os.listdir(path):
     os.system(f"cp -r {backend_dir} {path}")
+    print(f"\nCreated matplotlib-backend-kitty module in {path}\n")
+else:
+    print(f"\nUsing matplotlib-backend-kitty module found in {path}\n")
 
