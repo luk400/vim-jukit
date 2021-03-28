@@ -7,17 +7,11 @@
 fun! IPythonSplit(...)
     let b:ipython = 1
     let b:output_title=strftime("%Y%m%d%H%M%S")
-python3 << EOF
-import vim
-script_path = vim.eval('b:kittyrepl_script_path')
-path = '/'.join(script_path.split('/')[:-2])
-vim.command(f"let l:plugin_path = '{path}'")
-EOF
     silent exec "!kitty @ launch --keep-focus --title " . b:output_title . " --cwd=current"
     if a:0 > 0
         silent exec '!kitty @ send-text --match title:' . b:output_title . " " . a:1 . "\x0d"
     endif
-    silent exec '!kitty @ send-text --match title:' . b:output_title . " python " . l:plugin_path . "/helpers/check_matplotlib_backend.py " . l:plugin_path . "\x0d"
+    silent exec '!kitty @ send-text --match title:' . b:output_title . " python " . g:plugin_path . "/helpers/check_matplotlib_backend.py " . g:plugin_path . "\x0d"
     silent exec '!kitty @ send-text --match title:' . b:output_title . " ipython -i -c \"\\\"import matplotlib; matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\x0d"
 endfun
 
@@ -160,22 +154,63 @@ fun! ToggleIPython()
 endfun
 
 
+fun! NotebookConvert(from_notebook)
+    if a:from_notebook == 1
+        silent exec "!python " . g:plugin_path . "/helpers/ipynb_py_convert % %:r.py"
+        exec "e %:r.py"
+    elseif a:from_notebook == 0
+        silent exec "!python " . g:plugin_path . "/helpers/ipynb_py_convert % %:r.ipynb"
+    endif
+    redraw!
+endfun
+
+
+fun! SaveToPDF(run, open)
+    silent exec "!python " . g:plugin_path . "/helpers/ipynb_py_convert % %:r.ipynb"
+    if a:run == 1
+        let l:command = "!jupyter nbconvert --to pdf --execute %:r.ipynb "
+    else
+        let l:command = "!jupyter nbconvert --to pdf %:r.ipynb "
+    endif
+    if a:open == 1
+        let l:command = l:command . "&& "  . b:pdf_viewer . " %:r.pdf &"
+    else
+        let l:command = l:command . "&"
+    endif
+    silent! exec l:command
+    redraw!
+endfun
+
+
+fun! GetPluginPath()
+python3 << EOF
+import vim
+script_path = vim.eval('g:plugin_script_path')
+path = '/'.join(script_path.split('/')[:-2])
+vim.command(f"let l:plugin_path = '{path}'")
+EOF
+    return l:plugin_path
+endfun
+
+
+let g:plugin_script_path = expand("<sfile>")
+let g:plugin_path = GetPluginPath()
+
 highlight seperation ctermbg=22 ctermfg=22
 sign define seperators linehl=seperation
-autocmd BufEnter * let b:comment_mark = "#"
+
+autocmd BufEnter * let b:ipython = 1 | let b:pdf_viewer = "zathura" | let b:comment_mark = "#"
 autocmd BufEnter,TextChangedI,TextChanged * exe "sign unplace * group=seperators buffer=" . bufnr()
 autocmd BufEnter,TextChangedI,TextChanged * call HighlightMarkers()
 
-let b:ipython = 1
-let b:kittyrepl_script_path=expand("<sfile>")
 nnoremap <leader>tpy :call ToggleIPython()<cr>
 nnoremap <leader>mm :call NewMarkerBelow()<cr>
 
-nnoremap <leader>py :call IPythonSplit()<cr>
 " use the following command to execute a command in terminal before opening
 " ipython. So if you want to start ipython in a virtual environment, you can
 " simply use ':Ipython conda activate myvenv'
 command! -nargs=1 Ipython :call IPythonSplit(<q-args>)
+nnoremap <leader>ipy :call IPythonSplit()<cr>
 
 nnoremap <leader>sp :call ReplSplit()<cr>
 nnoremap <cr> :call SendLine()<cr>
@@ -183,4 +218,9 @@ vnoremap <cr> :<C-U>call SendSelection()<cr>
 nnoremap <leader>all :call SendAll()<cr>
 nnoremap <leader>cc :call SendAllUntilCurrent()<cr><c-o>
 nmap <leader><space> :call SelectSection()<cr><cr>:silent! exec '/\|%%--%%\|'<cr>:nohl<cr>j
+
+nnoremap <leader>np :call NotebookConvert(1)<cr>
+nnoremap <leader>pn :call NotebookConvert(0)<cr>
+nnoremap <leader>w :call SaveToPDF(1,1)<cr>
+nnoremap <leader>nw :call SaveToPDF(0,1)<cr>
 
