@@ -110,7 +110,12 @@ endfun
 
 fun! SendSection()
     call SelectSection()
-    normal! "xy
+    if b:ipython==1
+        normal! "+y
+        let @x = '%paste'
+    else
+        normal! "xy
+    endif
     silent exec ParseRegister()
     redraw!
     silent! exec '/\|%%--%%\|'
