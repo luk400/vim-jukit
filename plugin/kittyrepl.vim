@@ -2,6 +2,7 @@
 "      - ADD FUNTION TO CHECK WHAT THE SYSTEM CLIPBOARD IS 
 "      - MAKE IT POSSIBLE TO USE NORMAL PYTHON INSTEAD OF IPYTHON WITH INLINE
 "        PLOTTING
+"      - MAKE BUFFER VARIABLES EASILY MODIFYABLE BY USER IN VIMRC
 
 fun! IPythonSplit(...)
     let b:ipython = 1
@@ -11,7 +12,7 @@ fun! IPythonSplit(...)
         silent exec '!kitty @ send-text --match title:' . b:output_title . " " . a:1 . "\x0d"
     endif
     silent exec '!kitty @ send-text --match title:' . b:output_title . " python " . g:plugin_path . "/helpers/check_matplotlib_backend.py " . g:plugin_path . "\x0d"
-    silent exec '!kitty @ send-text --match title:' . b:output_title . " ipython -i -c \"\\\"import matplotlib; matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\x0d"
+    silent exec '!kitty @ send-text --match title:' . b:output_title . " " . b:ipython_cmd . " -i -c \"\\\"import matplotlib; matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\x0d"
 endfun
 
 
@@ -210,7 +211,7 @@ let g:plugin_path = GetPluginPath()
 highlight seperation ctermbg=22 ctermfg=22
 sign define seperators linehl=seperation
 
-autocmd BufEnter * let b:ipython = 1 | let b:pdf_viewer = "zathura" | let b:html_viewer="firefox" | let b:comment_mark = "#"
+autocmd BufEnter * let b:ipython = 1 | let b:pdf_viewer = "zathura" | let b:html_viewer="firefox" | let b:comment_mark = "#" | let b:ipython_cmd = '~/anaconda3/bin/ipython'
 autocmd BufEnter,TextChangedI,TextChanged * exe "sign unplace * group=seperators buffer=" . bufnr()
 autocmd BufEnter,TextChangedI,TextChanged * call HighlightMarkers()
 
