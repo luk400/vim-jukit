@@ -1,5 +1,7 @@
 "TODO: - VARIABLE AND FUNCTION SCOPE
 "      - ADD FUNTION TO CHECK WHAT THE SYSTEM CLIPBOARD IS 
+"      - MAKE IT POSSIBLE TO USE NORMAL PYTHON INSTEAD OF IPYTHON WITH INLINE
+"        PLOTTING
 
 fun! IPythonSplit(...)
     let b:ipython = 1
@@ -174,15 +176,15 @@ fun! NotebookConvert(from_notebook)
 endfun
 
 
-fun! SaveToPDF(run, open)
+fun! SaveNBToFile(run, open, to)
     silent exec "!python " . g:plugin_path . "/helpers/ipynb_py_convert % %:r.ipynb"
     if a:run == 1
-        let l:command = "!jupyter nbconvert --to pdf --execute %:r.ipynb "
+        let l:command = "!jupyter nbconvert --to " . a:to . " --allow-errors --execute --log-level='ERROR' %:r.ipynb "
     else
-        let l:command = "!jupyter nbconvert --to pdf %:r.ipynb "
+        let l:command = "!jupyter nbconvert --to " . a:to . " --log-level='ERROR' %:r.ipynb "
     endif
     if a:open == 1
-        let l:command = l:command . "&& "  . b:pdf_viewer . " %:r.pdf &"
+        exec 'let l:command = l:command . "&& " . b:' . a:to . '_viewer . " %:r.' . a:to . ' &"'
     else
         let l:command = l:command . "&"
     endif
@@ -208,7 +210,7 @@ let g:plugin_path = GetPluginPath()
 highlight seperation ctermbg=22 ctermfg=22
 sign define seperators linehl=seperation
 
-autocmd BufEnter * let b:ipython = 1 | let b:pdf_viewer = "zathura" | let b:comment_mark = "#"
+autocmd BufEnter * let b:ipython = 1 | let b:pdf_viewer = "zathura" | let b:html_viewer="firefox" | let b:comment_mark = "#"
 autocmd BufEnter,TextChangedI,TextChanged * exe "sign unplace * group=seperators buffer=" . bufnr()
 autocmd BufEnter,TextChangedI,TextChanged * call HighlightMarkers()
 
@@ -228,8 +230,10 @@ nnoremap <leader>all :call SendAll()<cr>
 nnoremap <leader>cc :call SendAllUntilCurrent()<cr><c-o>
 nmap <leader><space> :call SendSection()<cr>
 
-nnoremap <leader>np :call NotebookConvert(1)<cr>
-nnoremap <leader>pn :call NotebookConvert(0)<cr>
-nnoremap <leader>w :call SaveToPDF(1,1)<cr>
-nnoremap <leader>nw :call SaveToPDF(0,1)<cr>
+nnoremap <leader><leader>np :call NotebookConvert(1)<cr>
+nnoremap <leader><leader>pn :call NotebookConvert(0)<cr>
+nnoremap <leader>sp :call SaveNBToFile(0,1,'pdf')<cr>
+nnoremap <leader>rsp :call SaveNBToFile(1,1,'pdf')<cr>
+nnoremap <leader>sh :call SaveNBToFile(0,1,'html')<cr>
+nnoremap <leader>rsh :call SaveNBToFile(1,1,'html')<cr>
 
