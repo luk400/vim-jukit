@@ -1,8 +1,5 @@
 "TODO: - VARIABLE AND FUNCTION SCOPE
-"      - FIGURE OUT HOW TO PUT SENDSECTION MAPPING INTO A WORKING FUNTION, 
-"        CURRENTLY THE PROBLEM IS THAT I CANT SELECT WITH FUNCTION
-"        SelectSection AND SEND FROM INSIDE A FUNCTION, ONLY WORKS AS A
-"        MAPPING VIA nmap
+"      - ADD FUNTION TO CHECK WHAT THE SYSTEM CLIPBOARD IS 
 
 fun! IPythonSplit(...)
     let b:ipython = 1
@@ -69,8 +66,8 @@ endfun
 
 
 function! GetVisualSelection()
-    "Credit for this function goes to user 'xolox' on stackoverflow: 
-    "https://stackoverflow.com/questions/1533565/how-to-get-visually-selected-text-in-vimscript
+    "Credit: 
+    "https://stackoverflow.com/questions/1533565/how-to-get-visually-selected-text-in-vimscript/6271254#6271254
     let [line_start, column_start] = getpos("'<")[1:2]
     let [line_end, column_end] = getpos("'>")[1:2]
     let lines = getline(line_start, line_end)
@@ -106,6 +103,18 @@ fun! SendSelection()
     silent exec ParseRegister()
     redraw!
 endfun
+
+
+fun! SendSection()
+    call SelectSection()
+    normal! "xy
+    silent exec ParseRegister()
+    redraw!
+    silent! exec '/\|%%--%%\|'
+    nohl
+    normal! j
+endfun
+
 
 
 fun! SendAllUntilCurrent()
@@ -217,7 +226,7 @@ nnoremap <cr> :call SendLine()<cr>
 vnoremap <cr> :<C-U>call SendSelection()<cr>
 nnoremap <leader>all :call SendAll()<cr>
 nnoremap <leader>cc :call SendAllUntilCurrent()<cr><c-o>
-nmap <leader><space> :call SelectSection()<cr><cr>:silent! exec '/\|%%--%%\|'<cr>:nohl<cr>j
+nmap <leader><space> :call SendSection()<cr>
 
 nnoremap <leader>np :call NotebookConvert(1)<cr>
 nnoremap <leader>pn :call NotebookConvert(0)<cr>
