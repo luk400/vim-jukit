@@ -1,15 +1,15 @@
 "TODO: 
-"      - MAKE IT POSSIBLE TO USE NORMAL PYTHON INSTEAD OF IPYTHON WITH INLINE
-"        PLOTTING
 "      - AUTOMATICALLY DETECT COMMAND MARKER BASED ON FILE TYPE
 "      - USE AUTOLOAD TO ORGANIZE CODE
 "      - RESEARCH IF IT'S POSSIBLE TO HAVE MULTIPLE KITTY SPLITS TO SEND TO
 "        FOR A SINGLE BUFFER. IDEA: make b:output_title a list, somehow keep track of
 "        the last split visited, always send to the split where the cursor was
 "        last
+"      - DOCUMENT CODE BETTER
+
 
 fun! s:PythonSplit(...)
-    let b:ipython = 1
+    let b:ipython = split(g:python_cmd, '/')[-1] == 'ipython'
     let b:output_title=strftime("%Y%m%d%H%M%S")
     silent exec "!kitty @ launch --keep-focus --title " . b:output_title . " --cwd=current"
     if a:0 > 0
@@ -21,6 +21,7 @@ endfun
 
 
 fun! s:ReplSplit()
+    let b:ipython = 0
     let b:output_title=strftime("%Y%m%d%H%M%S")
     silent exec "!kitty @ launch  --title " . b:output_title . " --cwd=current"
 endfun
@@ -217,16 +218,16 @@ endfun
 fun! s:GetPluginPath(plugin_script_path)
     let plugin_path = a:plugin_script_path
     let plugin_path = split(plugin_path, "/")[:-3]
-    return join(plugin_path, "/")
+    return "/" . join(plugin_path, "/")
 endfun
 
 
 fun! s:InitBufVar()
-    let b:ipython = g:ipython_default
+    let b:ipython = 0
     let b:comment_mark = "#"
 endfun
 
-let g:ipython_default = 0
+
 let g:plugin_path = <SID>GetPluginPath(expand("<sfile>"))
 let g:pdf_viewer = "zathura"
 let g:html_viewer = "firefox"
