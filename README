@@ -1,0 +1,9 @@
+
+Requirements:
+
+vim with python3
+vim with +clipboard to access the system clipboard (check with 'echo has("clipboard")')
+
+Side Effects:
+When sending to ipython, the text is copied to system clipboard and then pasted into the ipython shell using '%paste'. 
+
