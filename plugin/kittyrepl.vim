@@ -226,9 +226,9 @@ endfun
 
 
 fun! s:InitBufVar()
-    let b:inline_plotting = 1
+    let b:inline_plotting = g:inline_plotting_default
     if g:use_tcomment != 1
-        let b:comment_mark = g:default_comment_marker
+        let b:comment_mark = g:comment_marker_default
     endif
 endfun
 
@@ -240,7 +240,8 @@ let g:pdf_viewer = "zathura"
 let g:html_viewer = "firefox"
 let g:python_cmd = '~/anaconda3/bin/ipython'
 let g:use_tcomment = 0
-let g:default_comment_marker = "#"
+g:inline_plotting_default = 1
+let g:comment_marker_default = "#"
 let g:highlight_markers = 0
 highlight seperation ctermbg=22 ctermfg=22
 
