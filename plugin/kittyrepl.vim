@@ -240,7 +240,7 @@ let g:pdf_viewer = "zathura"
 let g:html_viewer = "firefox"
 let g:python_cmd = '~/anaconda3/bin/ipython'
 let g:use_tcomment = 0
-g:inline_plotting_default = 1
+let g:inline_plotting_default = 1
 let g:comment_marker_default = "#"
 let g:highlight_markers = 0
 highlight seperation ctermbg=22 ctermfg=22
