@@ -1,3 +1,10 @@
+" TODO
+"       - RENAME PLUGIN TO VIM-JUKIT
+"       - CHECK FOR EXISTENCE OF USER-DEFINED VARIABLES
+"       - COMMENT FUNCTIONS
+"       - GNU LICENSE!
+"       - MAKE USED REGISTER CHOOSABLE BY USER (DEFAULT 'x')
+
 let g:wrapscan = &wrapscan
 let g:plugin_path = kittyrepl#GetPluginPath(expand("<sfile>"))
 " User defined variables:
@@ -38,4 +45,3 @@ nnoremap <leader>pdf :call kittyrepl#SaveNBToFile(0,1,'pdf')<cr>
 nnoremap <leader>rpdf :call kittyrepl#SaveNBToFile(1,1,'pdf')<cr>
 nnoremap <leader>html :call kittyrepl#SaveNBToFile(0,1,'html')<cr>
 nnoremap <leader>rhtml :call kittyrepl#SaveNBToFile(1,1,'html')<cr>
-

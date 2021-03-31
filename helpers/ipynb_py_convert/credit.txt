@@ -1,3 +1,3 @@
-The origin of this module can be found at:
+Origin of this module:
 
 https://github.com/kiwi0fruit/ipynb-py-convert
