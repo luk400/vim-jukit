@@ -2,9 +2,8 @@
 "      - ADD FUNTION TO CHECK WHAT THE SYSTEM CLIPBOARD IS 
 "      - MAKE IT POSSIBLE TO USE NORMAL PYTHON INSTEAD OF IPYTHON WITH INLINE
 "        PLOTTING
-"      - MAKE BUFFER VARIABLES EASILY MODIFYABLE BY USER IN VIMRC
-"      - MAKE CHECKING NOWRAPSCAN WITHOUT SIDEEFFECTS!
 "      - AUTOMATICALLY DETECT COMMAND MARKER BASED ON FILE TYPE
+"      - USE AUTOLOAD TO ORGANIZE CODE
 
 fun! IPythonSplit(...)
     let b:ipython = 1
@@ -223,11 +222,11 @@ endfun
 
 
 fun! InitBufVar()
-    let b:ipython = 1
+    let b:ipython = g:ipython_default
     let b:comment_mark = "#"
 endfun
 
-
+let g:ipython_default = 1
 let g:plugin_script_path = expand("<sfile>")
 let g:plugin_path = GetPluginPath()
 let g:pdf_viewer = "zathura"
