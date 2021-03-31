@@ -1,11 +1,11 @@
 "TODO: 
-"      - AUTOMATICALLY DETECT COMMAND MARKER BASED ON FILE TYPE
 "      - USE AUTOLOAD TO ORGANIZE CODE
 "      - RESEARCH IF IT'S POSSIBLE TO HAVE MULTIPLE KITTY SPLITS TO SEND TO
 "        FOR A SINGLE BUFFER. IDEA: make b:output_title a list, somehow keep track of
 "        the last split visited, always send to the split where the cursor was
 "        last
 "      - DOCUMENT CODE BETTER
+"      - CHANGE PREFIX OF FUNCTIONS INSIDE OTHER FUNCTIONS FROM <SID> TO s:
 
 
 fun! s:PythonSplit(...)
@@ -57,14 +57,14 @@ fun! s:SelectSection()
     set nowrapscan
 
     let line_before_search = line(".")
-    silent! exec '/^' . b:comment_mark . ' |%%--%%|'
+    silent! exec '/|%%--%%|'
     if line(".")!=line_before_search
         normal! k$v
     else
         normal! G$v
     endif
     let line_before_search = line(".")
-    silent! exec '?^' . b:comment_mark . ' |%%--%%|'
+    silent! exec '?|%%--%%|'
     if line(".")!=line_before_search
         normal! j0
     else
@@ -99,7 +99,7 @@ fun! s:SendLine()
     else
         normal! 0v$"xy
     endif
-    silent exec <SID>ParseRegister()
+    silent exec s:ParseRegister()
     normal! j
     redraw!
 endfun
@@ -107,29 +107,29 @@ endfun
 
 fun! s:SendSelection()
     if b:ipython==1
-        let @+ = <SID>GetVisualSelection() 
+        let @+ = s:GetVisualSelection() 
         let @x = '%paste'
     else
-        let @x = <SID>GetVisualSelection() 
+        let @x = s:GetVisualSelection() 
     endif
-    silent exec <SID>ParseRegister()
+    silent exec s:ParseRegister()
     redraw!
 endfun
 
 
 fun! s:SendSection()
-    call <SID>SelectSection()
+    call s:SelectSection()
     if b:ipython==1
         normal! "+y
         let @x = '%paste'
     else
         normal! "xy
     endif
-    silent exec <SID>ParseRegister()
+    silent exec s:ParseRegister()
     redraw!
 
     set nowrapscan
-    silent! exec '/^' . b:comment_mark . ' |%%--%%|'
+    silent! exec '/|%%--%%|'
     if g:wrapscan == 1
         set wrapscan
     endif
@@ -140,14 +140,14 @@ endfun
 
 
 fun! s:SendUntilCurrentSection()
-    silent! exec '/^' . b:comment_mark . ' |%%--%%|'
+    silent! exec '/|%%--%%|'
     if b:ipython==1
         normal! k$vggj"+y
         let @x = '%paste'
     else
         normal! k$vggj"xy
     endif
-    silent exec <SID>ParseRegister()
+    silent exec s:ParseRegister()
     redraw!
 endfun
 
@@ -159,12 +159,12 @@ fun! s:SendAll()
     else
         normal! ggvG$"xy
     endif
-    silent exec <SID>ParseRegister()
+    silent exec s:ParseRegister()
 endfun
 
 
 fun! s:HighlightMarkers()
-    call getline(1, '$')->map({l, v -> [l+1, v =~ "^" . b:comment_mark . " |%%--%%|\s*$"]})->filter({k,v -> v[1]})->map({k,v -> v[0]})->map({k,v -> <SID>HighlightSepLines(k,v)})
+    call getline(1, '$')->map({l, v -> [l+1, v =~ "|%%--%%|"]})->filter({k,v -> v[1]})->map({k,v -> v[0]})->map({k,v -> s:HighlightSepLines(k,v)})
     return
 endfun
 
@@ -175,8 +175,13 @@ fun! s:HighlightSepLines(key, val)
 endfun
 
 
-fun! s:NewMarkerBelow()
-    exec "normal! o" . b:comment_mark . " \|%%--%%\|"
+fun! s:NewMarker()
+    if g:use_tcomment == 1
+        exec 'normal! o|%%--%%|'
+        call tcomment#operator#Line('g@$')
+    else
+        exec "normal! o" . b:comment_mark . ' |%%--%%|'
+    endif
     normal! j
 endfun
 
@@ -233,6 +238,7 @@ let g:pdf_viewer = "zathura"
 let g:html_viewer = "firefox"
 let g:python_cmd = '~/anaconda3/bin/ipython'
 let g:wrapscan = &wrapscan
+let g:use_tcomment = 1
 
 highlight seperation ctermbg=22 ctermfg=22
 sign define seperators linehl=seperation
@@ -242,7 +248,7 @@ autocmd BufEnter,TextChangedI,TextChanged * exe "sign unplace * group=seperators
 autocmd BufEnter,TextChangedI,TextChanged * call <SID>HighlightMarkers()
 
 nnoremap <leader>tpy :call <SID>ToggleIPython()<cr>
-nnoremap <leader>mm :call <SID>NewMarkerBelow()<cr>
+nnoremap <leader>mm :call <SID>NewMarker()<cr>
 
 " use the following command to execute a command in terminal before opening
 " ipython. So if you want to start ipython in a virtual environment, you can
