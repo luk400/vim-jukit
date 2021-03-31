@@ -4,6 +4,7 @@
 "        PLOTTING
 "      - MAKE BUFFER VARIABLES EASILY MODIFYABLE BY USER IN VIMRC
 "      - MAKE CHECKING NOWRAPSCAN WITHOUT SIDEEFFECTS!
+"      - AUTOMATICALLY DETECT COMMAND MARKER BASED ON FILE TYPE
 
 fun! IPythonSplit(...)
     let b:ipython = 1
@@ -13,7 +14,7 @@ fun! IPythonSplit(...)
         silent exec '!kitty @ send-text --match title:' . b:output_title . " " . a:1 . "\x0d"
     endif
     silent exec '!kitty @ send-text --match title:' . b:output_title . " python " . g:plugin_path . "/helpers/check_matplotlib_backend.py " . g:plugin_path . "\x0d"
-    silent exec '!kitty @ send-text --match title:' . b:output_title . " " . b:ipython_cmd . " -i -c \"\\\"import matplotlib; matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\x0d"
+    silent exec '!kitty @ send-text --match title:' . b:output_title . " " . g:ipython_cmd . " -i -c \"\\\"import matplotlib; matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\x0d"
 endfun
 
 
@@ -51,6 +52,7 @@ endfun
 
 fun! SelectSection()
     set nowrapscan
+
     let line_before_search = line(".")
     silent! exec '/^' . b:comment_mark . ' |%%--%%|'
     if line(".")!=line_before_search
@@ -65,7 +67,10 @@ fun! SelectSection()
     else
         normal! gg
     endif
-    set nowrapscan!
+
+    if g:wrapscan == 1
+        set wrapscan
+    endif
 endfun
 
 
@@ -110,7 +115,6 @@ endfun
 
 
 fun! SendSection()
-    set nowrapscan
     call SelectSection()
     if b:ipython==1
         normal! "+y
@@ -120,9 +124,12 @@ fun! SendSection()
     endif
     silent exec ParseRegister()
     redraw!
+
     set nowrapscan
     silent! exec '/^' . b:comment_mark . ' |%%--%%|'
-    set nowrapscan!
+    if g:wrapscan == 1
+        set wrapscan
+    endif
     nohl
     normal! j
 endfun
@@ -195,7 +202,7 @@ fun! SaveNBToFile(run, open, to)
         let l:command = "!jupyter nbconvert --to " . a:to . " --log-level='ERROR' %:r.ipynb "
     endif
     if a:open == 1
-        exec 'let l:command = l:command . "&& " . b:' . a:to . '_viewer . " %:r.' . a:to . ' &"'
+        exec 'let l:command = l:command . "&& " . g:' . a:to . '_viewer . " %:r.' . a:to . ' &"'
     else
         let l:command = l:command . "&"
     endif
@@ -215,13 +222,23 @@ EOF
 endfun
 
 
+fun! InitBufVar()
+    let b:ipython = 1
+    let b:comment_mark = "#"
+endfun
+
+
 let g:plugin_script_path = expand("<sfile>")
 let g:plugin_path = GetPluginPath()
+let g:pdf_viewer = "zathura"
+let g:html_viewer = "firefox"
+let g:ipython_cmd = '~/anaconda3/bin/ipython'
+let g:wrapscan = &wrapscan
 
 highlight seperation ctermbg=22 ctermfg=22
 sign define seperators linehl=seperation
 
-autocmd BufEnter * let b:ipython = 1 | let b:pdf_viewer = "zathura" | let b:html_viewer="firefox" | let b:comment_mark = "#" | let b:ipython_cmd = '~/anaconda3/bin/ipython'
+autocmd BufEnter * call InitBufVar()
 autocmd BufEnter,TextChangedI,TextChanged * exe "sign unplace * group=seperators buffer=" . bufnr()
 autocmd BufEnter,TextChangedI,TextChanged * call HighlightMarkers()
 
