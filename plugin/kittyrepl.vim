@@ -15,8 +15,12 @@ fun! s:PythonSplit(...)
     if a:0 > 0
         silent exec '!kitty @ send-text --match title:' . b:output_title . " " . a:1 . "\x0d"
     endif
-    silent exec '!kitty @ send-text --match title:' . b:output_title . " python3 " . g:plugin_path . "/helpers/check_matplotlib_backend.py " . g:plugin_path . "\x0d"
-    silent exec '!kitty @ send-text --match title:' . b:output_title . " " . g:python_cmd . " -i -c \"\\\"import matplotlib; matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\x0d"
+    if b:inline_plotting == 1
+        silent exec '!kitty @ send-text --match title:' . b:output_title . " python3 " . g:plugin_path . "/helpers/check_matplotlib_backend.py " . g:plugin_path . "\x0d"
+        silent exec '!kitty @ send-text --match title:' . b:output_title . " " . g:python_cmd . " -i -c \"\\\"import matplotlib; matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\x0d"
+    else
+        silent exec '!kitty @ send-text --match title:' . b:output_title . " " . g:python_cmd . "\x0d"
+    endif
 endfun
 
 
@@ -186,12 +190,6 @@ fun! s:NewMarker()
 endfun
 
 
-fun! s:ToggleIPython()
-    let b:ipython = (b:ipython==0)
-    echo "b:ipython = " . b:ipython
-endfun
-
-
 fun! s:NotebookConvert(from_notebook)
     if a:from_notebook == 1
         silent exec "!python3 " . g:plugin_path . "/helpers/ipynb_py_convert % %:r.py"
@@ -228,20 +226,21 @@ endfun
 
 
 fun! s:InitBufVar()
-    let b:ipython = 1
+    let b:inline_plotting = 1
     if g:use_tcomment != 1
         let b:comment_mark = g:default_comment_marker
     endif
 endfun
 
 
+let g:wrapscan = &wrapscan
 let g:plugin_path = <SID>GetPluginPath(expand("<sfile>"))
+" User defined variables:
 let g:pdf_viewer = "zathura"
 let g:html_viewer = "firefox"
 let g:python_cmd = '~/anaconda3/bin/ipython'
-let g:wrapscan = &wrapscan
-let g:default_comment_marker = "#"
 let g:use_tcomment = 0
+let g:default_comment_marker = "#"
 let g:highlight_markers = 0
 highlight seperation ctermbg=22 ctermfg=22
 
@@ -257,18 +256,15 @@ endif
 " use the following command to execute a command in terminal before opening
 " ipython. So if you want to start ipython in a virtual environment, you can
 " simply use ':Ipython conda activate myvenv'
-command! -nargs=1 Ipython :call <SID>PythonSplit(<q-args>)
+command! -nargs=1 KittyPy :call <SID>PythonSplit(<q-args>)
 nnoremap <leader>py :call <SID>PythonSplit()<cr>
-
-nnoremap <leader>tpy :call <SID>ToggleIPython()<cr>
-nnoremap <leader>mm :call <SID>NewMarker()<cr>
-
 nnoremap <leader>sp :call <SID>ReplSplit()<cr>
 nnoremap <cr> :call <SID>SendLine()<cr>
 vnoremap <cr> :<C-U>call <SID>SendSelection()<cr>
 nmap <leader><space> :call <SID>SendSection()<cr>
 nnoremap <leader>cc :call <SID>SendUntilCurrentSection()<cr><c-o>
 nnoremap <leader>all :call <SID>SendAll()<cr>
+nnoremap <leader>mm :call <SID>NewMarker()<cr>
 
 nnoremap <leader><leader>np :call <SID>NotebookConvert(1)<cr>
 nnoremap <leader><leader>pn :call <SID>NotebookConvert(0)<cr>
