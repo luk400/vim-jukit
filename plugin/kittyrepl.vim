@@ -3,6 +3,7 @@
 "      - MAKE IT POSSIBLE TO USE NORMAL PYTHON INSTEAD OF IPYTHON WITH INLINE
 "        PLOTTING
 "      - MAKE BUFFER VARIABLES EASILY MODIFYABLE BY USER IN VIMRC
+"      - MAKE CHECKING NOWRAPSCAN WITHOUT SIDEEFFECTS!
 
 fun! IPythonSplit(...)
     let b:ipython = 1
@@ -109,6 +110,7 @@ endfun
 
 
 fun! SendSection()
+    set nowrapscan
     call SelectSection()
     if b:ipython==1
         normal! "+y
@@ -118,7 +120,9 @@ fun! SendSection()
     endif
     silent exec ParseRegister()
     redraw!
-    silent! exec '/\|%%--%%\|'
+    set nowrapscan
+    silent! exec '/^' . b:comment_mark . ' |%%--%%|'
+    set nowrapscan!
     nohl
     normal! j
 endfun
@@ -134,6 +138,7 @@ fun! SendAllUntilCurrent()
         normal! k$vggj"xy
     endif
     silent exec ParseRegister()
+    redraw!
 endfun
 
 
