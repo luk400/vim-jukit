@@ -77,7 +77,7 @@ fun! s:SelectSection()
 endfun
 
 
-function! GetVisualSelection()
+function! s:GetVisualSelection()
     "Credit: 
     "https://stackoverflow.com/questions/1533565/how-to-get-visually-selected-text-in-vimscript/6271254#6271254
     let [line_start, column_start] = getpos("'<")[1:2]
@@ -228,7 +228,7 @@ endfun
 
 
 fun! s:InitBufVar()
-    let b:ipython = 0
+    let b:ipython = 1
     if g:use_tcomment != 1
         let b:comment_mark = g:default_comment_marker
     endif
