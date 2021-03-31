@@ -1,25 +1,27 @@
 "TODO: 
 "      - USE AUTOLOAD TO ORGANIZE CODE
-"      - RESEARCH IF IT'S POSSIBLE TO HAVE MULTIPLE KITTY SPLITS TO SEND TO
-"        FOR A SINGLE BUFFER. IDEA: make b:output_title a list, somehow keep track of
-"        the last split visited, always send to the split where the cursor was
-"        last
 "      - DOCUMENT CODE BETTER
-"      - CHANGE PREFIX OF FUNCTIONS INSIDE OTHER FUNCTIONS FROM <SID> TO s:
 
 
 fun! s:PythonSplit(...)
     let b:ipython = split(g:python_cmd, '/')[-1] == 'ipython'
     let b:output_title=strftime("%Y%m%d%H%M%S")
-    silent exec "!kitty @ launch --keep-focus --title " . b:output_title . " --cwd=current"
+    silent exec "!kitty @ launch --keep-focus --title " . b:output_title
+        \ . " --cwd=current"
     if a:0 > 0
-        silent exec '!kitty @ send-text --match title:' . b:output_title . " " . a:1 . "\x0d"
+        silent exec '!kitty @ send-text --match title:' . b:output_title
+            \ . " " . a:1 . "\r"
     endif
     if b:inline_plotting == 1
-        silent exec '!kitty @ send-text --match title:' . b:output_title . " python3 " . g:plugin_path . "/helpers/check_matplotlib_backend.py " . g:plugin_path . "\x0d"
-        silent exec '!kitty @ send-text --match title:' . b:output_title . " " . g:python_cmd . " -i -c \"\\\"import matplotlib; matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\x0d"
+        silent exec '!kitty @ send-text --match title:' . b:output_title
+            \ . " python3 " . g:plugin_path . "/helpers/check_matplotlib_backend.py "
+            \ . g:plugin_path . "\r"
+        silent exec '!kitty @ send-text --match title:' . b:output_title
+            \ . " " . g:python_cmd . " -i -c \"\\\"import matplotlib;
+            \ matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\r"
     else
-        silent exec '!kitty @ send-text --match title:' . b:output_title . " " . g:python_cmd . "\x0d"
+        silent exec '!kitty @ send-text --match title:' . b:output_title
+            \ . " " . g:python_cmd . "\r"
     endif
 endfun
 
@@ -82,7 +84,7 @@ endfun
 
 
 function! s:GetVisualSelection()
-    "Credit: 
+    "Credit for this function: 
     "https://stackoverflow.com/questions/1533565/how-to-get-visually-selected-text-in-vimscript/6271254#6271254
     let [line_start, column_start] = getpos("'<")[1:2]
     let [line_end, column_end] = getpos("'>")[1:2]
@@ -168,13 +170,16 @@ endfun
 
 
 fun! s:HighlightMarkers()
-    call getline(1, '$')->map({l, v -> [l+1, v =~ "|%%--%%|"]})->filter({k,v -> v[1]})->map({k,v -> v[0]})->map({k,v -> s:HighlightSepLines(k,v)})
+    call getline(1, '$')->map({l, v -> [l+1, v =~ "|%%--%%|"]})
+        \->filter({k,v -> v[1]})->map({k,v -> v[0]})
+        \->map({k,v -> s:HighlightSepLines(k,v)})
     return
 endfun
 
 
 fun! s:HighlightSepLines(key, val)
-    exe "sign place 1 line=" . a:val . " group=seperators name=seperators buffer=" . bufnr() | nohl
+    exe "sign place 1 line=" . a:val . " group=seperators name=seperators buffer="
+        \ . bufnr() | nohl
     return
 endfun
 
@@ -204,7 +209,8 @@ endfun
 fun! s:SaveNBToFile(run, open, to)
     silent exec "!python3 " . g:plugin_path . "/helpers/ipynb_py_convert % %:r.ipynb"
     if a:run == 1
-        let command = "!jupyter nbconvert --to " . a:to . " --allow-errors --execute --log-level='ERROR' %:r.ipynb "
+        let command = "!jupyter nbconvert --to " . a:to
+            \ . " --allow-errors --execute --log-level='ERROR' %:r.ipynb "
     else
         let command = "!jupyter nbconvert --to " . a:to . " --log-level='ERROR' %:r.ipynb "
     endif
@@ -238,11 +244,11 @@ let g:plugin_path = <SID>GetPluginPath(expand("<sfile>"))
 " User defined variables:
 let g:pdf_viewer = "zathura"
 let g:html_viewer = "firefox"
-let g:python_cmd = '~/anaconda3/bin/ipython'
+let g:python_cmd = 'ipython'
 let g:use_tcomment = 0
 let g:inline_plotting_default = 1
 let g:comment_marker_default = "#"
-let g:highlight_markers = 0
+let g:highlight_markers = 1
 highlight seperation ctermbg=22 ctermfg=22
 
 
