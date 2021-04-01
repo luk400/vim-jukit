@@ -26,7 +26,7 @@ Converting .py file back to .ipynb, then convert to .pdf and open it
 
 * kitty terminal emulator (https://github.com/kiwi0fruit/ipynb-py-convert)
 * vim with python3 support
-* vim with '+clipboard' to access the system clipboard (check with 'echo has("clipboard")' in vim)
+* vim with '+clipboard' to access the system clipboard (check with `:echo has("clipboard")` in vim)
 
 ## Installation
 
@@ -55,23 +55,23 @@ let g:jukit_mappings = 1
 ```
 
 ###### Explanation
-`g:jukit_highlight_markers`: Specify if cell markers should be highlighter (1) or not (0)
+* `g:jukit_highlight_markers`: Specify if cell markers should be highlighter (1) or not (0)
 
-`g:jukit_hl_settings`: Specify arguments for highlighting cell markers (see `:h highlight-args`)
+* `g:jukit_hl_settings`: Specify arguments for highlighting cell markers (see `:h highlight-args`)
 
-`g:jukit_use_tcomment`: Specify if tcomment (https://github.com/tomtom/tcomment_vim) plugin should be used to comment out cell markers - recommended if you work with many different languages for which you intend to make use cell markers, otherwise you will have to manually set `b:jukit_comment_mark` every time you work on a file where `b:comment_mark` != `g:jukit_comment_mark_default`. Requires the tcomment plugin to already be installed.
+* `g:jukit_use_tcomment`: Specify if tcomment (https://github.com/tomtom/tcomment_vim) plugin should be used to comment out cell markers - recommended if you work with many different languages for which you intend to make use cell markers, otherwise you will have to manually set `b:jukit_comment_mark` every time you work on a file where `b:comment_mark` != `g:jukit_comment_mark_default`. Requires the tcomment plugin to already be installed.
 
-`g:jukit_comment_mark_default`: Every time a buffer is entered the variable `b:comment_mark` is set according to `g:jukit_comment_mark_default` to prepend the cell markers in the file. Only required if `g:jukit_use_tcomment=0`.
+* `g:jukit_comment_mark_default`: Every time a buffer is entered the variable `b:comment_mark` is set according to `g:jukit_comment_mark_default` to prepend the cell markers in the file. Only required if `g:jukit_use_tcomment=0`.
 
-`g:jukit_python_cmd`: Specifies the terminal command to use to start the interactive python shell ('python' or 'ipython')
+* `g:jukit_python_cmd`: Specifies the terminal command to use to start the interactive python shell ('python' or 'ipython')
 
-`g:jukit_inline_plotting_default`: Every time a buffer is entered the variable `b:inline_plotting` is set according to this default value, which either enables (1) or disables (0) directly plotting into terminal using when matplotlib.
+* `g:jukit_inline_plotting_default`: Every time a buffer is entered the variable `b:inline_plotting` is set according to this default value, which either enables (1) or disables (0) directly plotting into terminal using when matplotlib.
 
-`g:jukit_jukit_register`: This is the register to which jukit will yank code when sending to the kitty-terminal window.
+* `g:jukit_jukit_register`: This is the register to which jukit will yank code when sending to the kitty-terminal window.
 
-`g:jukit_html_viewer`: Specifies the html-viewer to use when using the `jukit#SaveNBToFile()` function (see next section)
+* `g:jukit_html_viewer`: Specifies the html-viewer to use when using the `jukit#SaveNBToFile()` function (see next section)
 
-`g:jukit_mappings`: If set to 0, no jukit function mappings will be set by default and you will have to define each desired mapping manually in your .vimrc.
+* `g:jukit_mappings`: If set to 0, no jukit function mappings will be set by default and you will have to define each desired mapping manually in your .vimrc.
 
 ### Functions and Mappings
 
@@ -94,19 +94,32 @@ nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'pdf')<cr>
 ```
 
 ###### Explanation
-`jukit#PythonSplit()`: Creates a new kitty-terminal-window and opens the python shell using the matplotlib backend for inline plotting (if `b:inline_plotting == 1`)
-`jukit#ReplSplit()`: Only creates a new kitty-terminal-window
-`jukit#SendLine()`: Sends the line at the current cursor position to the other window
-`jukit#SendSelection()`: Sends the visually selected text
-`jukit#SendSection()`: Sends the whole current section (i.e. the code inbetween cell-markers)
-`jukit#SendUntilCurrentSection()`: Sends from the beginning of the file until (and including) the current section
-`jukit#SendAll()`: Send content of whole file
-`jukit#NewMarker()`: Create a new cell-marker
-`jukit#NotebookConvert(1)`: Convert from .ipynb to .py
-`jukit#NotebookConvert(0)`: Convert from .py to .ipynb
-`jukit#SaveNBToFile(0,1,'html')`: Convert the existing .ipynb to .html and open it
-`jukit#SaveNBToFile(1,1,'html')`: Convert the existing .ipynb to .html and open it, but run the code and include output
-`jukit#SaveNBToFile(1,1,'pdf')` and `jukit#SaveNBToFile(0,1,'pdf')`: same as above, but with .pdf instead of .html
+* `jukit#PythonSplit()`: Creates a new kitty-terminal-window and opens the python shell using the matplotlib backend for inline plotting (if `b:inline_plotting == 1`)
+
+* `jukit#ReplSplit()`: Only creates a new kitty-terminal-window
+
+* `jukit#SendLine()`: Sends the line at the current cursor position to the other window
+
+* `jukit#SendSelection()`: Sends the visually selected text
+
+* `jukit#SendSection()`: Sends the whole current section (i.e. the code inbetween cell-markers)
+
+* `jukit#SendUntilCurrentSection()`: Sends from the beginning of the file until (and including) the current section
+
+* `jukit#SendAll()`: Send content of whole file
+
+* `jukit#NewMarker()`: Create a new cell-marker
+
+* `jukit#NotebookConvert(1)`: Convert from .ipynb to .py
+
+* `jukit#NotebookConvert(0)`: Convert from .py to .ipynb
+
+* `jukit#SaveNBToFile(0,1,'html')`: Convert the existing .ipynb to .html and open it
+
+* `jukit#SaveNBToFile(1,1,'html')`: Convert the existing .ipynb to .html and open it, but run the code and include output
+
+* `jukit#SaveNBToFile(1,1,'pdf')` and `jukit#SaveNBToFile(0,1,'pdf')`: same as above, but with .pdf instead of .html
+
 
 In general, the arguments of the functions `jukit#NotebookConvert()` and `jukit#SaveNBToFile()` are as follows:
 
@@ -117,14 +130,14 @@ In general, the arguments of the functions `jukit#NotebookConvert()` and `jukit#
 
 ### Commands
 
-When working with virtual environments, you can activate it before starting the python shell using the `KittyPy` command, e.g.:
+When working with virtual environments, you can activate it before starting the python shell using the `JukitPy` command, e.g.:
 
 
 ```
 :JukitPy conda activate myvenv
 ```
 
-This will open a new kitty terminal window, activate the virtual environment using the given command, and then open the python shell with the matplotlib backend for inline plotting (if `b:inline_plotting == 1`).
+This will open a new kitty-terminal-window, activate the virtual environment using the given command, and then open the python shell with the matplotlib backend for inline plotting (if `b:inline_plotting == 1`).
 
 ## Other notes to be aware of
 
