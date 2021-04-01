@@ -74,7 +74,7 @@ fun! jukit#PythonSplit(...)
     " Opens new kitty window split and opens python
 
     " check if ipython is used
-    let b:ipython = split(s:python_cmd, '/')[-1] == 'ipython'
+    let b:ipython = split(s:jukit_python_cmd, '/')[-1] == 'ipython'
     " define title of new kitty window by which we match when sending
     let b:output_title=strftime("%Y%m%d%H%M%S")
     " create new window
@@ -98,17 +98,17 @@ fun! jukit#PythonSplit(...)
         " open python and import the matplotlib with the backend required
         " backend first
         silent exec '!kitty @ send-text --match title:' . b:output_title
-            \ . " " . s:python_cmd . " -i -c \"\\\"import matplotlib;
+            \ . " " . s:jukit_python_cmd . " -i -c \"\\\"import matplotlib;
             \ matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\r"
     else
         " if no inline plotting is desired, simply open python
         silent exec '!kitty @ send-text --match title:' . b:output_title
-            \ . " " . s:python_cmd . "\r"
+            \ . " " . s:jukit_python_cmd . "\r"
     endif
 endfun
 
 
-fun! jukit#ReplSplit()
+fun! jukit#WindowSplit()
     " Opens a new kitty terminal window
 
     let b:ipython = 0
@@ -184,6 +184,8 @@ endfun
 fun! jukit#SendUntilCurrentSection()
     " Sends all code until (and including) the current section to window
 
+    " save current window view to restore after jumping to file beginning
+    let save_view = winsaveview()
     " go to end of current section
     silent! exec '/|%%--%%|'
     if b:ipython==1
@@ -198,6 +200,9 @@ fun! jukit#SendUntilCurrentSection()
     endif
     " send register content to window
     silent exec s:ParseRegister()
+    " restore previous window view
+    call winrestview(save_view)
+    nohl
     redraw!
 endfun
 
@@ -222,13 +227,13 @@ endfun
 fun! jukit#NewMarker()
     " Creates a new cell marker below
 
-    if s:use_tcomment == 1
-        " use tcomment plugin to automaticall detect comment marker of 
+    if s:jukit_use_tcomment == 1
+        " use tcomment plugin to automaticall detect comment mark of 
         " current filetype and comment line if specified
         exec 'normal! o |%%--%%|'
         call tcomment#operator#Line('g@$')
     else
-        " otherwise simply prepend line with user b:comment_marker variable
+        " otherwise simply prepend line with user b:comment_mark variable
         exec "normal! o" . b:comment_mark . ' |%%--%%|'
     endif
     normal! j
@@ -261,7 +266,7 @@ fun! jukit#SaveNBToFile(run, open, to)
         let command = "!jupyter nbconvert --to " . a:to . " --log-level='ERROR' %:r.ipynb "
     endif
     if a:open == 1
-        exec 'let command = command . "&& " . s:' . a:to . '_viewer . " %:r.' . a:to . ' &"'
+        exec 'let command = command . "&& " . g:jukit_' . a:to . '_viewer . " %:r.' . a:to . ' &"'
     else
         let command = command . "&"
     endif
@@ -282,9 +287,9 @@ endfun
 fun! s:InitBufVar()
     " Initialize buffer variables
 
-    let b:inline_plotting = s:inline_plotting_default
-    if s:use_tcomment != 1
-        let b:comment_mark = s:comment_marker_default
+    let b:inline_plotting = s:jukit_inline_plotting_default
+    if s:jukit_use_tcomment != 1
+        let b:comment_mark = s:jukit_comment_mark_default
     endif
 endfun
 
@@ -304,14 +309,12 @@ EOF
 
 """""""""""""""""""""""""
 " User defined variables:
-let s:use_tcomment = get(g:, 'use_tcomment', 0)
-let s:inline_plotting_default = get(g:, 'inline_plotting_default', 1)
-let s:comment_marker_default = get(g:, 'comment_marker_default', '#')
-let s:pdf_viewer = get(g:, 'pdf_viewer', 'zathura')
-let s:html_viewer = get(g:, 'html_viewer', 'firefox')
-let s:python_cmd = get(g:, 'python_cmd', 'ipython')
-let s:highlight_markers = get(g:, 'highlight_markers', 1)
+let s:jukit_use_tcomment = get(g:, 'jukit_use_tcomment', 0)
+let s:jukit_inline_plotting_default = get(g:, 'jukit_inline_plotting_default', 1)
+let s:jukit_comment_mark_default = get(g:, 'jukit_comment_mark_default', '#')
+let s:jukit_python_cmd = get(g:, 'jukit_python_cmd', 'ipython')
 let s:jukit_register = get(g:, 'jukit_register', 'x')
+let g:jukit_html_viewer = 'firefox'
 
 
 """""""""""""""""""""""""""""

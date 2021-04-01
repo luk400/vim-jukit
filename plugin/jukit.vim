@@ -21,13 +21,14 @@ endfun
 
 """""""""""""""""""
 " Startup variables
-let s:highlight_markers = get(g:, 'highlight_markers', 1)
+let s:jukit_highlight_markers = get(g:, 'jukit_highlight_markers', 1)
 let s:jukit_hl_settings = get(g:, 'jukit_hl_settings', 'ctermbg=22 ctermfg=22')
+let s:jukit_mappings = get(g:, 'jukit_mappings', 1)
 
 
 """"""""""""""
 " Autocommands
-if s:highlight_markers == 1
+if s:jukit_highlight_markers == 1
     exec 'highlight cell_markers ' . s:jukit_hl_settings
     sign define cell_markers linehl=cell_markers
     autocmd BufEnter,TextChangedI,TextChanged * exe
@@ -38,12 +39,12 @@ endif
 
 """"""""""
 " Mappings
-if !exists("g:jukit_no_mappings") || !g:jukit_no_mappings
+if s:jukit_mappings == 1
     if !hasmapto('jukit#PythonSplit()', 'n')
         nnoremap <leader>py :call jukit#PythonSplit()<cr>
     endif
     if !hasmapto('jukit#ReplSplit()', 'n')
-        nnoremap <leader>sp :call jukit#ReplSplit()<cr>
+        nnoremap <leader>sp :call jukit#WindowSplit()<cr>
     endif
     if !hasmapto('jukit#SendLine()', 'n')
         nnoremap <cr> :call jukit#SendLine()<cr>
@@ -64,22 +65,16 @@ if !exists("g:jukit_no_mappings") || !g:jukit_no_mappings
         nnoremap <leader>mm :call jukit#NewMarker()<cr>
     endif
     if !hasmapto('jukit#NotebookConvert(1)', 'n')
-        nnoremap <leader><leader>np :call jukit#NotebookConvert(1)<cr>
+        nnoremap <leader>np :call jukit#NotebookConvert(1)<cr>
     endif
     if !hasmapto('jukit#NotebookConvert(0)', 'n')
-        nnoremap <leader><leader>pn :call jukit#NotebookConvert(0)<cr>
-    endif
-    if !hasmapto('jukit#SaveNBToFile(0,1,"pdf")', 'n')
-        nnoremap <leader>pdf :call jukit#SaveNBToFile(0,1,'pdf')<cr>
-    endif
-    if !hasmapto('jukit#SaveNBToFile(1,1,"pdf")', 'n')
-        nnoremap <leader>rpdf :call jukit#SaveNBToFile(1,1,'pdf')<cr>
+        nnoremap <leader>pn :call jukit#NotebookConvert(0)<cr>
     endif
     if !hasmapto('jukit#SaveNBToFile(0,1,"html")', 'n')
-        nnoremap <leader>html :call jukit#SaveNBToFile(0,1,'html')<cr>
+        nnoremap <leader>ht :call jukit#SaveNBToFile(0,1,'html')<cr>
     endif
     if !hasmapto('jukit#SaveNBToFile(1,1,"html")', 'n')
-        nnoremap <leader>rhtml :call jukit#SaveNBToFile(1,1,'html')<cr>
+        nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'html')<cr>
     endif
 endif
 
