@@ -1,17 +1,43 @@
-autocmd BufEnter * call jukit#InitBufVar()
+"""""""""""""""""""
+" Startup functions
+fun! s:HighlightMarkers()
+    " Highlights all cell markers in file
+ 
+    call getline(1, '$')->map({l, v -> [l+1, v =~ "|%%--%%|"]})
+        \->filter({k,v -> v[1]})->map({k,v -> v[0]})
+        \->map({k,v -> s:HighlightSepLines(k,v)})
+    return
+endfun
 
 
+fun! s:HighlightSepLines(key, val)
+    " used by s:HighlightMarkers() to highlight markers
+ 
+    exe "sign place 1 line=" . a:val . " group=cell_markers name=cell_markers buffer="
+        \ . bufnr() | nohl
+    return
+endfun
+
+
+"""""""""""""""""""
+" Startup variables
 let s:highlight_markers = get(g:, 'highlight_markers', 1)
+let s:jukit_hl_settings = get(g:, 'jukit_hl_settings', 'ctermbg=22 ctermfg=22')
+
+
+""""""""""""""
+" Autocommands
 if s:highlight_markers == 1
-    let s:jukit_hl_settings = get(g:, 'jukit_hl_settings', 'ctermbg=22 ctermfg=22')
     exec 'highlight cell_markers ' . s:jukit_hl_settings
     sign define cell_markers linehl=cell_markers
     autocmd BufEnter,TextChangedI,TextChanged * exe
         \ "sign unplace * group=cell_markers buffer=" . bufnr()
-    autocmd BufEnter,TextChangedI,TextChanged * call jukit#HighlightMarkers()
+    autocmd BufEnter,TextChangedI,TextChanged * call s:HighlightMarkers()
 endif
 
 
+""""""""""
+" Mappings
 if !exists("g:jukit_no_mappings") || !g:jukit_no_mappings
     if !hasmapto('jukit#PythonSplit()', 'n')
         nnoremap <leader>py :call jukit#PythonSplit()<cr>
@@ -57,8 +83,6 @@ if !exists("g:jukit_no_mappings") || !g:jukit_no_mappings
     endif
 endif
 
-
-" use the following command to execute a command in terminal before opening
-" ipython. So if you want to start ipython in a virtual environment, you can
-" simply use ':Ipython conda activate myvenv'
-command! -nargs=1 KittyPy :call jukit#PythonSplit(<q-args>)
+" use the following to execute a command in terminal before opening python
+" shell (e.g. conda activate myenv)
+command! -nargs=1 JukitPy :call jukit#PythonSplit(<q-args>)

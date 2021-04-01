@@ -22,9 +22,7 @@ fun! s:SelectSection()
         normal! gg
     endif
 
-    if s:wrapscan == 1
-        set wrapscan
-    endif
+    let &wrapscan = s:wrapscan
 endfun
 
 
@@ -176,9 +174,7 @@ fun! jukit#SendSection()
     set nowrapscan
     " move to next section
     silent! exec '/|%%--%%|'
-    if s:wrapscan == 1
-        set wrapscan
-    endif
+    let &wrapscan = s:wrapscan
     nohl
     normal! j
 endfun
@@ -219,25 +215,6 @@ fun! jukit#SendAll()
     endif
     " send register content to window
     silent exec s:ParseRegister()
-endfun
-
-
-fun! jukit#HighlightMarkers()
-    " Highlights all cell markers in file
-    
-    call getline(1, '$')->map({l, v -> [l+1, v =~ "|%%--%%|"]})
-        \->filter({k,v -> v[1]})->map({k,v -> v[0]})
-        \->map({k,v -> s:HighlightSepLines(k,v)})
-    return
-endfun
-
-
-fun! s:HighlightSepLines(key, val)
-    " used by jukit#HighlightMarkers() to highlight markers
-    
-    exe "sign place 1 line=" . a:val . " group=cell_markers name=cell_markers buffer="
-        \ . bufnr() | nohl
-    return
 endfun
 
 
@@ -301,7 +278,7 @@ fun! jukit#GetPluginPath(plugin_script_path)
 endfun
 
 
-fun! jukit#InitBufVar()
+fun! s:InitBufVar()
     " Initialize buffer variables
 
     let b:inline_plotting = s:inline_plotting_default
@@ -311,15 +288,25 @@ fun! jukit#InitBufVar()
 endfun
 
 
-let s:wrapscan = &wrapscan
+""""""""""""""""""
+" helper variables
+let s:wrapscan = &wrapscan 
 let s:plugin_path = jukit#GetPluginPath(expand("<sfile>"))
 
+
+"""""""""""""""""""""""""
 " User defined variables:
-let s:pdf_viewer = get(g:, 'pdf_viewer', 'zathura')
-let s:html_viewer = get(g:, 'html_viewer', 'firefox')
-let s:python_cmd = get(g:, 'python_cmd', 'ipython')
 let s:use_tcomment = get(g:, 'use_tcomment', 0)
 let s:inline_plotting_default = get(g:, 'inline_plotting_default', 1)
 let s:comment_marker_default = get(g:, 'comment_marker_default', '#')
+let s:pdf_viewer = get(g:, 'pdf_viewer', 'zathura')
+let s:html_viewer = get(g:, 'html_viewer', 'firefox')
+let s:python_cmd = get(g:, 'python_cmd', 'ipython')
 let s:highlight_markers = get(g:, 'highlight_markers', 1)
 let s:jukit_register = get(g:, 'jukit_register', 'x')
+
+
+"""""""""""""""""""""""""""""
+" initialize buffer variables
+call s:InitBufVar()
+autocmd BufEnter * call s:InitBufVar()
