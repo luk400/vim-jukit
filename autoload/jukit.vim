@@ -92,7 +92,8 @@ fun! jukit#PythonSplit(...)
         " if inline plotting is enabled, use helper script to check if the
         " required backend is in python path and otherwise create it
         silent exec '!kitty @ send-text --match title:' . b:output_title
-            \ . " python3 " . s:plugin_path . "/helpers/check_matplotlib_backend.py "
+            \ . " " . s:python_path . " " . s:plugin_path
+            \ . "/helpers/check_matplotlib_backend.py "
             \ . s:plugin_path . "\r"
         " open python and import the matplotlib with the backend required
         " backend first
@@ -239,10 +240,10 @@ fun! jukit#NotebookConvert(from_notebook)
     " a:from_notebook==0
 
     if a:from_notebook == 1
-        silent exec "!python3 " . s:plugin_path . "/helpers/ipynb_py_convert % %:r.py"
+        silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert % %:r.py"
         exec "e %:r.py"
     elseif a:from_notebook == 0
-        silent exec "!python3 " . s:plugin_path . "/helpers/ipynb_py_convert % %:r.ipynb"
+        silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert % %:r.ipynb"
     endif
     redraw!
 endfun
@@ -252,7 +253,7 @@ fun! jukit#SaveNBToFile(run, open, to)
     " Converts the existing .ipynb to the given filetype (a:to) - e.g. html or
     " pdf - and open with specified file viewer
 
-    silent exec "!python3 " . s:plugin_path . "/helpers/ipynb_py_convert % %:r.ipynb"
+    silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert % %:r.ipynb"
     if a:run == 1
         let command = "!jupyter nbconvert --to " . a:to
             \ . " --allow-errors --execute --log-level='ERROR' %:r.ipynb "
@@ -292,6 +293,13 @@ endfun
 " helper variables
 let s:wrapscan = &wrapscan 
 let s:plugin_path = jukit#GetPluginPath(expand("<sfile>"))
+
+" get path of python executable that vim is using
+python3 << EOF
+import vim
+import sys
+vim.command("let s:python_path = '{}'".format(sys.executable))
+EOF
 
 
 """""""""""""""""""""""""
