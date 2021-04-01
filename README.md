@@ -10,19 +10,14 @@ It uses the graphical capabilities of the `kitty` terminal emulator (https://git
 
 ## Examples
 
-Converting a given .ipynb file to a simple .py file:
+![Converting a given .ipynb file to a simple .py file](https://user-images.githubusercontent.com/57172028/113362614-09bcce00-934f-11eb-8225-a5c9e096a7ec.mp4)
 
--- example --
 
-Opening python shell in split window and sending code
+![Opening python shell in split window and sending code](https://user-images.githubusercontent.com/57172028/113362690-3375f500-934f-11eb-863a-4664fc6b4b2a.mp4)
 
--- example --
 
-Converting back to .ipynb then to html and open
+![Converting to .ipynb then to pdf and open](https://user-images.githubusercontent.com/57172028/113362634-16412680-934f-11eb-817e-c6563cda707a.mp4)
 
--- example --
-
-Converting to .ipynb then to pdf and open
 
 ## Requirements:
 
@@ -52,6 +47,7 @@ let g:jukit_python_cmd = 'python'
 let g:jukit_inline_plotting_default = 1
 let g:jukit_register = 'x'
 let g:jukit_html_viewer = 'firefox'
+let g:jukit_pdf_viewer = 'zathura'
 let g:jukit_mappings = 1
 ```
 
@@ -90,6 +86,8 @@ nnoremap <leader>np :call jukit#NotebookConvert(1)<cr>
 nnoremap <leader>pn :call jukit#NotebookConvert(0)<cr>
 nnoremap <leader>ht :call jukit#SaveNBToFile(0,1,'html')<cr>
 nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'html')<cr>
+nnoremap <leader>ht :call jukit#SaveNBToFile(0,1,'pdf')<cr>
+nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'pdf')<cr>
 ```
 
 ###### Explanation
@@ -105,6 +103,7 @@ nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'html')<cr>
 `jukit#NotebookConvert(0)`: Convert from .py to .ipynb
 `jukit#SaveNBToFile(0,1,'html')`: Convert the existing .ipynb to .html and open it
 `jukit#SaveNBToFile(1,1,'html')`: Convert the existing .ipynb to .html and open it, but run the code and include output
+`jukit#SaveNBToFile(1,1,'pdf')` and `jukit#SaveNBToFile(0,1,'pdf')`: same as above, but with .pdf instead of .html
 
 In general, the arguments of the functions `jukit#NotebookConvert()` and `jukit#SaveNBToFile()` are as follows:
 
