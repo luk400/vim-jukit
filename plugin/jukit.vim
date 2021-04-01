@@ -3,9 +3,8 @@ autocmd BufEnter * call jukit#InitBufVar()
 
 let s:highlight_markers = get(g:, 'highlight_markers', 1)
 if s:highlight_markers == 1
-    if !hlexists('cell_markers')
-        highlight cell_markers ctermbg=22 ctermfg=22
-    endif
+    let s:jukit_hl_settings = get(g:, 'jukit_hl_settings', 'ctermbg=22 ctermfg=22')
+    exec 'highlight cell_markers ' . s:jukit_hl_settings
     sign define cell_markers linehl=cell_markers
     autocmd BufEnter,TextChangedI,TextChanged * exe
         \ "sign unplace * group=cell_markers buffer=" . bufnr()
