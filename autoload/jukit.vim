@@ -72,7 +72,7 @@ EOF
 endfun
 
 
-fun! kittyrepl#PythonSplit(...)
+fun! jukit#PythonSplit(...)
     " Opens new kitty window split and opens python
 
     " check if ipython is used
@@ -109,7 +109,7 @@ fun! kittyrepl#PythonSplit(...)
 endfun
 
 
-fun! kittyrepl#ReplSplit()
+fun! jukit#ReplSplit()
     " Opens a new kitty terminal window
 
     let b:ipython = 0
@@ -118,7 +118,7 @@ fun! kittyrepl#ReplSplit()
 endfun
 
 
-fun! kittyrepl#SendLine()
+fun! jukit#SendLine()
     " Sends a single line to the other kitty terminal window
 
     if b:ipython==1
@@ -137,7 +137,7 @@ fun! kittyrepl#SendLine()
 endfun
 
 
-fun! kittyrepl#SendSelection()
+fun! jukit#SendSelection()
     " Sends visually selected text to the other kitty terminal window
     
     if b:ipython==1
@@ -155,7 +155,7 @@ fun! kittyrepl#SendSelection()
 endfun
 
 
-fun! kittyrepl#SendSection()
+fun! jukit#SendSection()
     " Sends the section of current cursor position to window
 
     " first select the whole current section
@@ -184,7 +184,7 @@ fun! kittyrepl#SendSection()
 endfun
 
 
-fun! kittyrepl#SendUntilCurrentSection()
+fun! jukit#SendUntilCurrentSection()
     " Sends all code until (and including) the current section to window
 
     " go to end of current section
@@ -205,7 +205,7 @@ fun! kittyrepl#SendUntilCurrentSection()
 endfun
 
 
-fun! kittyrepl#SendAll()
+fun! jukit#SendAll()
     " Sends all code in file to window
     
     if b:ipython==1
@@ -222,7 +222,7 @@ fun! kittyrepl#SendAll()
 endfun
 
 
-fun! kittyrepl#HighlightMarkers()
+fun! jukit#HighlightMarkers()
     " Highlights all cell markers in file
     
     call getline(1, '$')->map({l, v -> [l+1, v =~ "|%%--%%|"]})
@@ -233,7 +233,7 @@ endfun
 
 
 fun! s:HighlightSepLines(key, val)
-    " used by kittyrepl#HighlightMarkers() to highlight markers
+    " used by jukit#HighlightMarkers() to highlight markers
     
     exe "sign place 1 line=" . a:val . " group=seperators name=seperators buffer="
         \ . bufnr() | nohl
@@ -241,7 +241,7 @@ fun! s:HighlightSepLines(key, val)
 endfun
 
 
-fun! kittyrepl#NewMarker()
+fun! jukit#NewMarker()
     " Creates a new cell marker below
 
     if g:use_tcomment == 1
@@ -257,7 +257,7 @@ fun! kittyrepl#NewMarker()
 endfun
 
 
-fun! kittyrepl#NotebookConvert(from_notebook)
+fun! jukit#NotebookConvert(from_notebook)
     " Converts from .ipynb to .py if a:from_notebook==1 and the otherway if
     " a:from_notebook==0
 
@@ -271,7 +271,7 @@ fun! kittyrepl#NotebookConvert(from_notebook)
 endfun
 
 
-fun! kittyrepl#SaveNBToFile(run, open, to)
+fun! jukit#SaveNBToFile(run, open, to)
     " Converts the existing .ipynb to the given filetype (a:to) - e.g. html or
     " pdf - and open with specified file viewer
 
@@ -292,7 +292,7 @@ fun! kittyrepl#SaveNBToFile(run, open, to)
 endfun
 
 
-fun! kittyrepl#GetPluginPath(plugin_script_path)
+fun! jukit#GetPluginPath(plugin_script_path)
     " Gets the absolute path to the plugin (i.e. to the folder vim-jukit/) 
     
     let plugin_path = a:plugin_script_path
@@ -301,7 +301,7 @@ fun! kittyrepl#GetPluginPath(plugin_script_path)
 endfun
 
 
-fun! kittyrepl#InitBufVar()
+fun! jukit#InitBufVar()
     " Initialize buffer variables
 
     let b:inline_plotting = g:inline_plotting_default
