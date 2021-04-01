@@ -10,13 +10,16 @@ It uses the graphical capabilities of the `kitty` terminal emulator (https://git
 
 ## Examples
 
-![Converting a given .ipynb file to a simple .py file](https://user-images.githubusercontent.com/57172028/113362614-09bcce00-934f-11eb-8225-a5c9e096a7ec.mp4)
+Converting a .ipynb file to a .py file
+![converting_to_py](https://user-images.githubusercontent.com/57172028/113363801-26a6d080-9352-11eb-9a1e-b32bbb59b707.gif)
 
 
-![Opening python shell in split window and sending code](https://user-images.githubusercontent.com/57172028/113362690-3375f500-934f-11eb-863a-4664fc6b4b2a.mp4)
+Opening python shell in split window and sending code to window
+![sending_code](https://user-images.githubusercontent.com/57172028/113363862-535ae800-9352-11eb-8061-12bb53513c9f.gif)
 
 
-![Converting to .ipynb then to pdf and open](https://user-images.githubusercontent.com/57172028/113362634-16412680-934f-11eb-817e-c6563cda707a.mp4)
+Converting .py file back to .ipynb, then convert to .pdf and open it
+![convert_to_pdf](https://user-images.githubusercontent.com/57172028/113363912-7e453c00-9352-11eb-87dd-23dfe3590e02.gif)
 
 
 ## Requirements:
