@@ -1,30 +1,28 @@
 # vim-jukit
 
-This plugin aims to provide an alternative for users (like myself) who frequently work with python in jupyter-notebook and are searching for a way to work with jupyter-notebook files in vim. The goal here is not to replicate the features of jupyter-notebook in vim, but merely to provide a convenient way to convert and edit jupyter-notebook files in vim. 
+This plugin aims to provide an alternative for users who frequently work with python in jupyter-notebook and are searching for a way to work with jupyter-notebook files in vim. The goal here is not to replicate the features of jupyter-notebook in vim, but merely to provide a convenient way to convert and edit jupyter-notebook files in vim. 
 
-It uses the graphical capabilities of the `kitty` terminal emulator (https://github.com/kovidgoyal/kitty) and incorporates the functionality of `ipynb_py_convert` (https://github.com/kiwi0fruit/ipynb-py-convert) as well as `matplotlib-backend-kitty` (https://github.com/jktr/matplotlib-backend-kitty) and makes it possible to:
+It uses the graphical capabilities of the `kitty` terminal emulator (https://github.com/kovidgoyal/kitty) and incorporates the functionality of the packages`ipynb_py_convert` (https://github.com/kiwi0fruit/ipynb-py-convert) as well as `matplotlib-backend-kitty` (https://github.com/jktr/matplotlib-backend-kitty) and makes it possible to:
 * easily send code to another split-window in the kitty-terminal 
-* run individual lines, visually selected code, or cells like in jupyter-notebook
-* display matplotlib plots in the terminal using the python/ipython shell and `matplotlib-backend-kitty`
-* convert jupyter-notebook files to simple python-files and back using `ipynb_py_convert`
+* run individual lines, visually selected code, or whole cells like in jupyter-notebook
+* display matplotlib plots in the terminal using `matplotlib-backend-kitty` 
+* map keys for converting jupyter-notebook files to simple python-files and back using `ipynb_py_convert`
 
-Workflow
+## Examples
 
 Converting a given .ipynb file to a simple .py file:
 
 -- example --
 
 Opening python shell in split window and sending code
+
 -- example --
 
-Creating cell markers
+Converting back to .ipynb then to html and open
+
 -- example --
 
-Converting back to .ipynb
--- example --
-
-Converting .ipynb to html and open
--- example --
+Converting to .ipynb then to pdf and open
 
 ## Requirements:
 
@@ -126,8 +124,9 @@ When working with virtual environments, you can activate it before starting the 
 
 This will open a new kitty terminal window, activate the virtual environment using the given command, and then open the python shell with the matplotlib backend for inline plotting (if `b:inline_plotting == 1`).
 
-## Other notes:
+## Other notes to be aware of
 
-* When using ipython, be aware that the text is copied to the system clipboard and then pasted into the ipython shell using '%paste', thus modifying the contents of your system clipboard. 
+* When using ipython, be aware that the code is copied to the system clipboard and then pasted into the ipython shell using '%paste', thus modifying the contents of your system clipboard. 
 * Converting ipynb-files using the `jukit#SaveNBToFile()` function has only been tested with pdf and html output thus far, and there are cases where converting to pdf may fail (e.g. when an image in the notebook should by displayed using a hyperlink).
+* Everytime you open the python shell using `jukit#PythonSplit()` with `b:inline_plotting=1`, matplotlib is automatically imported at the beginning (to specify the backend matplotlib should use).
 
