@@ -1,7 +1,6 @@
 " TODO
 "       - RENAME PLUGIN TO VIM-JUKIT
 "       - CHECK FOR EXISTENCE OF USER-DEFINED VARIABLES
-"       - COMMENT FUNCTIONS
 "       - GNU LICENSE!
 "       - MAKE USED REGISTER CHOOSABLE BY USER (DEFAULT 'x')
 
@@ -10,11 +9,12 @@ let g:plugin_path = kittyrepl#GetPluginPath(expand("<sfile>"))
 " User defined variables:
 let g:pdf_viewer = "zathura"
 let g:html_viewer = "firefox"
-let g:python_cmd = 'ipython'
+let g:python_cmd = "ipython"
 let g:use_tcomment = 0
 let g:inline_plotting_default = 1
 let g:comment_marker_default = "#"
 let g:highlight_markers = 1
+let g:jukit_register = "x"
 highlight seperation ctermbg=22 ctermfg=22
 
 

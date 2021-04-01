@@ -50,10 +50,11 @@ python3 << EOF
 import vim 
 import json
 
-reg = vim.eval('@x')
-if reg[-1]!="\n":
-    reg += "\n"
-escaped = reg.translate(str.maketrans({
+reg = vim.eval('g:jukit_register')
+reg_conent = vim.eval(f'@{reg}')
+if reg_conent[-1]!="\n":
+    reg_conent += "\n"
+escaped = reg_conent.translate(str.maketrans({
     "\n": "\\\n",
     "\\": "\\\\",
     '"': '\\"',
@@ -124,10 +125,10 @@ fun! kittyrepl#SendLine()
         " if ipython is used, copy code to system clipboard and '%paste'
         " to register
         normal! 0v$"+y
-        let @x = '%paste'
+        exec 'let @' . g:jukit_register . " = '%paste'"
     else
         " otherwise yank line to register
-        normal! 0v$"xy
+        exec 'normal! 0v$"' . g:jukit_register . 'y'
     endif
     " send register content to window
     silent exec s:ParseRegister()
@@ -143,10 +144,10 @@ fun! kittyrepl#SendSelection()
         " if ipython is used, copy visual selection to system clipboard and 
         " '%paste' to register
         let @+ = s:GetVisualSelection() 
-        let @x = '%paste'
+        exec 'let @' . g:jukit_register . " = '%paste'"
     else
         " otherwise yank content of visual selection to register
-        let @x = s:GetVisualSelection() 
+        exec 'let @' . g:jukit_register . ' = s:GetVisualSelection()'
     endif
     " send register content to window
     silent exec s:ParseRegister()
@@ -163,10 +164,10 @@ fun! kittyrepl#SendSection()
         " if ipython is used, copy whole section to system clipboard and 
         " '%paste' to register
         normal! "+y
-        let @x = '%paste'
+        exec 'let @' . g:jukit_register . " = '%paste'"
     else
         " otherwise yank content of section to register
-        normal! "xy
+        exec 'normal! "' . g:jukit_register . 'y'
     endif
     " send register content to window
     silent exec s:ParseRegister()
@@ -183,7 +184,6 @@ fun! kittyrepl#SendSection()
 endfun
 
 
-
 fun! kittyrepl#SendUntilCurrentSection()
     " Sends all code until (and including) the current section to window
 
@@ -193,11 +193,11 @@ fun! kittyrepl#SendUntilCurrentSection()
         " if ipython is used, copy from end of current section until 
         " file beginning to system clipboard and yank '%paste' to register
         normal! k$vggj"+y
-        let @x = '%paste'
+        exec 'let @' . g:jukit_register . " = '%paste'"
     else
         " otherwise simply yank everything from beginning to current
         " section to register
-        normal! k$vggj"xy
+        exec 'normal! k$vggj"' . g:jukit_register . 'y'
     endif
     " send register content to window
     silent exec s:ParseRegister()
@@ -212,10 +212,10 @@ fun! kittyrepl#SendAll()
         " if ipython is used, copy all code in file  to system clipboard 
         " and yank '%paste' to register
         normal! ggvG$"+y
-        let @x = '%paste'
+        exec 'let @' . g:jukit_register . " = '%paste'"
     else
         " otherwise copy yank whole file content to register
-        normal! ggvG$"xy
+        exec 'normal! ggvG$"' . g:jukit_register . 'y'
     endif
     " send register content to window
     silent exec s:ParseRegister()
