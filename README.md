@@ -27,6 +27,7 @@ Converting .py file back to .ipynb, then convert to .pdf and open it
 * kitty terminal emulator (https://github.com/kiwi0fruit/ipynb-py-convert)
 * vim with python3 support
 * vim with '+clipboard' to access the system clipboard (check with `:echo has("clipboard")` in vim)
+* remote control needs to be enabled in config (i.e. put `allow_remote_control yes` in your kitty.conf)
 
 ## Installation
 
@@ -143,4 +144,4 @@ This will open a new kitty-terminal-window, activate the virtual environment usi
 * When using ipython, be aware that the code is copied to the system clipboard and then pasted into the ipython shell using '%paste', thus modifying the contents of your system clipboard. 
 * Converting .ipynb-files using the `jukit#SaveNBToFile()` function has only been tested with pdf and html output thus far, and there are cases where converting to pdf may fail (e.g. when an image in the notebook should by displayed using a hyperlink).
 * Every time you open the python shell using `jukit#PythonSplit()` with `b:inline_plotting=1`, matplotlib is automatically imported at the beginning (to specify the backend matplotlib should use).
-
+* Converting .ipynb file currently only works for notebook format v4+
