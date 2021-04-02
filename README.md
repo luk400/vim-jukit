@@ -2,7 +2,7 @@
 
 This plugin aims to provide an alternative for users who frequently work with python in jupyter-notebook and are searching for a way to work with jupyter-notebook files in vim. The goal here is not to replicate the features of jupyter-notebook in vim, but merely to provide a convenient way to convert and edit jupyter-notebook files using vim. 
 
-It uses the graphical capabilities of the `kitty` terminal emulator (https://github.com/kovidgoyal/kitty) and incorporates the functionality of the packages`ipynb_py_convert` (https://github.com/kiwi0fruit/ipynb-py-convert) as well as `matplotlib-backend-kitty` (https://github.com/jktr/matplotlib-backend-kitty) and makes it possible to:
+It uses the graphical capabilities of the [kitty terminal emulator](https://github.com/kovidgoyal/kitty) and incorporates the functionality of the packages [ipynb_py_convert](https://github.com/kiwi0fruit/ipynb-py-convert) as well as [matplotlib-backend-kitty](https://github.com/jktr/matplotlib-backend-kitty) and makes it possible to:
 * easily send code to another split-window in the kitty-terminal 
 * run individual lines, visually selected code, or whole cells like in jupyter-notebook
 * display matplotlib plots in the terminal using `matplotlib-backend-kitty` 
@@ -24,7 +24,7 @@ Converting .py file back to .ipynb, then convert to .pdf and open it
 
 ## Requirements
 
-* kitty terminal emulator (https://github.com/kiwi0fruit/ipynb-py-convert)
+* [kitty terminal emulator](https://github.com/kovidgoyal/kitty)
 * remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf)
 * ImageMagick for displaying plots in the terminal (install using `sudo apt-get install imagemagick`)
 * vim with python3 support
@@ -34,7 +34,7 @@ Converting .py file back to .ipynb, then convert to .pdf and open it
 
 With your plugin manager of choice, e.g. using vim-plug:
 
-```
+```vim
 Plug 'luk400/vim-jukit' 
 ```
 
@@ -43,7 +43,7 @@ Plug 'luk400/vim-jukit'
 #### User defined variables
 
 ###### Default values
-```
+```vim
 let g:jukit_highlight_markers = 1
 let g:jukit_hl_settings = 'ctermbg=22 ctermfg=22'
 let g:jukit_use_tcomment = 0
@@ -61,7 +61,7 @@ let g:jukit_mappings = 1
 
 * `g:jukit_hl_settings`: Specify arguments for highlighting cell markers (see `:h highlight-args`)
 
-* `g:jukit_use_tcomment`: Specify if `tcomment` (https://github.com/tomtom/tcomment_vim) plugin should be used to comment out cell markers - recommended if you work with many different languages for which you intend to make use of cell markers, otherwise you will have to manually set `b:comment_mark` every time you work in a language where the comment-mark is not the one specified in `g:jukit_comment_mark_default`. This requires the tcomment plugin to already be installed.
+* `g:jukit_use_tcomment`: Specify if [tcomment plugin](https://github.com/tomtom/tcomment_vim) should be used to comment out cell markers - recommended if you work with many different languages for which you intend to make use of cell markers, otherwise you will have to manually set `b:comment_mark` every time you work in a language where the comment-mark is not the one specified in `g:jukit_comment_mark_default`. This requires the tcomment plugin to already be installed.
 
 * `g:jukit_comment_mark_default`: Every time a buffer is entered the variable `b:comment_mark` is set according to `g:jukit_comment_mark_default` to prepend the cell-markers in the file. Only required if `g:jukit_use_tcomment=0`.
 
@@ -78,7 +78,7 @@ let g:jukit_mappings = 1
 ### Functions and Mappings
 
 ###### Default mappings
-```
+```vim
 nnoremap <leader>py :call jukit#PythonSplit()<cr>
 nnoremap <leader>sp :call jukit#WindowSplit()<cr>
 nnoremap <cr> :call jukit#SendLine()<cr>
@@ -130,11 +130,11 @@ In general, the function `jukit#SaveNBToFile()` is explained as follows:
 When working with virtual environments, you can activate it before starting the python shell using the `JukitPy` command, e.g.:
 
 
-```
+```vim
 :JukitPy conda activate myvenv
 ```
 
-This will open a new kitty-terminal-window, activate the virtual environment using the given command, and then open the python shell with the matplotlib backend for inline plotting (if `b:inline_plotting == 1`).
+This will open a new kitty-terminal-window, activate the virtual environment using the given command, and then open the python shell with the matplotlib backend for inline plotting (if `b:inline_plotting = 1`).
 
 ## Other notes to be aware of
 
@@ -142,7 +142,9 @@ This will open a new kitty-terminal-window, activate the virtual environment usi
 * Converting .ipynb-files using the `jukit#SaveNBToFile()` function has only been tested with pdf and html output thus far, and there are cases where converting to pdf may fail (e.g. when an image in the notebook should by displayed using a hyperlink).
 * Every time you open the python shell using `jukit#PythonSplit()` with `b:inline_plotting=1`, matplotlib is automatically imported at the beginning (to specify the backend matplotlib should use).
 * Converting .ipynb file currently only works for files with notebook format v4+, older file versions must first be converted using `jupyter-notebook`
+* If you're using the python shell instead of ipython and need to indent empty lines in indented code blocks (e.g. function definitions) you may want to consider a plugin like [this very basic one](https://github.com/luk400/vim-emptyindent') I made a while ago since I didn't find anything like it.
 
 ## TODO
 
 [ ] Update second gif
+[ ] Get system specs where tested
