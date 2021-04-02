@@ -25,9 +25,10 @@ Converting .py file back to .ipynb, then convert to .pdf and open it
 ## Requirements
 
 * kitty terminal emulator (https://github.com/kiwi0fruit/ipynb-py-convert)
+* remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf)
+* ImageMagick for displaying plots in the terminal (install using `sudo apt-get install imagemagick`)
 * vim with python3 support
 * vim with '+clipboard' to access the system clipboard (check with `:echo has("clipboard")` in vim)
-* remote control needs to be enabled in config (i.e. put `allow_remote_control yes` in your kitty.conf)
 
 ## Installation
 
@@ -90,8 +91,8 @@ nnoremap <leader>np :call jukit#NotebookConvert(1)<cr>
 nnoremap <leader>pn :call jukit#NotebookConvert(0)<cr>
 nnoremap <leader>ht :call jukit#SaveNBToFile(0,1,'html')<cr>
 nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'html')<cr>
-nnoremap <leader>ht :call jukit#SaveNBToFile(0,1,'pdf')<cr>
-nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'pdf')<cr>
+nnoremap <leader>pd :call jukit#SaveNBToFile(0,1,'pdf')<cr>
+nnoremap <leader>rpd :call jukit#SaveNBToFile(1,1,'pdf')<cr>
 ```
 
 ###### Explanation
@@ -144,4 +145,9 @@ This will open a new kitty-terminal-window, activate the virtual environment usi
 * When using ipython, be aware that the code is copied to the system clipboard and then pasted into the ipython shell using '%paste', thus modifying the contents of your system clipboard. 
 * Converting .ipynb-files using the `jukit#SaveNBToFile()` function has only been tested with pdf and html output thus far, and there are cases where converting to pdf may fail (e.g. when an image in the notebook should by displayed using a hyperlink).
 * Every time you open the python shell using `jukit#PythonSplit()` with `b:inline_plotting=1`, matplotlib is automatically imported at the beginning (to specify the backend matplotlib should use).
-* Converting .ipynb file currently only works for notebook format v4+
+* Converting .ipynb file currently only works for files with notebook format v4+, older file versions must first be converted using `jupyter-notebook`
+
+## TODO
+
+* [] Add check to see if file already exists when using `jukit#NotebookConvert(0)`
+* [] Combine `jukit#NotebookConvert(0)` and `jukit#NotebookConvert(1)` so that it automatically detects the current file type and either converts to .py or .ipynb based on that
