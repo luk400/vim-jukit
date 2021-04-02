@@ -68,7 +68,7 @@ let g:jukit_mappings = 1
 
 * `g:jukit_comment_mark_default`: Every time a buffer is entered the variable `b:comment_mark` is set according to `g:jukit_comment_mark_default` to prepend the cell-markers in the file. Only required if `g:jukit_use_tcomment=0`.
 
-* `g:jukit_use_tcomment`: Specify if [tcomment plugin](https://github.com/tomtom/tcomment_vim) should be used to comment out cell markers - recommended if you work with many different languages for which you intend to make use of cell markers, otherwise you will have to manually set `b:comment_mark` every time you work in a language where the comment-mark is not the one specified in `g:jukit_comment_mark_default`. This requires the tcomment plugin to already be installed.
+* `g:jukit_use_tcomment`: Specify if [tcomment plugin](https://github.com/tomtom/tcomment_vim) should be used to comment out cell markers - recommended if you regularly work with different languages for which you intend to make use of cell markers, otherwise you will have to manually set `b:comment_mark` every time you work in a language where the comment-mark is not the one specified in `g:jukit_comment_mark_default`. This requires the tcomment plugin to already be installed.
 
 * `g:jukit_python_cmd`: Specifies the terminal command to use to start the interactive python shell ('python' or 'ipython')
 
@@ -92,8 +92,7 @@ nnoremap <leader><space> :call jukit#SendSection()<cr>
 nnoremap <leader>cc :call jukit#SendUntilCurrentSection()<cr>
 nnoremap <leader>all :call jukit#SendAll()<cr>
 nnoremap <leader>mm :call jukit#NewMarker()<cr>
-nnoremap <leader>np :call jukit#NotebookConvert(1)<cr>
-nnoremap <leader>pn :call jukit#NotebookConvert(0)<cr>
+nnoremap <leader>np :call jukit#NotebookConvert()<cr>
 nnoremap <leader>ht :call jukit#SaveNBToFile(0,1,'html')<cr>
 nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'html')<cr>
 nnoremap <leader>pd :call jukit#SaveNBToFile(0,1,'pdf')<cr>
@@ -128,7 +127,7 @@ nnoremap <leader>rpd :call jukit#SaveNBToFile(1,1,'pdf')<cr>
 
 In general, the function `jukit#SaveNBToFile()` is explained as follows:
 
-* `jukit#SaveNBToFile(run, open, to)`: Must have Jupyter installed to work, since it uses the terminal command `jupyter nbconvert`. Here, `run` should be 1 or 0 and specifies if the code should be run to include output when converting, `open` should be 1 or 0 indicating if the file should be opened afterwards, and `to` specifies the output format. Generally, `to` can take any argument accepted by the `--to` flag of `jupyter nbconvert` (see `jupyter nbconvert -h`), note however that you need to specify a viewer variable to then open the file (i.e. to use `jukit#SaveNBToFile(0, 1, 'pdf')` the variable `g:jukit_pdf_viewer` needs to exist).
+* `jukit#SaveNBToFile(run, open, to)`: Must have Jupyter installed to work, since it uses the terminal command `jupyter nbconvert`. Here, `run` should be 1 or 0 and specifies if the code should be run to include output when converting, `open` should be 1 or 0 indicating if the file should be opened afterwards, and `to` specifies the output format. Generally, `to` can take any argument accepted by the `--to` flag of `jupyter nbconvert` (see `jupyter nbconvert -h`), note however that this has only been tested with pdf and html, and you need to specify a viewer variable to then open the file (i.e. to use `jukit#SaveNBToFile(0, 1, 'pdf')` the variable `g:jukit_pdf_viewer` needs to exist).
 
 ### Commands
 
@@ -148,4 +147,4 @@ This will open a new kitty-terminal-window, activate the virtual environment usi
 * Every time you open the python shell using `jukit#PythonSplit()` with `b:inline_plotting=1`, matplotlib is automatically imported at the beginning (to specify the backend matplotlib should use).
 * Converting .ipynb file currently only works for files with notebook format v4+, older file versions must first be converted using `jupyter-notebook`
 * If you're using the python shell instead of ipython and need to indent empty lines in indented code blocks (e.g. function definitions) you may want to consider a plugin like [this very basic (and somewhat underwhelming) one](https://github.com/luk400/vim-emptyindent) which I made a while ago since I didn't find anything like it.
-* This plugin has currently only been tested on Ubuntu 20.04 (and 20.10) using python 3.8, kitty 0.15.0, and matplotlib 3.3.2
+* vim-jukit has currently only been tested on Ubuntu 20.04 (and 20.10) using python 3.8, kitty 0.15.0, and matplotlib 3.3.2
