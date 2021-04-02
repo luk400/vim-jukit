@@ -293,7 +293,7 @@ fun! jukit#SaveNBToFile(run, open, to)
 endfun
 
 
-fun! jukit#GetPluginPath(plugin_script_path)
+fun! s:GetPluginPath(plugin_script_path)
     " Gets the absolute path to the plugin (i.e. to the folder vim-jukit/) 
     
     let plugin_path = a:plugin_script_path
@@ -315,7 +315,7 @@ endfun
 """"""""""""""""""
 " helper variables
 let s:wrapscan = &wrapscan 
-let s:plugin_path = jukit#GetPluginPath(expand("<sfile>"))
+let s:plugin_path = s:GetPluginPath(expand("<sfile>"))
 
 " get path of python executable that vim is using
 python3 << EOF
