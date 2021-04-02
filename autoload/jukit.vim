@@ -245,10 +245,12 @@ fun! jukit#NotebookConvert(from_notebook)
     " a:from_notebook==0
 
     if a:from_notebook == 1
-        silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert % %:r.py"
-        exec "e %:r.py"
+        silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert % " 
+            \ . expand("%:r") . '.py'
+        exec 'e ' . expand("%:r") . '.py'
     elseif a:from_notebook == 0
-        silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert % %:r.ipynb"
+        silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert % "
+            \ . expand("%:r") . '.ipynb'
     endif
     redraw!
 endfun
@@ -258,15 +260,18 @@ fun! jukit#SaveNBToFile(run, open, to)
     " Converts the existing .ipynb to the given filetype (a:to) - e.g. html or
     " pdf - and open with specified file viewer
 
-    silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert % %:r.ipynb"
+    silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert % "
+        \ . expand("%:r") '.ipynb'
     if a:run == 1
         let command = "!jupyter nbconvert --to " . a:to
-            \ . " --allow-errors --execute --log-level='ERROR' %:r.ipynb "
+            \ . " --allow-errors --execute --log-level='ERROR' " . expand("%:r") '.ipynb '
     else
-        let command = "!jupyter nbconvert --to " . a:to . " --log-level='ERROR' %:r.ipynb "
+        let command = "!jupyter nbconvert --to " . a:to . " --log-level='ERROR' "
+            \ . expand("%:r") . '.ipynb '
     endif
     if a:open == 1
-        exec 'let command = command . "&& " . g:jukit_' . a:to . '_viewer . " %:r.' . a:to . ' &"'
+        exec 'let command = command . "&& " . g:jukit_' . a:to . '_viewer . " '
+            \ . expand("%:r") . '.' . a:to . ' &"'
     else
         let command = command . "&"
     endif
