@@ -11,7 +11,7 @@ It uses the graphical capabilities of the [kitty terminal emulator](https://gith
 ## Examples
 
 * Converting a .ipynb file to a .py file
-![converting_to_py](https://user-images.githubusercontent.com/57172028/113363801-26a6d080-9352-11eb-9a1e-b32bbb59b707.gif)
+![converting_to_py](https://user-images.githubusercontent.com/57172028/113441420-95396c00-93ee-11eb-8474-02f9e264bf59.gif)
 
 
 * Sending code to python
@@ -23,7 +23,8 @@ It uses the graphical capabilities of the [kitty terminal emulator](https://gith
 
 
 * Converting .py file back to .ipynb, then convert to .pdf and open it
-![convert_to_pdf](https://user-images.githubusercontent.com/57172028/113363912-7e453c00-9352-11eb-87dd-23dfe3590e02.gif)
+![converting_to_pdf](https://user-images.githubusercontent.com/57172028/113441436-9b2f4d00-93ee-11eb-9594-f6602a6c48a8.gif)
+
 
 
 ## Requirements
