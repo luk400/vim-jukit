@@ -256,10 +256,11 @@ fun! jukit#SaveNBToFile(run, open, to)
     " pdf - and open with specified file viewer
 
     silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert "
-        \ . expand("%") . " " . expand("%:r") '.ipynb'
+        \ . expand("%") . " " . expand("%:r") . '.ipynb'
     if a:run == 1
         let command = "!jupyter nbconvert --to " . a:to
-            \ . " --allow-errors --execute --log-level='ERROR' " . expand("%:r") '.ipynb '
+            \ . " --allow-errors --execute --log-level='ERROR' "
+            \ . expand("%:r") . '.ipynb '
     else
         let command = "!jupyter nbconvert --to " . a:to . " --log-level='ERROR' "
             \ . expand("%:r") . '.ipynb '
@@ -312,7 +313,7 @@ EOF
 let s:jukit_use_tcomment = get(g:, 'jukit_use_tcomment', 0)
 let s:jukit_inline_plotting_default = get(g:, 'jukit_inline_plotting_default', 1)
 let s:jukit_comment_mark_default = get(g:, 'jukit_comment_mark_default', '#')
-let s:jukit_python_cmd = get(g:, 'jukit_python_cmd', 'ipython')
+let s:jukit_python_cmd = get(g:, 'jukit_python_cmd', 'python')
 let s:jukit_register = get(g:, 'jukit_register', 'x')
 let g:jukit_html_viewer = 'firefox'
 
