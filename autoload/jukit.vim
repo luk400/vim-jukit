@@ -60,7 +60,6 @@ escaped = reg_conent.translate(str.maketrans({
     "#": "\\#",
     "!": "\!",
     "%": "\%",
-    "|": "\|",
     }))
  
 vim.command("let escaped_text = shellescape({})".format(json.dumps(escaped)))
