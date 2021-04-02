@@ -1,6 +1,6 @@
 # vim-jukit
 
-This plugin aims to provide an alternative for users who frequently work with python in jupyter-notebook and are searching for a way to work with jupyter-notebook files in vim. The goal here is not to replicate the features of jupyter-notebook in vim, but merely to provide a convenient way to convert and edit jupyter-notebook files using vim. 
+This plugin aims to provide an alternative for users who frequently work with python in jupyter-notebook and are searching for a way to work with jupyter-notebook files in vim. The goal here is not to replicate the features of jupyter-notebook in vim, but merely to provide a convenient way to convert and edit the contents of jupyter-notebook files using vim. Many of this plugin's features are meant for python only, however if you're only intending to use the functionality of sending code and using cell-markers, then this should work with any language.
 
 It uses the graphical capabilities of the [kitty terminal emulator](https://github.com/kovidgoyal/kitty) and incorporates the functionality of the packages [ipynb_py_convert](https://github.com/kiwi0fruit/ipynb-py-convert) as well as [matplotlib-backend-kitty](https://github.com/jktr/matplotlib-backend-kitty) and makes it possible to:
 * easily send code to another split-window in the kitty-terminal 
@@ -102,7 +102,7 @@ nnoremap <leader>rpd :call jukit#SaveNBToFile(1,1,'pdf')<cr>
 ###### Explanation
 * `jukit#PythonSplit()`: Creates a new kitty-terminal-window and opens the python shell using the matplotlib backend for inline plotting (if `b:inline_plotting == 1`)
 
-* `jukit#WindowSplit()`: Opens a new kitty-terminal-window
+* `jukit#WindowSplit()`: Opens a new kitty-terminal-window. Use this if you don't want to automatically open the python shell (e.g. if you want to work with another programming language).
 
 * `jukit#SendLine()`: Sends the line at the current cursor position to the other window
 
