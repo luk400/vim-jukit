@@ -112,9 +112,7 @@ nnoremap <leader>rpd :call jukit#SaveNBToFile(1,1,'pdf')<cr>
 
 * `jukit#NewMarker()`: Create a new cell-marker
 
-* `jukit#NotebookConvert(1)`: Convert from .ipynb to .py
-
-* `jukit#NotebookConvert(0)`: Convert from .py to .ipynb
+* `jukit#NotebookConvert()`: Convert from .ipynb to .py or from .py to .ipynb depending on current file extension
 
 * `jukit#SaveNBToFile(0,1,'html')`: Convert the existing .ipynb to .html and open it
 
@@ -123,9 +121,7 @@ nnoremap <leader>rpd :call jukit#SaveNBToFile(1,1,'pdf')<cr>
 * `jukit#SaveNBToFile(1,1,'pdf')` and `jukit#SaveNBToFile(0,1,'pdf')`: same as above, but with .pdf instead of .html
 
 
-In general, the arguments for the functions `jukit#NotebookConvert()` and `jukit#SaveNBToFile()` are as follows:
-
-* `jukit#NotebookConvert(from_notebook)`: `from_notebook` is either 1 indicating that the current file is .ipynb and should be converted to .py, or 0 indicating the converse.
+In general, the function `jukit#SaveNBToFile()` is explained as follows:
 
 * `jukit#SaveNBToFile(run, open, to)`: Must have Jupyter installed to work, since it uses the terminal command `jupyter nbconvert`. Here, `run` should be 1 or 0 and specifies if the code should be run to include output when converting, `open` should be 1 or 0 indicating if the file should be opened afterwards, and `to` specifies the output format. Generally, `to` can take any argument accepted by the `--to` flag of `jupyter nbconvert` (see `jupyter nbconvert -h`), note however that you need to specify a viewer variable to then open the file (i.e. to use `jukit#SaveNBToFile(0, 1, 'pdf')` the variable `g:jukit_pdf_viewer` needs to exist).
 
@@ -148,9 +144,5 @@ This will open a new kitty-terminal-window, activate the virtual environment usi
 * Converting .ipynb file currently only works for files with notebook format v4+, older file versions must first be converted using `jupyter-notebook`
 
 ## TODO
-
-[ ] Add check to see if file already exists when using `jukit#NotebookConvert(0)`
-
-[ ] Combine `jukit#NotebookConvert(0)` and `jukit#NotebookConvert(1)` so that it automatically detects the current file type and either converts to .py or .ipynb based on that
 
 [ ] Update second gif
