@@ -149,6 +149,8 @@ This will open a new kitty-terminal-window, activate the virtual environment usi
 
 ## TODO
 
-[] Add check to see if file already exists when using `jukit#NotebookConvert(0)`
-[] Combine `jukit#NotebookConvert(0)` and `jukit#NotebookConvert(1)` so that it automatically detects the current file type and either converts to .py or .ipynb based on that
-[] Update second gif
+[ ] Add check to see if file already exists when using `jukit#NotebookConvert(0)`
+
+[ ] Combine `jukit#NotebookConvert(0)` and `jukit#NotebookConvert(1)` so that it automatically detects the current file type and either converts to .py or .ipynb based on that
+
+[ ] Update second gif
