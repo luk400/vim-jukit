@@ -148,8 +148,3 @@ This will open a new kitty-terminal-window, activate the virtual environment usi
 * Every time you open the python shell using `jukit#PythonSplit()` with `b:inline_plotting=1`, matplotlib is automatically imported at the beginning (to specify the backend matplotlib should use).
 * Converting .ipynb file currently only works for files with notebook format v4+, older file versions must first be converted using `jupyter-notebook`
 * If you're using the python shell instead of ipython and need to indent empty lines in indented code blocks (e.g. function definitions) you may want to consider a plugin like [this very basic one](https://github.com/luk400/vim-emptyindent') I made a while ago since I didn't find anything like it.
-
-## TODO
-
-[ ] Update second gif
-[ ] Get system specs where tested
