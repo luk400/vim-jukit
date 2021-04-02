@@ -89,16 +89,11 @@ fun! jukit#PythonSplit(...)
     endif
 
     if b:inline_plotting == 1
-        " if inline plotting is enabled, use helper script to check if the
-        " required backend is in python path and otherwise create it
-        silent exec '!kitty @ send-text --match title:' . b:output_title
-            \ . " " . s:python_path . " " . s:plugin_path
-            \ . "/helpers/check_matplotlib_backend.py "
-            \ . s:plugin_path . "\r"
-        " open python and import the matplotlib with the backend required
+        " open python, add path to backend  and import matplotlib with the required
         " backend first
         silent exec '!kitty @ send-text --match title:' . b:output_title
-            \ . " " . s:jukit_python_cmd . " -i -c \"\\\"import matplotlib;
+            \ . " " . s:jukit_python_cmd . " -i -c \"\\\"import sys;
+            \ sys.path.append('" . s:plugin_path . "/helpers'); import matplotlib;
             \ matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\r"
     else
         " if no inline plotting is desired, simply open python
