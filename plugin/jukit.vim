@@ -76,6 +76,12 @@ if s:jukit_mappings == 1
     if !hasmapto('jukit#SaveNBToFile(1,1,"html")', 'n')
         nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'html')<cr>
     endif
+    if !hasmapto('jukit#SaveNBToFile(0,1,"pdf")', 'n')
+        nnoremap <leader>pd :call jukit#SaveNBToFile(0,1,'pdf')<cr>
+    endif
+    if !hasmapto('jukit#SaveNBToFile(1,1,"pdf")', 'n')
+        nnoremap <leader>rpd :call jukit#SaveNBToFile(1,1,'pdf')<cr>
+    endif
 endif
 
 " use the following to execute a command in terminal before opening python
