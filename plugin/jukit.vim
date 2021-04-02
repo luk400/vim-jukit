@@ -64,11 +64,8 @@ if s:jukit_mappings == 1
     if !hasmapto('jukit#NewMarker()', 'n')
         nnoremap <leader>mm :call jukit#NewMarker()<cr>
     endif
-    if !hasmapto('jukit#NotebookConvert(1)', 'n')
-        nnoremap <leader>np :call jukit#NotebookConvert(1)<cr>
-    endif
-    if !hasmapto('jukit#NotebookConvert(0)', 'n')
-        nnoremap <leader>pn :call jukit#NotebookConvert(0)<cr>
+    if !hasmapto('jukit#NotebookConvert()', 'n')
+        nnoremap <leader>np :call jukit#NotebookConvert()<cr>
     endif
     if !hasmapto('jukit#SaveNBToFile(0,1,"html")', 'n')
         nnoremap <leader>ht :call jukit#SaveNBToFile(0,1,'html')<cr>
