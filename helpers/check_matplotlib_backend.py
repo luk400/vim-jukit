@@ -6,7 +6,7 @@ if __name__ == "__main__":
     plugin_path = str(sys.argv[1])
     backend_dir = plugin_path + "/helpers/matplotlib-backend-kitty"
 
-    paths = [path + "/" for path in site.getsitepackages()]
+    paths = [path + "/" for path in site.getsitepackages() if os.path.isdir(path)]
     all_modules = [os.listdir(path) for path in paths]
     all_modules = [el for sublist in all_modules for el in sublist]  # flatten
 
