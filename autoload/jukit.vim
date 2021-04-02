@@ -216,6 +216,7 @@ fun! jukit#SendAll()
     endif
     " send register content to window
     silent exec s:ParseRegister()
+    redraw!
 endfun
 
 
