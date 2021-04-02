@@ -10,15 +10,19 @@ It uses the graphical capabilities of the [kitty terminal emulator](https://gith
 
 ## Examples
 
-Converting a .ipynb file to a .py file
+* Converting a .ipynb file to a .py file
 ![converting_to_py](https://user-images.githubusercontent.com/57172028/113363801-26a6d080-9352-11eb-9a1e-b32bbb59b707.gif)
 
 
-Opening python shell in split window and sending code to window
-![sending_code](https://user-images.githubusercontent.com/57172028/113363862-535ae800-9352-11eb-8061-12bb53513c9f.gif)
+* Sending code to python
+![sending_code_python](https://user-images.githubusercontent.com/57172028/113440464-c44ede00-93ec-11eb-9e75-0a7b4b1b96d0.gif)
 
 
-Converting .py file back to .ipynb, then convert to .pdf and open it
+* Sending code to IPython
+![sending_code_ipython](https://user-images.githubusercontent.com/57172028/113440477-cadd5580-93ec-11eb-8a6e-0f350f07cb6c.gif)
+
+
+* Converting .py file back to .ipynb, then convert to .pdf and open it
 ![convert_to_pdf](https://user-images.githubusercontent.com/57172028/113363912-7e453c00-9352-11eb-87dd-23dfe3590e02.gif)
 
 
