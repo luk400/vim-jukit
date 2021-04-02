@@ -66,13 +66,13 @@ let g:jukit_mappings = 1
 
 * `g:jukit_hl_settings`: Specify arguments for highlighting cell markers (see `:h highlight-args`)
 
-* `g:jukit_use_tcomment`: Specify if [tcomment plugin](https://github.com/tomtom/tcomment_vim) should be used to comment out cell markers - recommended if you work with many different languages for which you intend to make use of cell markers, otherwise you will have to manually set `b:comment_mark` every time you work in a language where the comment-mark is not the one specified in `g:jukit_comment_mark_default`. This requires the tcomment plugin to already be installed.
-
 * `g:jukit_comment_mark_default`: Every time a buffer is entered the variable `b:comment_mark` is set according to `g:jukit_comment_mark_default` to prepend the cell-markers in the file. Only required if `g:jukit_use_tcomment=0`.
+
+* `g:jukit_use_tcomment`: Specify if [tcomment plugin](https://github.com/tomtom/tcomment_vim) should be used to comment out cell markers - recommended if you work with many different languages for which you intend to make use of cell markers, otherwise you will have to manually set `b:comment_mark` every time you work in a language where the comment-mark is not the one specified in `g:jukit_comment_mark_default`. This requires the tcomment plugin to already be installed.
 
 * `g:jukit_python_cmd`: Specifies the terminal command to use to start the interactive python shell ('python' or 'ipython')
 
-* `g:jukit_inline_plotting_default`: Every time a buffer is entered the variable `b:inline_plotting` is set according to this value, which either enables (1) or disables (0) directly plotting into terminal using when matplotlib.
+* `g:jukit_inline_plotting_default`: Every time a buffer is entered the variable `b:inline_plotting` is set according to this value, which either enables (1) or disables (0) directly plotting into terminal using matplotlib.
 
 * `g:jukit_jukit_register`: This is the register to which jukit will yank code when sending to the kitty-terminal-window.
 
