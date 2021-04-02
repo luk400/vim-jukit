@@ -236,17 +236,33 @@ fun! jukit#NewMarker()
 endfun
 
 
-fun! jukit#NotebookConvert(from_notebook)
-    " Converts from .ipynb to .py if a:from_notebook==1 and the otherway if
-    " a:from_notebook==0
+fun! jukit#NotebookConvert()
+    " Converts from .ipynb to .py and vice versa
 
-    if a:from_notebook == 1
+    if (expand("%:e")=="ipynb")
+        if !empty(glob(expand("%:r") . '.py'))
+            let answer = confirm(expand("%:r")
+                \ . '.py already exists. Do you want to replace it?', "&Yes\n&No", 1)
+            if answer == 0 || answer == 2
+                return
+            endif
+        endif
         silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert " 
             \ . expand("%") . " " . expand("%:r") . '.py'
         exec 'e ' . expand("%:r") . '.py'
-    elseif a:from_notebook == 0
+    elseif (expand("%:e")=="py")
+        if !empty(glob(expand("%:r") . '.ipynb'))
+            let answer = confirm(expand("%:r")
+                \ . '.ipynb already exists. Do you want to replace it?', "&Yes\n&No", 1)
+            if answer == 0 || answer == 2
+                return
+            endif
+        endif
         silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert "
             \ . expand("%") . " " . expand("%:r") . '.ipynb'
+        exec 'e ' . expand("%:r") . '.ipynb'
+    else
+        throw "File must be .py or .ipynb!"
     endif
     redraw!
 endfun
