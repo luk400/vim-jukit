@@ -14,7 +14,7 @@ It uses the graphical capabilities of the [kitty terminal emulator](https://gith
 ![converting_to_py](https://user-images.githubusercontent.com/57172028/113441420-95396c00-93ee-11eb-8474-02f9e264bf59.gif)
 
 
-* Sending visual selection, sections between cell-markers, or single lines to python shell and plotting directly in the terminal
+* Sending visual selection, code between cell-markers, or single lines to python shell, creating cell-markers and plotting directly in the terminal
 ![sending_code_python](https://user-images.githubusercontent.com/57172028/113440464-c44ede00-93ec-11eb-9e75-0a7b4b1b96d0.gif)
 
 
