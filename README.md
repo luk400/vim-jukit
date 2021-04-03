@@ -1,6 +1,6 @@
 # vim-jukit
 
-This plugin aims to provide an alternative for users who frequently work with python in jupyter-notebook and are searching for a way to work with jupyter-notebook files in vim. The goal here is not to replicate the features of jupyter-notebook in vim, but merely to provide a convenient way to convert and edit the contents of jupyter-notebook files using vim. Many of this plugin's features are meant for python only, however if you're only intending to use the functionality of sending code and using cell-markers, then this should work with any language.
+This plugin aims to provide an alternative for users who frequently work with jupyter-notebook and are searching for a way to work with jupyter-notebook files in vim. Many of this plugin's features are meant for python only, however if you're only intending to use the functionality of sending code and using cell-markers, then this should work with any language. The goal of this plugin was not to replicate the features of jupyter-notebook in vim, but merely to provide a convenient way to convert and edit the contents of jupyter-notebook files using vim.
 
 It uses the graphical capabilities of the [kitty terminal emulator](https://github.com/kovidgoyal/kitty) and incorporates the functionality of the packages [ipynb_py_convert](https://github.com/kiwi0fruit/ipynb-py-convert) as well as [matplotlib-backend-kitty](https://github.com/jktr/matplotlib-backend-kitty) and makes it possible to:
 * easily send code to another split-window in the kitty-terminal 
