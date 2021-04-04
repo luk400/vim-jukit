@@ -70,7 +70,7 @@ let g:jukit_mappings = 1
 
 * `g:jukit_use_tcomment`: Specify if [tcomment plugin](https://github.com/tomtom/tcomment_vim) should be used to comment out cell markers - recommended if you regularly work with different languages for which you intend to make use of cell markers, otherwise you will have to manually set `b:comment_mark` every time you work in a language where the comment-mark is not the one specified in `g:jukit_comment_mark_default`. This requires the tcomment plugin to already be installed.
 
-* `g:jukit_python_cmd`: Specifies the terminal command to use to start the interactive python shell ('python' or 'ipython')
+* `g:jukit_python_cmd`: Specifies the terminal command to use to start the interactive python shell (e.g. 'python3' or 'ipython3')
 
 * `g:jukit_inline_plotting_default`: Every time a buffer is entered the variable `b:inline_plotting` is set according to this value, which either enables (1) or disables (0) directly plotting into terminal using matplotlib.
 
