@@ -96,7 +96,7 @@ nnoremap <leader>np :call jukit#NotebookConvert()<cr>
 nnoremap <leader>ht :call jukit#SaveNBToFile(0,1,'html')<cr>
 nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'html')<cr>
 nnoremap <leader>pd :call jukit#SaveNBToFile(0,1,'pdf')<cr>
-nvnoremap <leader>h :<C-U>call jukit#PythonHelp()
+vnoremap <leader>h :<C-U>call jukit#PythonHelp()
 ```
 
 ###### Explanation
