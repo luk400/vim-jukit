@@ -39,7 +39,7 @@ class FigureManagerICat(FigureManagerBase):
 
         # resize figure to terminal size & aspect ratio
         dpi = self.canvas.figure.dpi
-        size = min(px[0], px[1]) / dpi
+        size = min(px[0], px[1]) / dpi * 0.8
         self.canvas.figure.set_size_inches((size, size))
                 
         with BytesIO() as buf:
