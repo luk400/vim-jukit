@@ -96,7 +96,7 @@ nnoremap <leader>np :call jukit#NotebookConvert()<cr>
 nnoremap <leader>ht :call jukit#SaveNBToFile(0,1,'html')<cr>
 nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'html')<cr>
 nnoremap <leader>pd :call jukit#SaveNBToFile(0,1,'pdf')<cr>
-nnoremap <leader>rpd :call jukit#SaveNBToFile(1,1,'pdf')<cr>
+nvnoremap <leader>h :<C-U>call jukit#PythonHelp()
 ```
 
 ###### Explanation
@@ -124,6 +124,7 @@ nnoremap <leader>rpd :call jukit#SaveNBToFile(1,1,'pdf')<cr>
 
 * `jukit#SaveNBToFile(1,1,'pdf')` and `jukit#SaveNBToFile(0,1,'pdf')`: same as above, but with .pdf instead of .html
 
+* `jukit#PythonHelp()`: shows documentation for visually selected python function/class in terminal
 
 In general, the function `jukit#SaveNBToFile()` is explained as follows:
 

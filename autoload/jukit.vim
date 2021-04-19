@@ -292,6 +292,25 @@ fun! jukit#SaveNBToFile(run, open, to)
 endfun
 
 
+fun! jukit#PythonHelp()
+    " send to terminal
+    if b:ipython==1
+        " if ipython is used, copy all code in file  to system clipboard 
+        " and yank '%paste' to register
+        let @+ = 'help(' . s:GetVisualSelection() . ')'
+        exec 'let @' . s:jukit_register . " = '%paste'"
+    else
+        " otherwise yank line to register
+        exec 'let @' . s:jukit_register . ' = help(' . s:GetVisualSelection() . ')'
+    endif
+    " send register content to window
+    silent exec s:ParseRegister()
+    silent exec "!kitty @ focus-window --match title:" . b:output_title
+    redraw!
+    nohl
+endfun
+
+
 fun! s:GetPluginPath(plugin_script_path)
     " Gets the absolute path to the plugin (i.e. to the folder vim-jukit/) 
     
