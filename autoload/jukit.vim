@@ -225,11 +225,11 @@ fun! jukit#NewMarker()
     if s:jukit_use_tcomment == 1
         " use tcomment plugin to automaticall detect comment mark of 
         " current filetype and comment line if specified
-        exec 'normal! o |%%--%%|'
+        exec "normal! o0\<c-d>\|%%--%%\|"
         call tcomment#operator#Line('g@$')
     else
         " otherwise simply prepend line with user b:comment_mark variable
-        exec "normal! o" . b:comment_mark . ' |%%--%%|'
+        exec "normal! o0\<c-d>" . b:comment_mark . " \|%%--%%\|"
     endif
     normal! j
 endfun
@@ -276,10 +276,10 @@ fun! jukit#SaveNBToFile(run, open, to)
     if a:run == 1
         let command = "!jupyter nbconvert --to " . a:to
             \ . " --allow-errors --execute --log-level='ERROR' "
-            \ . expand("%:r") . '.ipynb '
+            \ . "--HTMLExporter.theme=dark " . expand("%:r") . '.ipynb '
     else
         let command = "!jupyter nbconvert --to " . a:to . " --log-level='ERROR' "
-            \ . expand("%:r") . '.ipynb '
+            \ . "--HTMLExporter.theme=dark " . expand("%:r") . '.ipynb '
     endif
     if a:open == 1
         exec 'let command = command . "&& " . g:jukit_' . a:to . '_viewer . " '
