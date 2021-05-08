@@ -114,6 +114,11 @@ endfun
 fun! jukit#SendLine()
     " Sends a single line to the other kitty terminal window
 
+    if !exists('b:output_title')
+        echo "No split window found (buffer variable 'b:output_title' not set)"
+        return
+    endif
+
     if b:ipython==1
         " if ipython is used, copy code to system clipboard and '%paste'
         " to register
@@ -133,6 +138,11 @@ endfun
 fun! jukit#SendSelection()
     " Sends visually selected text to the other kitty terminal window
     
+    if !exists('b:output_title')
+        echo "No split window found (buffer variable 'b:output_title' not set)"
+        return
+    endif
+
     if b:ipython==1
         " if ipython is used, copy visual selection to system clipboard and 
         " '%paste' to register
