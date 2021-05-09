@@ -3,10 +3,18 @@
 fun! s:HighlightMarkers()
     " Highlights all cell markers in file
  
-    call getline(1, '$')->map({l, v -> [l+1, v =~ "|%%--%%|"]})
-        \->filter({k,v -> v[1]})->map({k,v -> v[0]})
-        \->map({k,v -> s:HighlightSepLines(k,v)})
-    return
+    " get content of lines
+    let lines = getline(1, '$')
+    " the following results in a list of sublists (one for each line), where 
+    " each sublist contains 2 numbers: 
+    " first is the line number, second indicates if it contains marker or not
+    let has_marker = map(lines, {l, v -> [l+1, v =~ "|%%--%%|"]})
+    " filter out sublists containing cell markers
+    let marker_sublists = filter(has_marker, {k,v -> v[1]})
+    " get position from each sublist
+    let pos = map(marker_sublists, {k,v -> v[0]})
+    " highlight lines
+    call map(pos, {k,v -> s:HighlightSepLines(k,v)})
 endfun
 
 
@@ -15,7 +23,6 @@ fun! s:HighlightSepLines(key, val)
  
     exe "sign place 1 line=" . a:val . " group=cell_markers name=cell_markers buffer="
         \ . bufnr() | nohl
-    return
 endfun
 
 
