@@ -217,7 +217,7 @@ fun! jukit#SendAll()
     if b:ipython==1
         " if ipython is used, copy all code in file  to system clipboard 
         " and yank '%paste' to register
-        normal! ggvG$"+y
+        normal! gg0vG$"+y
         exec 'let @' . s:jukit_register . " = '%paste'"
     else
         " otherwise copy yank whole file content to register
