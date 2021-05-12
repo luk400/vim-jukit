@@ -1,6 +1,7 @@
 import json
 import sys
 from os import path
+import re
 
 header_comment = '# |%%--%%|\n'
 
@@ -28,9 +29,11 @@ def py2nb(py_str):
         py_str = py_str[len(header_comment):]
 
     cells = []
-    chunks = py_str.split('\n\n%s' % header_comment)
+    chunks = py_str.split('\n%s' % header_comment)
 
     for chunk in chunks:
+        chunk = re.sub(r'^\n+', '', chunk)
+        chunk = re.sub(r'\n+$', '', chunk)
         cell_type = 'code'
         if chunk.startswith("'''"):
             chunk = chunk.strip("'\n")
