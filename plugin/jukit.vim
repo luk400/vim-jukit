@@ -50,7 +50,7 @@ if s:jukit_mappings == 1
     if !hasmapto('jukit#PythonSplit()', 'n')
         nnoremap <leader>py :call jukit#PythonSplit()<cr>
     endif
-    if !hasmapto('jukit#ReplSplit()', 'n')
+    if !hasmapto('jukit#WindowSplit()', 'n')
         nnoremap <leader>sp :call jukit#WindowSplit()<cr>
     endif
     if !hasmapto('jukit#SendLine()', 'n')
@@ -74,19 +74,19 @@ if s:jukit_mappings == 1
     if !hasmapto('jukit#NotebookConvert()', 'n')
         nnoremap <leader>np :call jukit#NotebookConvert()<cr>
     endif
-    if !hasmapto('jukit#SaveNBToFile(0,1,"html")', 'n')
+    if !hasmapto("jukit#SaveNBToFile(0,1,'html')", 'n')
         nnoremap <leader>ht :call jukit#SaveNBToFile(0,1,'html')<cr>
     endif
-    if !hasmapto('jukit#SaveNBToFile(1,1,"html")', 'n')
+    if !hasmapto("jukit#SaveNBToFile(1,1,'html')", 'n')
         nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'html')<cr>
     endif
-    if !hasmapto('jukit#SaveNBToFile(0,1,"pdf")', 'n')
+    if !hasmapto("jukit#SaveNBToFile(0,1,'pdf')", 'n')
         nnoremap <leader>pd :call jukit#SaveNBToFile(0,1,'pdf')<cr>
     endif
-    if !hasmapto('jukit#SaveNBToFile(1,1,"pdf")', 'n')
+    if !hasmapto("jukit#SaveNBToFile(1,1,'pdf')", 'n')
         nnoremap <leader>rpd :call jukit#SaveNBToFile(1,1,'pdf')<cr>
     endif
-    if !hasmapto('jukit#SaveNBToFile(1,1,"pdf")', 'n')
+    if !hasmapto('jukit#PythonHelp()', 'v')
         vnoremap <leader>h :<C-U>call jukit#PythonHelp()<cr>
     endif
 endif
