@@ -214,6 +214,7 @@ endfun
 fun! jukit#SendAll()
     " Sends all code in file to window
     
+    let save_view = winsaveview()
     if b:ipython==1
         " if ipython is used, copy all code in file  to system clipboard 
         " and yank '%paste' to register
@@ -225,6 +226,7 @@ fun! jukit#SendAll()
     endif
     " send register content to window
     silent exec s:ParseRegister()
+    call winrestview(save_view)
     redraw!
 endfun
 
