@@ -32,8 +32,8 @@ It uses the graphical capabilities of the [kitty terminal emulator](https://gith
 * remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf)
 * ImageMagick for displaying plots in the terminal (install using e.g. `sudo apt-get install imagemagick`)
 * vim with python3 support (check using e.g. `vim --version` and look for `+python3`)
-* vim with '+clipboard' to access the system clipboard if you intend to use IPython (check with `:echo has("clipboard")` in vim)
-* Neovim users: if you're using neovim, you will additionally have to launch kitty with the ``--listen-on`` option ([see here for more information](https://sw.kovidgoyal.net/kitty/invocation.html)). Furthermore, if you want to have multiple, different kitty instances running Neovim and sending code to split windows, different addresses will need to be specified in the ``listen-on`` option. One possible way to do this is by always launching kitty with a command like ``kitty --listen-on=unix:@"$(date +%s%N)"``, which will make sure different kitty instances are launched with different, abstract sockets to listen on.
+* vim with clipboard support to access the system clipboard if you intend to use IPython (check with `vim --version` and look for `+clipboard` or with `:echo has("clipboard")` in vim)
+* Neovim users: if you're using Neovim, you will additionally have to launch kitty with the ``--listen-on`` option ([see here for more information](https://sw.kovidgoyal.net/kitty/invocation.html)). Furthermore, if you want to have multiple, different kitty instances running Neovim and sending code to split windows, different addresses will need to be specified in the ``listen-on`` option. One possible way to do this is by always launching kitty with a command like ``kitty --listen-on=unix:@"$(date +%s%N)"``, which will make sure different kitty instances are launched with different, abstract sockets to listen on.
 
 ## Installation
 
@@ -144,7 +144,7 @@ This will open a new kitty-terminal-window, activate the virtual environment usi
 ## Other notes to be aware of
 
 * When using ipython, be aware that the code is copied to the system clipboard and then pasted into the ipython shell using '%paste', thus modifying the contents of your system clipboard. 
-* Converting .ipynb-files using the `jukit#SaveNBToFile()` function has only been tested with pdf and html output thus far, and there are cases where converting to pdf may fail (e.g. when an image in the notebook should by displayed using a hyperlink).
+* Converting .ipynb-files using the `jukit#SaveNBToFile()` function has only been tested with pdf and html output thus far, and there are cases where converting to pdf may fail (e.g. when an image in the notebook should be displayed using a hyperlink).
 * Every time you open the python shell using `jukit#PythonSplit()` with `b:inline_plotting=1`, matplotlib is automatically imported at the beginning (to specify the backend matplotlib should use).
 * Converting .ipynb file currently only works for files with notebook format v4+, older file versions must first be converted using `jupyter-notebook`
 * If you're using the python shell instead of ipython and need to indent empty lines in indented code blocks (e.g. function definitions) you may want to consider a plugin like [this very basic (and somewhat underwhelming) one](https://github.com/luk400/vim-emptyindent) which I made a while ago since I didn't find anything like it.
