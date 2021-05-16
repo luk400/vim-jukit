@@ -10,7 +10,7 @@ It uses the graphical capabilities of the [kitty terminal emulator](https://gith
 
 ## Examples
 
-* Converting a .ipynb file to a .py file. Sending lines, sections and visual selections. Creating cell markers.
+* Converting a .ipynb file to a .py file. Sending lines, sections and visual selections. Display matplotlib-plots directly in kitty terminal.
 ![Jukit_Gif1_Sending_Basics](https://user-images.githubusercontent.com/57172028/118408527-4423c580-b686-11eb-8474-4221f4805065.gif)
 
 
