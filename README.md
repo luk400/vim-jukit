@@ -14,16 +14,16 @@ It uses the graphical capabilities of the [kitty terminal emulator](https://gith
 ![Jukit_Gif1_Sending_Basics](https://user-images.githubusercontent.com/57172028/118408527-4423c580-b686-11eb-8474-4221f4805065.gif)
 
 
+* Converting back to .ipynb
+![Jukit_Gif4_Convert_back_to_ipynb](https://user-images.githubusercontent.com/57172028/118408585-82b98000-b686-11eb-8c56-ca305ee0c841.gif)
+
+
 * Converting to HTML and opening with/without running the code.
 ![Jukit_Gif2_Convert_to_html](https://user-images.githubusercontent.com/57172028/118408551-5998ef80-b686-11eb-8edb-98479dd56189.gif)
 
 
 * Converting to PDF and opening with/without running the code.
 ![Jukit_Gif3_Convert_to_pdf](https://user-images.githubusercontent.com/57172028/118408566-6e758300-b686-11eb-87e3-70d22789cce3.gif)
-
-
-* Converting back to .ipynb
-![Jukit_Gif4_Convert_back_to_ipynb](https://user-images.githubusercontent.com/57172028/118408585-82b98000-b686-11eb-8c56-ca305ee0c841.gif)
 
 
 ## Requirements
@@ -33,6 +33,7 @@ It uses the graphical capabilities of the [kitty terminal emulator](https://gith
 * ImageMagick for displaying plots in the terminal (install using `sudo apt-get install imagemagick`)
 * vim with python3 support
 * vim with '+clipboard' to access the system clipboard (check with `:echo has("clipboard")` in vim)
+* Neovim users: if you're using neovim, you will additionally have to launch kitty with the ``--listen-on`` option ([see here for more information](https://sw.kovidgoyal.net/kitty/invocation.html)). Furthermore, if you want to have multiple, different kitty instances running Neovim and sending code to split windows, different addresses will need to be specified in the ``listen-on`` option. One possible way to do this is by always launching kitty with a command like ``kitty --listen-on=unix:@"$(date +%s%N)"``, which will make sure different kitty instances are launched with different, abstract sockets to listen on.
 
 ## Installation
 
@@ -149,4 +150,3 @@ This will open a new kitty-terminal-window, activate the virtual environment usi
 * If you're using the python shell instead of ipython and need to indent empty lines in indented code blocks (e.g. function definitions) you may want to consider a plugin like [this very basic (and somewhat underwhelming) one](https://github.com/luk400/vim-emptyindent) which I made a while ago since I didn't find anything like it.
 * To use the jukit#SaveNBToFile() function in a virtual environment, make sure you opened your python file in the virtual environment you want to use and make sure you have the python modules 'nbconvert' and 'ipykernel' installed in this environment.
 * vim-jukit has currently only been tested on Ubuntu 20.04 (and 20.10) using python 3.8, kitty 0.15.0, and matplotlib 3.3.2
-* If you're using neovim, you will have to launch kitty with the ``--listen-on`` option ([see here for more information](https://sw.kovidgoyal.net/kitty/invocation.html)). Furthermore, if you want to have multiple, different kitty instances running neovim and sending code to split windows, different addresses will need to be specified in the ``listen-on`` option. One possible way to do this is by always launching kitty with a command like ``kitty --listen-on=unix:@"$(date +%s%N)"``, which will make sure different kitty instances are launched with different, abstract sockets to listen on.
