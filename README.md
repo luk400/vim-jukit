@@ -10,21 +10,20 @@ It uses the graphical capabilities of the [kitty terminal emulator](https://gith
 
 ## Examples
 
-* Converting a .ipynb file to a .py file
-![converting_to_py](https://user-images.githubusercontent.com/57172028/113441420-95396c00-93ee-11eb-8474-02f9e264bf59.gif)
+* Converting a .ipynb file to a .py file. Sending lines, sections and visual selections. Creating cell markers.
+![Jukit_Gif1_Sending_Basics](https://user-images.githubusercontent.com/57172028/118408527-4423c580-b686-11eb-8474-4221f4805065.gif)
 
 
-* Sending visual selection, code between cell-markers, or single lines to python shell, creating cell-markers, plotting directly in the terminal
-![sending_code_python](https://user-images.githubusercontent.com/57172028/113440464-c44ede00-93ec-11eb-9e75-0a7b4b1b96d0.gif)
+* Converting to HTML and opening with/without running the code.
+![Jukit_Gif2_Convert_to_html](https://user-images.githubusercontent.com/57172028/118408551-5998ef80-b686-11eb-8edb-98479dd56189.gif)
 
 
-* Sending code to IPython shell using '%paste'
-![sending_code_ipython](https://user-images.githubusercontent.com/57172028/113440477-cadd5580-93ec-11eb-8a6e-0f350f07cb6c.gif)
+* Converting to PDF and opening with/without running the code.
+![Jukit_Gif3_Convert_to_pdf](https://user-images.githubusercontent.com/57172028/118408566-6e758300-b686-11eb-87e3-70d22789cce3.gif)
 
 
-* Converting .py file back to .ipynb, then convert to .pdf and open it
-![converting_to_pdf](https://user-images.githubusercontent.com/57172028/113441436-9b2f4d00-93ee-11eb-9594-f6602a6c48a8.gif)
-
+* Converting back to .ipynb
+![Jukit_Gif4_Convert_back_to_ipynb](https://user-images.githubusercontent.com/57172028/118408585-82b98000-b686-11eb-8c56-ca305ee0c841.gif)
 
 
 ## Requirements
