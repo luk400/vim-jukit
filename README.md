@@ -72,7 +72,7 @@ let g:jukit_mappings = 1
 
 * `g:jukit_python_cmd`: Specifies the terminal command to use to start the interactive python shell (e.g. 'python3' or 'ipython3')
 
-* `g:jukit_inline_plotting_default`: Every time a buffer is entered the variable `b:inline_plotting` is set according to this value, which either enables (1) or disables (0) directly plotting into terminal using matplotlib.
+* `g:jukit_inline_plotting_default`: Every time a buffer is entered the variable `b:inline_plotting` is set according to this value, which either enables or disables directly plotting into terminal using matplotlib.
 
 * `g:jukit_jukit_register`: This is the register to which jukit will yank code when sending to the kitty-terminal-window.
 
@@ -129,7 +129,7 @@ vnoremap <leader>h :<C-U>call jukit#PythonHelp()<cr>
 
 In general, the function `jukit#SaveNBToFile()` works as follows:
 
-* `jukit#SaveNBToFile(run, open, to)`: Must have Jupyter installed to work, since it uses the terminal command `jupyter nbconvert`. The `run` argument specifies if the code should be executed to include output when converting, `open` inidcateds if the file should be opened after converting, and `to` specifies the output format. Generally, `to` can take any argument accepted by the `--to` flag of `jupyter nbconvert` (see `jupyter nbconvert -h`), note however that this has only been tested with pdf and html, and you need to specify a viewer variable to then open the file (e.g. to use `jukit#SaveNBToFile(0, 1, 'pdf')` the variable `g:jukit_pdf_viewer` needs to exist).
+* `jukit#SaveNBToFile(run, open, to)`: The `run` argument specifies if the code should be executed to include output when converting, `open` indicates if the file should be opened after converting, and `to` specifies the output format. Generally, `to` can take any argument accepted by the `--to` flag of `jupyter nbconvert` (see `jupyter nbconvert -h`), note however that this has only been tested with pdf and html, and you need to specify a viewer variable to then open the file (e.g. to use `jukit#SaveNBToFile(0, 1, 'pdf')` the variable `g:jukit_pdf_viewer` needs to exist). Must have Jupyter installed to work, since it uses the terminal command `jupyter nbconvert`.
 
 ### Commands
 
