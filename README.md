@@ -53,7 +53,7 @@ let g:jukit_highlight_markers = 1
 let g:jukit_hl_settings = 'ctermbg=22 ctermfg=22'
 let g:jukit_use_tcomment = 0
 let g:jukit_comment_mark_default = '#'
-let g:jukit_python_cmd = 'python3'
+let g:jukit_python_cmd = 'ipython3'
 let g:jukit_inline_plotting_default = 1
 let g:jukit_register = 'x'
 let g:jukit_html_viewer = 'firefox'

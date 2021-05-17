@@ -360,7 +360,7 @@ EOF
 let s:jukit_use_tcomment = get(g:, 'jukit_use_tcomment', 0)
 let s:jukit_inline_plotting_default = get(g:, 'jukit_inline_plotting_default', 1)
 let s:jukit_comment_mark_default = get(g:, 'jukit_comment_mark_default', '#')
-let s:jukit_python_cmd = get(g:, 'jukit_python_cmd', 'python3')
+let s:jukit_python_cmd = get(g:, 'jukit_python_cmd', 'ipython3')
 let s:jukit_register = get(g:, 'jukit_register', 'x')
 let g:jukit_html_viewer = 'firefox'
 let g:jukit_pdf_viewer = 'zathura'
