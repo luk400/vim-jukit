@@ -62,7 +62,7 @@ let g:jukit_mappings = 1
 ```
 
 ###### Explanation
-* `g:jukit_highlight_markers`: Specify if cell markers should be highlighted (1) or not (0)
+* `g:jukit_highlight_markers`: Specify if cell markers should be highlighted or not 
 
 * `g:jukit_hl_settings`: Specify arguments for highlighting cell markers (see `:h highlight-args`)
 
@@ -76,7 +76,7 @@ let g:jukit_mappings = 1
 
 * `g:jukit_jukit_register`: This is the register to which jukit will yank code when sending to the kitty-terminal-window.
 
-* `g:jukit_html_viewer` and `g:jukit_pdf_viewer`: Specifies the html-viewer and pdf-viewer to use when using the `jukit#SaveNBToFile()` function (see next section)
+* `g:jukit_html_viewer` and `g:jukit_pdf_viewer`: Specifies the html-viewer and pdf-viewer to use when using the `jukit#SaveNBToFile()` function
 
 * `g:jukit_mappings`: If set to 0, no jukit function mappings will be set by default.
 
@@ -96,6 +96,7 @@ nnoremap <leader>np :call jukit#NotebookConvert()<cr>
 nnoremap <leader>ht :call jukit#SaveNBToFile(0,1,'html')<cr>
 nnoremap <leader>rht :call jukit#SaveNBToFile(1,1,'html')<cr>
 nnoremap <leader>pd :call jukit#SaveNBToFile(0,1,'pdf')<cr>
+nnoremap <leader>rpd :call jukit#SaveNBToFile(1,1,'pdf')<cr>
 vnoremap <leader>h :<C-U>call jukit#PythonHelp()<cr>
 ```
 
@@ -126,13 +127,13 @@ vnoremap <leader>h :<C-U>call jukit#PythonHelp()<cr>
 
 * `jukit#PythonHelp()`: shows documentation for visually selected python function/class in terminal
 
-In general, the function `jukit#SaveNBToFile()` is explained as follows:
+In general, the function `jukit#SaveNBToFile()` works as follows:
 
-* `jukit#SaveNBToFile(run, open, to)`: Must have Jupyter installed to work, since it uses the terminal command `jupyter nbconvert`. Here, `run` should be 1 or 0 and specifies if the code should be run to include output when converting, `open` should be 1 or 0 indicating if the file should be opened afterwards, and `to` specifies the output format. Generally, `to` can take any argument accepted by the `--to` flag of `jupyter nbconvert` (see `jupyter nbconvert -h`), note however that this has only been tested with pdf and html, and you need to specify a viewer variable to then open the file (i.e. to use `jukit#SaveNBToFile(0, 1, 'pdf')` the variable `g:jukit_pdf_viewer` needs to exist).
+* `jukit#SaveNBToFile(run, open, to)`: Must have Jupyter installed to work, since it uses the terminal command `jupyter nbconvert`. The `run` argument specifies if the code should be executed to include output when converting, `open` inidcateds if the file should be opened after converting, and `to` specifies the output format. Generally, `to` can take any argument accepted by the `--to` flag of `jupyter nbconvert` (see `jupyter nbconvert -h`), note however that this has only been tested with pdf and html, and you need to specify a viewer variable to then open the file (e.g. to use `jukit#SaveNBToFile(0, 1, 'pdf')` the variable `g:jukit_pdf_viewer` needs to exist).
 
 ### Commands
 
-When working with virtual environments, you can activate it before starting the python shell using the `JukitPy` command, e.g.:
+When working with virtual environments, you can activate it before starting the python shell using the `JukitPy` command, for example:
 
 
 ```vim
@@ -143,7 +144,7 @@ This will open a new kitty-terminal-window, activate the virtual environment usi
 
 ## Other notes to be aware of
 
-* When using ipython, be aware that the code is copied to the system clipboard and then pasted into the ipython shell using '%paste', thus modifying the contents of your system clipboard. 
+* When using IPython, the code is copied to the system clipboard and then executed in the IPython shell using `%paste`, thus modifying the contents of your system clipboard. 
 * Converting .ipynb-files using the `jukit#SaveNBToFile()` function has only been tested with pdf and html output thus far, and there are cases where converting to pdf may fail (e.g. when an image in the notebook should be displayed using a hyperlink).
 * Every time you open the python shell using `jukit#PythonSplit()` with `b:inline_plotting=1`, matplotlib is automatically imported at the beginning (to specify the backend matplotlib should use).
 * Converting .ipynb file currently only works for files with notebook format v4+, older file versions must first be converted using `jupyter-notebook`
