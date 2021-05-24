@@ -19,7 +19,7 @@ fun! s:SelectSection()
     if line(".")!=line_before_search
         normal! j0
     else
-        normal! gg
+        normal! gg0
     endif
 
     let &wrapscan = s:wrapscan
@@ -76,6 +76,10 @@ fun! jukit#PythonSplit(...)
     let b:ipython = (stridx(split(s:jukit_python_cmd, '/')[-1], 'ipython') >= 0)
     " define title of new kitty window by which we match when sending
     let b:output_title=strftime("%Y%m%d%H%M%S")
+    " save these buffer-variables also in global variables according to which 
+    " these variables will be set for new buffers
+    let g:last_output_title = b:output_title
+    let g:last_ipython = b:ipython
     " create new window
     silent exec "!kitty @ launch --keep-focus --title " . b:output_title
         \ . " --cwd=current"
@@ -107,6 +111,8 @@ fun! jukit#WindowSplit()
 
     let b:ipython = 0
     let b:output_title=strftime("%Y%m%d%H%M%S")
+    let g:last_output_title = b:output_title
+    let g:last_ipython = b:ipython
     silent exec "!kitty @ launch  --title " . b:output_title . " --cwd=current"
 endfun
 
@@ -294,7 +300,7 @@ fun! jukit#SaveNBToFile(run, open, to)
             \ . "--HTMLExporter.theme=dark " . expand("%:r") . '.ipynb '
     endif
     if a:open == 1
-        exec 'let command = command . "&& " . g:jukit_' . a:to . '_viewer . " '
+        exec 'let command = command . "&& " . s:jukit_' . a:to . '_viewer . " '
             \ . expand("%:r") . '.' . a:to . ' &"'
     else
         let command = command . "&"
@@ -335,6 +341,12 @@ endfun
 fun! s:InitBufVar()
     " Initialize buffer variables
 
+    if !exists('b:has_been_entered') && exists("g:last_output_title") && exists("g:last_ipython")
+        let b:has_been_entered = 1
+        let b:output_title = g:last_output_title
+        let b:ipython = g:last_ipython
+    endif
+
     let b:inline_plotting = s:jukit_inline_plotting_default
     if s:jukit_use_tcomment != 1
         let b:comment_mark = s:jukit_comment_mark_default
@@ -362,8 +374,8 @@ let s:jukit_inline_plotting_default = get(g:, 'jukit_inline_plotting_default', 1
 let s:jukit_comment_mark_default = get(g:, 'jukit_comment_mark_default', '#')
 let s:jukit_python_cmd = get(g:, 'jukit_python_cmd', 'ipython3')
 let s:jukit_register = get(g:, 'jukit_register', 'x')
-let g:jukit_html_viewer = 'firefox'
-let g:jukit_pdf_viewer = 'zathura'
+let s:jukit_html_viewer = get(g:, 'jukit_html_viewer', 'firefox')
+let s:jukit_pdf_viewer = get(g:, 'jukit_pdf_viewer', 'zathura')
 
 
 """""""""""""""""""""""""""""

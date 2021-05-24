@@ -66,13 +66,13 @@ let g:jukit_mappings = 1
 
 * `g:jukit_hl_settings`: Specify arguments for highlighting cell markers (see `:h highlight-args`)
 
-* `g:jukit_comment_mark_default`: Every time a buffer is entered the variable `b:comment_mark` is set according to `g:jukit_comment_mark_default` to prepend the cell-markers in the file. Only required if `g:jukit_use_tcomment=0`.
+* `g:jukit_comment_mark_default`: Every time a new buffer is entered the variable `b:comment_mark` is set according to `g:jukit_comment_mark_default` to prepend the cell-markers in the file. Only required if `g:jukit_use_tcomment=0`.
 
 * `g:jukit_use_tcomment`: Specify if [tcomment plugin](https://github.com/tomtom/tcomment_vim) should be used to comment out cell markers - recommended if you regularly work with different languages for which you intend to make use of cell markers, otherwise you will have to manually set `b:comment_mark` every time you work in a language where the comment-mark is not the one specified in `g:jukit_comment_mark_default`. This requires the tcomment plugin to already be installed.
 
 * `g:jukit_python_cmd`: Specifies the terminal command to use to start the interactive python shell (e.g. 'python3' or 'ipython3')
 
-* `g:jukit_inline_plotting_default`: Every time a buffer is entered the variable `b:inline_plotting` is set according to this value, which either enables or disables directly plotting into terminal using matplotlib.
+* `g:jukit_inline_plotting_default`: Every time a new buffer is entered the variable `b:inline_plotting` is set according to this value, which either enables or disables directly plotting into terminal using matplotlib.
 
 * `g:jukit_jukit_register`: This is the register to which jukit will yank code when sending to the kitty-terminal-window.
 
@@ -149,5 +149,6 @@ This will open a new kitty-terminal-window, activate the virtual environment usi
 * Every time you open the python shell using `jukit#PythonSplit()` with `b:inline_plotting=1`, matplotlib is automatically imported at the beginning (to specify the backend matplotlib should use).
 * Converting .ipynb file currently only works for files with notebook format v4+, older file versions must first be converted using `jupyter-notebook`
 * If you're using the python shell instead of ipython and need to indent empty lines in indented code blocks (e.g. function definitions) you may want to consider a plugin like [this very basic (and somewhat underwhelming) one](https://github.com/luk400/vim-emptyindent) which I made a while ago since I didn't find anything like it.
+* If you need to switch from using ipython to python shell while working (for example when debugging using pdb), you can do so by setting `let b:ipython=0`, and `let b:ipython=1` to resume using ipython (i.e. to resume using the `%paste` command for sending code)
 * To use the jukit#SaveNBToFile() function in a virtual environment, make sure you opened your python file in the virtual environment you want to use and make sure you have the python modules 'nbconvert' and 'ipykernel' installed in this environment.
 * vim-jukit has currently only been tested on Ubuntu 20.04 (and 20.10) using python 3.8, kitty 0.15.0, and matplotlib 3.3.2
