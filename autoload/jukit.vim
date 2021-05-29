@@ -201,12 +201,12 @@ fun! jukit#SendUntilCurrentSection()
     if b:ipython==1
         " if ipython is used, copy from end of current section until 
         " file beginning to system clipboard and yank '%paste' to register
-        normal! k$vgg"+y
+        normal! k$vgg0"+y
         exec 'let @' . s:jukit_register . " = '%paste'"
     else
         " otherwise simply yank everything from beginning to current
         " section to register
-        exec 'normal! k$vgg"' . s:jukit_register . 'y'
+        exec 'normal! k$vgg0"' . s:jukit_register . 'y'
     endif
     " send register content to window
     silent exec s:ParseRegister()
@@ -228,7 +228,7 @@ fun! jukit#SendAll()
         exec 'let @' . s:jukit_register . " = '%paste'"
     else
         " otherwise copy yank whole file content to register
-        exec 'normal! ggvG$"' . s:jukit_register . 'y'
+        exec 'normal! gg0vG$"' . s:jukit_register . 'y'
     endif
     " send register content to window
     silent exec s:ParseRegister()
