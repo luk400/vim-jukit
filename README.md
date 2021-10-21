@@ -31,6 +31,7 @@ It uses the graphical capabilities of the [kitty terminal emulator](https://gith
 * [kitty terminal emulator](https://github.com/kovidgoyal/kitty)
 * remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf)
 * ImageMagick for displaying plots in the terminal (install using e.g. `sudo apt-get install imagemagick`)
+* For sending code to IPython via `%paste` tkinter must be installed (`sudo apt-get install python3-tk`)
 * vim with python3 support (check using e.g. `vim --version` and look for `+python3`)
 * vim with clipboard support to access the system clipboard if you intend to use IPython (check with `vim --version` and look for `+clipboard` or with `:echo has("clipboard")` in vim)
 * Neovim users: if you're using Neovim, you will additionally have to launch kitty with the ``--listen-on`` option ([see here for more information](https://sw.kovidgoyal.net/kitty/invocation.html)). Furthermore, if you want to have multiple, different kitty instances running Neovim and sending code to split windows, different addresses will need to be specified in the ``listen-on`` option. One possible way to do this is by always launching kitty with a command like ``kitty --listen-on=unix:@"$(date +%s%N)"``, which will make sure different kitty instances are launched with different, abstract sockets to listen on.
