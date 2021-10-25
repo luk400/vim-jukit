@@ -39,12 +39,12 @@ class FigureManagerICat(FigureManagerBase):
 
         # resize figure to terminal size & aspect ratio
         dpi = self.canvas.figure.dpi
-        size = min(px[0], px[1]) / dpi * 0.8
+        size = min(px[0], px[1]) / dpi * 0.85
         self.canvas.figure.set_size_inches((size, size))
                 
         with BytesIO() as buf:
             self.canvas.figure.savefig(buf, format='png', facecolor='#888888')
-            icat('--align', 'left', output=False, input=buf.getbuffer())
+            icat('--align', 'center', output=False, input=buf.getbuffer())
 
 @_Backend.export
 class _BackendICatAgg(_Backend):
