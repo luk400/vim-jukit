@@ -83,6 +83,7 @@ let s:jukit_highlight_markers = get(g:, 'jukit_highlight_markers', 1)
 let s:jukit_mappings = get(g:, 'jukit_mappings', 1)
 let s:jukit_enable_textcell_hl = get(g:, 'jukit_enable_textcell_hl', 1)
 let s:jukit_enable_text_syntax_hl = get(g:, 'jukit_enable_text_syntax_hl', 1)
+let s:jukit_text_syntax_file_dir = get(g:, 'jukit_text_syntax_file_dir', $VIMRUNTIME . '/syntax/')
 let s:jukit_text_syntax_file = get(g:, 'jukit_text_syntax_file', 'markdown.vim')
 
 """"""""""""""
@@ -103,7 +104,7 @@ let s:textcell_regex = '\(|%%--%%|\n\)\@<=\n*"""\n\(^\%(.*|%%--%%|\)\@!.*\n\)*""
 
 if s:jukit_highlight_markers
   if !hlexists('JukitCellMarkers')
-    highlight JukitCellMarkers guifg=#1d615a guibg=#1d615a ctermbg=18 ctermfg=18
+    highlight JukitCellMarkers guifg=#1d615a guibg=#1d615a ctermbg=22 ctermfg=22
   endif
 
   sign define JukitCellMarkers linehl=JukitCellMarkers
@@ -122,13 +123,21 @@ endif
 if s:jukit_enable_text_syntax_hl
   au BufEnter * syn clear
 
-  let s:syntax_dir = $VIMRUNTIME . '/syntax/'
-  
+  if type(s:jukit_text_syntax_file)==v:t_string
+    let s:jukit_text_syntax_file = [s:jukit_text_syntax_file]
+  endif
+ 
   au BufEnter * exe 'syn match textcell /' . s:textcell_regex . '/ contains=@MarkdownCells'
-  au BufEnter * exe 'syn include @MarkdownCells ' . s:syntax_dir . s:jukit_text_syntax_file
-  
+  for syntax_file in s:jukit_text_syntax_file
+    au BufEnter * exe 'syn include @MarkdownCells ' . s:jukit_text_syntax_file_dir . syntax_file
+  endfor
+ 
+  let s:main_syntax_dir = $VIMRUNTIME . '/syntax/'
   au BufEnter * exe 'syn match codecell /\(' . s:textcell_regex . '\)\@!/ contains=@NativeSyn'
-  au BufEnter * call s:LoadMainSyntaxFile(s:syntax_dir . &filetype . '.vim')
+  au BufEnter * call s:LoadMainSyntaxFile(s:main_syntax_dir . &filetype . '.vim')
+
+  " prevent buggy syntax matching
+  au BufEnter * syntax sync fromstart
 endif
 
 """"""""""
