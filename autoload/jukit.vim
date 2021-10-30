@@ -64,7 +64,7 @@ escaped = reg_conent.translate(str.maketrans({
  
 vim.command("let escaped_text = shellescape({})".format(json.dumps(escaped)))
 EOF
-    let command = '!kitty @ send-text --match title:' . b:output_title . ' ' . escaped_text
+    let command = '!kitty @ send-text --match title:' . b:jukit_output_title . ' ' . escaped_text
     return command
 endfun
 
@@ -73,34 +73,34 @@ fun! jukit#PythonSplit(...)
     " Opens new kitty window split and opens python
 
     " check if ipython is used
-    let b:ipython = (stridx(split(s:jukit_python_cmd, '/')[-1], 'ipython') >= 0)
+    let b:jukit_ipython = (stridx(split(s:jukit_python_cmd, '/')[-1], 'ipython') >= 0)
     " define title of new kitty window by which we match when sending
-    let b:output_title=strftime("%Y%m%d%H%M%S")
+    let b:jukit_output_title=strftime("%Y%m%d%H%M%S")
     " save these buffer-variables also in global variables according to which 
     " these variables will be set for new buffers
-    let g:last_output_title = b:output_title
-    let g:last_ipython = b:ipython
+    let g:jukit_last_output_title = b:jukit_output_title
+    let g:jukit_last_ipython = b:jukit_ipython
     " create new window
-    silent exec "!kitty @ launch --keep-focus --title " . b:output_title
+    silent exec "!kitty @ launch --keep-focus --title " . b:jukit_output_title
         \ . " --cwd=current"
 
     " if an argument was given, execute it in new kitty terminal window before
     " starting python shell
     if a:0 > 0
-        silent exec '!kitty @ send-text --match title:' . b:output_title
+        silent exec '!kitty @ send-text --match title:' . b:jukit_output_title
             \ . " " . a:1 . "\r"
     endif
 
-    if b:inline_plotting == 1
+    if b:jukit_inline_plotting == 1
         " open python, add path to backend  and import matplotlib with the required
         " backend first
-        silent exec '!kitty @ send-text --match title:' . b:output_title
+        silent exec '!kitty @ send-text --match title:' . b:jukit_output_title
             \ . " " . s:jukit_python_cmd . " -i -c \"\\\"import sys;
             \ sys.path.append('" . s:plugin_path . "/helpers'); import matplotlib;
             \ matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\r"
     else
         " if no inline plotting is desired, simply open python
-        silent exec '!kitty @ send-text --match title:' . b:output_title
+        silent exec '!kitty @ send-text --match title:' . b:jukit_output_title
             \ . " " . s:jukit_python_cmd . "\r"
     endif
 endfun
@@ -109,23 +109,23 @@ endfun
 fun! jukit#WindowSplit()
     " Opens a new kitty terminal window
 
-    let b:ipython = 0
-    let b:output_title=strftime("%Y%m%d%H%M%S")
-    let g:last_output_title = b:output_title
-    let g:last_ipython = b:ipython
-    silent exec "!kitty @ launch  --title " . b:output_title . " --cwd=current"
+    let b:jukit_ipython = 0
+    let b:jukit_output_title=strftime("%Y%m%d%H%M%S")
+    let g:jukit_last_output_title = b:jukit_output_title
+    let g:jukit_last_ipython = b:jukit_ipython
+    silent exec "!kitty @ launch  --title " . b:jukit_output_title . " --cwd=current"
 endfun
 
 
 fun! jukit#SendLine()
     " Sends a single line to the other kitty terminal window
 
-    if !exists('b:output_title')
-        echo "No split window found (buffer variable 'b:output_title' not set)"
+    if !exists('b:jukit_output_title')
+        echo "No split window found (buffer variable 'b:jukit_output_title' not set)"
         return
     endif
 
-    if b:ipython==1
+    if b:jukit_ipython==1
         " if ipython is used, copy code to system clipboard and '%paste'
         " to register
         normal! 0v$"+y
@@ -144,12 +144,12 @@ endfun
 fun! jukit#SendSelection()
     " Sends visually selected text to the other kitty terminal window
     
-    if !exists('b:output_title')
-        echo "No split window found (buffer variable 'b:output_title' not set)"
+    if !exists('b:jukit_output_title')
+        echo "No split window found (buffer variable 'b:jukit_output_title' not set)"
         return
     endif
 
-    if b:ipython==1
+    if b:jukit_ipython==1
         " if ipython is used, copy visual selection to system clipboard and 
         " '%paste' to register
         let @+ = s:GetVisualSelection() 
@@ -169,7 +169,7 @@ fun! jukit#SendSection()
 
     " first select the whole current section
     call s:SelectSection()
-    if b:ipython==1
+    if b:jukit_ipython==1
         " if ipython is used, copy whole section to system clipboard and 
         " '%paste' to register
         normal! "+y
@@ -198,7 +198,7 @@ fun! jukit#SendUntilCurrentSection()
     let save_view = winsaveview()
     " go to end of current section
     silent! exec '/|%%--%%|'
-    if b:ipython==1
+    if b:jukit_ipython==1
         " if ipython is used, copy from end of current section until 
         " file beginning to system clipboard and yank '%paste' to register
         normal! k$vgg0"+y
@@ -221,7 +221,7 @@ fun! jukit#SendAll()
     " Sends all code in file to window
     
     let save_view = winsaveview()
-    if b:ipython==1
+    if b:jukit_ipython==1
         " if ipython is used, copy all code in file  to system clipboard 
         " and yank '%paste' to register
         normal! gg0vG$"+y
@@ -246,8 +246,8 @@ fun! jukit#NewMarker()
         exec "normal! o0\<c-d>\|%%--%%\|"
         call tcomment#operator#Line('g@$')
     else
-        " otherwise simply prepend line with user b:comment_mark variable
-        exec "normal! o0\<c-d>" . b:comment_mark . " \|%%--%%\|"
+        " otherwise simply prepend line with user b:jukit_comment_mark variable
+        exec "normal! o0\<c-d>" . b:jukit_comment_mark . " \|%%--%%\|"
     endif
     normal! j
 endfun
@@ -312,7 +312,7 @@ endfun
 
 fun! jukit#PythonHelp()
     " send to terminal
-    if b:ipython==1
+    if b:jukit_ipython==1
         " if ipython is used, copy all code in file  to system clipboard 
         " and yank '%paste' to register
         let @+ = 'help(' . s:GetVisualSelection() . ')'
@@ -323,7 +323,7 @@ fun! jukit#PythonHelp()
     endif
     " send register content to window
     silent exec s:ParseRegister()
-    silent exec "!kitty @ focus-window --match title:" . b:output_title
+    silent exec "!kitty @ focus-window --match title:" . b:jukit_output_title
     redraw!
     nohl
 endfun
@@ -341,15 +341,15 @@ endfun
 fun! s:InitBufVar()
     " Initialize buffer variables
 
-    if !exists('b:has_been_entered') && exists("g:last_output_title") && exists("g:last_ipython")
-        let b:has_been_entered = 1
-        let b:output_title = g:last_output_title
-        let b:ipython = g:last_ipython
+    if !exists('b:jukit_buffer_vars_set') && exists("g:jukit_last_output_title") && exists("g:jukit_last_ipython")
+        let b:jukit_buffer_vars_set = 1
+        let b:jukit_output_title = g:jukit_last_output_title
+        let b:jukit_ipython = g:jukit_last_ipython
     endif
 
-    let b:inline_plotting = s:jukit_inline_plotting_default
+    let b:jukit_inline_plotting = s:jukit_inline_plotting_default
     if s:jukit_use_tcomment != 1
-        let b:comment_mark = s:jukit_comment_mark_default
+        let b:jukit_comment_mark = s:jukit_comment_mark_default
     endif
 endfun
 

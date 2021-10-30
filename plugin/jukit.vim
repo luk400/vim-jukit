@@ -1,5 +1,5 @@
-""""""""""""""""""""""""""""""""""""""""""""""
-" Functions used in Autocmd's for highlighting
+"""""""""""""""""""""""""""""""""
+" Functions used for highlighting
 fun! s:HighlightMarkers()
     exe "sign unplace * group=JukitCellMarkers buffer=" . bufnr()
     " Highlights all cell markers in file
@@ -30,8 +30,8 @@ fun! s:AddSignsInRegion()
   let i = 0
   while !((line('.')+i)==line('$'))
       if !(getline(line('.')+i)=~'|%%--%%|')
-          exe "sign place 1 line=" . (line('.')+i) . " group=JukitTextcellColors "
-            \ . "name=JukitTextcellColors buffer=" . bufnr()
+          exe "sign place 1 line=" . (line('.')+i) . " group=JukitTextcells "
+            \ . "name=JukitTextcells buffer=" . bufnr()
           let i += 1
       else
           return
@@ -58,33 +58,33 @@ fun! s:PlaceMarkdownCellSigns(textcell_regex)
 
   let nr_lines_change = s:LineNrChange()
   if nr_lines_change!=0
-    if nr_lines_change < 0 
-      exe "sign unplace * group=TextCellRegion buffer=" . bufnr()
-    endif
     let save_view = winsaveview()
     " first unplace existing signs
-    silent! exe "sign unplace * group=TextCellRegion buffer=" . bufnr()
+    silent! exe "sign unplace * group=JukitTextcells buffer=" . bufnr()
     " Then add signs again
     silent! exe 'g/' . a:textcell_regex . '/call s:AddSignsInRegion()'
     call winrestview(save_view)
   endif
 endfun
 
-fun! s:LoadMainSyntaxFile(filepath)
+fun! s:LoadSyntaxFile(filepath, include)
   if filereadable(a:filepath)
     unlet! b:current_syntax
-    exe 'syn include @NativeSyn ' . a:filepath
+    exe 'syn include ' . a:include . ' ' . a:filepath
+  else
+    echom "vim-jukit: given syntax_file '" . a:filepath 
+      \ . "' code-cells not found. Please use absolute path!"
   endif
 endfun
 
 """""""""""""""""""
 " Startup variables
+let s:jukit_hl_extensions = get(g:, 'jukit_hl_extensions', '*')
 let s:jukit_highlight_markers = get(g:, 'jukit_highlight_markers', 1)
-let s:jukit_mappings = get(g:, 'jukit_mappings', 1)
 let s:jukit_enable_textcell_hl = get(g:, 'jukit_enable_textcell_hl', 1)
 let s:jukit_enable_text_syntax_hl = get(g:, 'jukit_enable_text_syntax_hl', 1)
-let s:jukit_text_syntax_file_dir = get(g:, 'jukit_text_syntax_file_dir', $VIMRUNTIME . '/syntax/')
-let s:jukit_text_syntax_file = get(g:, 'jukit_text_syntax_file', 'markdown.vim')
+let s:jukit_text_syntax_file = get(g:, 'jukit_text_syntax_file', $VIMRUNTIME . '/syntax/' . 'markdown.vim')
+let s:jukit_mappings = get(g:, 'jukit_mappings', 1)
 
 """"""""""""""
 " highlighting
@@ -102,42 +102,49 @@ let s:jukit_text_syntax_file = get(g:, 'jukit_text_syntax_file', 'markdown.vim')
 " matched since it's in a lookahead)
 let s:textcell_regex = '\(|%%--%%|\n\)\@<=\n*"""\n\(^\%(.*|%%--%%|\)\@!.*\n\)*"""\n*\(.\{1,4}|%%--%%|\)\@='
 
-if s:jukit_highlight_markers
-  if !hlexists('JukitCellMarkers')
-    highlight JukitCellMarkers guifg=#1d615a guibg=#1d615a ctermbg=22 ctermfg=22
+if len(s:jukit_hl_extensions)
+  if type(s:jukit_hl_extensions)==v:t_string
+    if s:jukit_hl_extensions == '*'
+      let s:autocmd_extensions = '*'
+    else
+      let s:autocmd_extensions = '*.' . s:jukit_hl_extensions 
+    endif
+  elseif type(s:jukit_hl_extensions)==v:t_list
+    let s:autocmd_extensions = '*.' . join(s:jukit_hl_extensions, ',*.')
   endif
 
-  sign define JukitCellMarkers linehl=JukitCellMarkers
-  autocmd BufEnter,InsertLeave,TextChanged * call s:HighlightMarkers()
-endif
+  if s:jukit_highlight_markers
+    if !hlexists('JukitCellMarkerColors')
+      highlight JukitCellMarkerColors guifg=#1d615a guibg=#1d615a ctermbg=22 ctermfg=22
+    endif
 
-if s:jukit_enable_textcell_hl
-  if !hlexists('JukitTextcellColors')
-    highlight JukitTextcellColors guibg=#131628 ctermbg=0
+    sign define JukitCellMarkers linehl=JukitCellMarkerColors
+    exe 'autocmd BufEnter,InsertLeave,TextChanged ' . s:autocmd_extensions 
+      \ . ' call s:HighlightMarkers()'
   endif
 
-  sign define JukitTextcellColors linehl=JukitTextcellColors
-  autocmd BufEnter,TextChangedI,TextChanged * call s:PlaceMarkdownCellSigns(s:textcell_regex)
-endif
+  if s:jukit_enable_textcell_hl
+    if !hlexists('JukitTextcellColors')
+      highlight JukitTextcellColors guibg=#131628 ctermbg=0
+    endif
 
-if s:jukit_enable_text_syntax_hl
-  au BufEnter * syn clear
-
-  if type(s:jukit_text_syntax_file)==v:t_string
-    let s:jukit_text_syntax_file = [s:jukit_text_syntax_file]
+    sign define JukitTextcells linehl=JukitTextcellColors
+    exe 'autocmd BufEnter,TextChangedI,TextChanged ' . s:autocmd_extensions 
+      \ . ' call s:PlaceMarkdownCellSigns(s:textcell_regex)'
   endif
+
+  if s:jukit_enable_text_syntax_hl
+    " to understand the usage of me=e-8 in the following end pattern,
+    " see :help syn-pattern-offset
+    exe 'autocmd BufEnter ' . s:autocmd_extensions . ' syn region textcell '
+      \ . 'start=/|%%--%%|\n*"""\n/ end=/"""\n*.\{1,4}|%%--%%|/me=e-8 '
+      \ . 'contains=@MarkdownCells containedin=ALL keepend'
+    exe 'autocmd BufEnter ' . s:autocmd_extensions 
+      \ . ' call s:LoadSyntaxFile(s:jukit_text_syntax_file, "@MarkdownCells")'
  
-  au BufEnter * exe 'syn match textcell /' . s:textcell_regex . '/ contains=@MarkdownCells'
-  for syntax_file in s:jukit_text_syntax_file
-    au BufEnter * exe 'syn include @MarkdownCells ' . s:jukit_text_syntax_file_dir . syntax_file
-  endfor
- 
-  let s:main_syntax_dir = $VIMRUNTIME . '/syntax/'
-  au BufEnter * exe 'syn match codecell /\(' . s:textcell_regex . '\)\@!/ contains=@NativeSyn'
-  au BufEnter * call s:LoadMainSyntaxFile(s:main_syntax_dir . &filetype . '.vim')
-
-  " prevent buggy syntax matching
-  au BufEnter * syntax sync fromstart
+    " prevent buggy syntax matching
+    exe 'autocmd BufEnter ' . s:autocmd_extensions . ' syntax sync fromstart'
+  endif
 endif
 
 """"""""""
