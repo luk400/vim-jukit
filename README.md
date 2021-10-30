@@ -26,6 +26,10 @@ It uses the graphical capabilities of the [kitty terminal emulator](https://gith
 ![Jukit_Gif3_Convert_to_pdf](https://user-images.githubusercontent.com/57172028/118408566-6e758300-b686-11eb-87e3-70d22789cce3.gif)
 
 
+* Highlighting and markdown syntax for text cells
+![textcell_highlighting_demo_faster](https://user-images.githubusercontent.com/57172028/139558980-25af4266-324b-42ce-9f18-6fa5025000ea.gif)
+
+
 ## Requirements
 
 * [kitty terminal emulator](https://github.com/kovidgoyal/kitty)
