@@ -319,7 +319,7 @@ fun! jukit#PythonHelp()
         exec 'let @' . s:jukit_register . " = '%paste'"
     else
         " otherwise yank line to register
-        exec 'let @' . s:jukit_register . ' = help(' . s:GetVisualSelection() . ')'
+        exec 'let @' . s:jukit_register . ' = "help(' . s:GetVisualSelection() . ')"'
     endif
     " send register content to window
     silent exec s:ParseRegister()
