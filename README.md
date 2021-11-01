@@ -73,7 +73,7 @@ let g:jukit_mappings = 1
 
 * `g:jukit_enable_text_syntax_hl`: Whether or not to enable special syntax highlighting in text cells instead of the standard string-syntax-color.
 
-* `g:jukit_text_syntax_file`: Specifies the path to a syntax file to be used for syntax highlighting in text cells (by default markdown).
+* `g:jukit_text_syntax_file`: Specifies the path to a syntax file to be used for syntax highlighting in text cells (by default markdown). If you want to define your own syntax matches inside of text cells, make sure to include `containedin=textcell` (e.g.: `syn match header2 "^##.*$" containedin=textcell`).
 
 * `g:jukit_highlight_markers`: Specify whether cell-marker-lines should be highlighted or not. You can specify the colors of cell markers by putting `highlight JukitCellMarkers guifg=#1d615a guibg=#1d615a ctermbg=22 ctermfg=22` with your desired colors in your vimrc. Make sure to define this highlight group *after* loading a colorscheme in your vimrc. 
 
