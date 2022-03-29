@@ -129,13 +129,13 @@ fun! jukit#SendLine()
         " if ipython is used, copy code to system clipboard and '%paste'
         " to register
         normal! 0v$"+y
-        exec 'let @' . s:jukit_register . " = '%paste'"
+        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
     else
         " otherwise yank line to register
         exec 'normal! 0v$"' . s:jukit_register . 'y'
+        silent exec s:ParseRegister()
     endif
     " send register content to window
-    silent exec s:ParseRegister()
     normal! j
     redraw!
 endfun
@@ -153,13 +153,13 @@ fun! jukit#SendSelection()
         " if ipython is used, copy visual selection to system clipboard and 
         " '%paste' to register
         let @+ = s:GetVisualSelection() 
-        exec 'let @' . s:jukit_register . " = '%paste'"
+        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
     else
         " otherwise yank content of visual selection to register
         exec 'let @' . s:jukit_register . ' = s:GetVisualSelection()'
+        silent exec s:ParseRegister()
     endif
     " send register content to window
-    silent exec s:ParseRegister()
     redraw!
 endfun
 
@@ -173,13 +173,13 @@ fun! jukit#SendSection()
         " if ipython is used, copy whole section to system clipboard and 
         " '%paste' to register
         normal! "+y
-        exec 'let @' . s:jukit_register . " = '%paste'"
+        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
     else
         " otherwise yank content of section to register
         exec 'normal! "' . s:jukit_register . 'y'
+        silent exec s:ParseRegister()
     endif
     " send register content to window
-    silent exec s:ParseRegister()
     redraw!
 
     set nowrapscan
@@ -202,14 +202,13 @@ fun! jukit#SendUntilCurrentSection()
         " if ipython is used, copy from end of current section until 
         " file beginning to system clipboard and yank '%paste' to register
         normal! k$vgg0"+y
-        exec 'let @' . s:jukit_register . " = '%paste'"
+        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
     else
         " otherwise simply yank everything from beginning to current
         " section to register
         exec 'normal! k$vgg0"' . s:jukit_register . 'y'
+        silent exec s:ParseRegister()
     endif
-    " send register content to window
-    silent exec s:ParseRegister()
     " restore previous window view
     call winrestview(save_view)
     nohl
@@ -225,13 +224,13 @@ fun! jukit#SendAll()
         " if ipython is used, copy all code in file  to system clipboard 
         " and yank '%paste' to register
         normal! gg0vG$"+y
-        exec 'let @' . s:jukit_register . " = '%paste'"
+        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
     else
         " otherwise copy yank whole file content to register
         exec 'normal! gg0vG$"' . s:jukit_register . 'y'
+        silent exec s:ParseRegister()
     endif
     " send register content to window
-    silent exec s:ParseRegister()
     call winrestview(save_view)
     redraw!
 endfun
@@ -316,13 +315,13 @@ fun! jukit#PythonHelp()
         " if ipython is used, copy all code in file  to system clipboard 
         " and yank '%paste' to register
         let @+ = 'help(' . s:GetVisualSelection() . ')'
-        exec 'let @' . s:jukit_register . " = '%paste'"
+        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
     else
         " otherwise yank line to register
         exec 'let @' . s:jukit_register . ' = "help(' . s:GetVisualSelection() . ')"'
+        silent exec s:ParseRegister()
     endif
     " send register content to window
-    silent exec s:ParseRegister()
     silent exec "!kitty @ focus-window --match title:" . b:jukit_output_title
     redraw!
     nohl
