@@ -1,70 +1,79 @@
 # SPDX-License-Identifier: CC0-1.0
 
-from matplotlib._pylab_helpers import Gcf
-from matplotlib.backend_bases import (
-    _Backend, FigureCanvasBase, FigureManagerBase)
+import codecs, sys, io, subprocess
+from matplotlib.backend_bases import _Backend, FigureManagerBase, Gcf
 from matplotlib.backends.backend_agg import FigureCanvasAgg
-from matplotlib import interactive
-
-from io import BytesIO
-from subprocess import run
-
-import sys
+import matplotlib.pyplot as plt
 
 
-# XXX heuristic for interactive repl
-if sys.flags.interactive:
-    interactive(True)
+# TODO: move kitty related functions to their own file
+def build_kitty_cmd(*cmd):
+    def f(*args, output=True, **kwargs):
+        if output:
+            kwargs["capture_output"] = True
+            kwargs["text"] = True
+        r = subprocess.run(cmd + args, **kwargs)
+        if output:
+            return r.stdout.rstrip()
+
+    return f
 
 
-class FigureManagerICat(FigureManagerBase):
-    
-    @classmethod
-    def _run(self, *cmd):
-        def f(*args, output=True, **kwargs):
-            if output:
-                kwargs['capture_output'] = True
-                kwargs['text'] = True
-            r = run(cmd + args, **kwargs)
-            if output:
-                return r.stdout.rstrip()
-        return f
-    
-    def show(self):
-        icat = __class__._run('kitty', '+kitten', 'icat')
-        
-        # gather terminal dimensions
-        px = icat('--print-window-size')
-        px = list(map(int, px.split('x')))
+icat = build_kitty_cmd("kitty", "+kitten", "icat")
 
-        # resize figure to terminal size & aspect ratio
+
+def _store_img_for_ipynb(img_hex_code):
+    if sys.stdout.jukit_plots_size > sys.stdout.max_plots_size:
+        sys.stdout._wrapped_stdout.write(
+            "\u001b[31m------------------------------------\n"
+            " [vim-jukit] -- PLACEHOLDER -- PLOT NOT SAVED: MAX SIZE ("
+            f"{sys.stdout.max_plots_size/2**20:.1f}MiB) REACHED\n"
+            "------------------------------------\n\u001b[0m"
+        )
+        return
+
+    b64 = codecs.encode(codecs.decode(img_hex_code, "hex"), "base64").decode()
+    sys.stdout._wrapped_stdout.write("<-- JUKIT_PLOT_PLACEHOLDER -->\n")
+    sys.stdout.add_jukit_plot(b64)
+
+
+class JukitFigureManager(FigureManagerBase):
+    def show(self, scaling, align):
+        term_width, term_height = icat("--print-window-size").split("x")
+        term_width, term_height = int(term_width), int(term_height)
+
         dpi = self.canvas.figure.dpi
-        size = min(px[0], px[1]) / dpi * 0.85
-        self.canvas.figure.set_size_inches((size, size))
-                
-        with BytesIO() as buf:
-            self.canvas.figure.savefig(buf, format='png', facecolor='#888888')
-            icat('--align', 'center', output=False, input=buf.getbuffer())
+        width = min(term_width, term_height) / dpi * scaling
+        x, y = self.canvas.figure.get_size_inches()
+        aspect_ratio = y / x
+        self.canvas.figure.set_size_inches((width, width * aspect_ratio))
+
+        if hasattr(sys.stdout, "add_jukit_plot"):
+            if "save_dpi" in plt.show.__annotations__.keys():
+                dpi = plt.show.__annotations__["save_dpi"]
+
+            with io.BytesIO() as save_buf:
+                self.canvas.figure.savefig(save_buf, format="png", dpi=dpi)
+                _store_img_for_ipynb(save_buf.getbuffer().hex())
+
+        with io.BytesIO() as buf:
+            self.canvas.figure.savefig(buf, format="png")
+            icat("--align", align, "--silent", output=False, input=buf.getbuffer())
+
 
 @_Backend.export
-class _BackendICatAgg(_Backend):
+class JukitBackend(_Backend):
     FigureCanvas = FigureCanvasAgg
-    FigureManager = FigureManagerICat
-    
-    # XXX: `trigger_manager_draw` is intended
-    # for updates, not one-shot rendering.
-    # Thus, we need to filter calls for figures
-    # that aren't fully initialized yet, like the
-    # call from `plt.figure`. Our heuristic for
-    # an initialized figure is the presence of axes.
-    def _trigger_manager_draw(manager):
-        if manager.canvas.figure.get_axes():
-            manager.show()
-            Gcf.destroy(manager)
-    
-    def show(*args, **kwargs):
-        _Backend.show(*args, **kwargs)
-        Gcf.destroy_all()
-    
-    trigger_manager_draw = _trigger_manager_draw
+    FigureManager = JukitFigureManager
     mainloop = lambda: None
+
+    @classmethod
+    def show(cls, *_, **kwargs):
+        managers = Gcf.get_all_fig_managers()
+        if not managers:
+            return
+        for manager in managers:
+            scaling = kwargs.get("scaling", 0.9)
+            align = kwargs.get("align", "center")
+            manager.show(scaling, align)
+        Gcf.destroy_all()

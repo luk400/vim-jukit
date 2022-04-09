@@ -1,383 +1,258 @@
-fun! s:SelectSection()
-    " Selects the text between 2 cell markers
-    
-    set nowrapscan
+let s:markers_nlines = -1
+let s:textcell_nlines = -1
+let s:md_start_pattern = '.*' . g:_jukit_md_mark . '$'
+let s:md_end_pattern = '^' . g:_jukit_md_mark . '.*'
 
-    let line_before_search = line(".")
-    silent! exec '/|%%--%%|'
-    " check if line has changed, otherwise no section AFTER the current one
-    " was found
-    if line(".")!=line_before_search
-        normal! k$v
+"""""""""""""""""""""""""""""""
+" check consistency of cell ids
+fun! s:comp_func(v1, v2) abort
+    if a:v1 == a:v2
+        call add(s:duplicates, a:v1)
+        return 0
     else
-        normal! G$v
-    endif
-    let line_before_search = line(".")
-    silent! exec '?|%%--%%|'
-    " check if line has changed, otherwise not section BEFORE the current one
-    " was found
-    if line(".")!=line_before_search
-        normal! j0
-    else
-        normal! gg0
-    endif
-
-    let &wrapscan = s:wrapscan
-endfun
-
-
-function! s:GetVisualSelection()
-    " Credit for this function: 
-    " https://stackoverflow.com/questions/1533565/how-to-get-visually-selected-text-in-vimscript/6271254#6271254
-    let [line_start, column_start] = getpos("'<")[1:2]
-    let [line_end, column_end] = getpos("'>")[1:2]
-    let lines = getline(line_start, line_end)
-    if len(lines) == 0
-        return ''
-    endif
-    let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
-    let lines[0] = lines[0][column_start - 1:]
-    return join(lines, "\n")
-endfunction
-
-
-fun! s:ParseRegister()
-    " Gets content of register and send to kitty window
-    
-python3 << EOF
-import vim 
-import json
-
-reg = vim.eval('s:jukit_register')
-reg_conent = vim.eval(f'@{reg}')
-if reg_conent[-1]!="\n":
-    reg_conent += "\n"
-escaped = reg_conent.translate(str.maketrans({
-    "\n": "\\\n",
-    "\\": "\\\\",
-    '"': '\\"',
-    "'": "\\'",
-    "#": "\\#",
-    "!": "\!",
-    "%": "\%",
-    }))
- 
-vim.command("let escaped_text = shellescape({})".format(json.dumps(escaped)))
-EOF
-    let command = '!kitty @ send-text --match title:' . b:jukit_output_title . ' ' . escaped_text
-    return command
-endfun
-
-
-fun! jukit#PythonSplit(...)
-    " Opens new kitty window split and opens python
-
-    " check if ipython is used
-    let b:jukit_ipython = (stridx(split(s:jukit_python_cmd, '/')[-1], 'ipython') >= 0)
-    " define title of new kitty window by which we match when sending
-    let b:jukit_output_title=strftime("%Y%m%d%H%M%S")
-    " save these buffer-variables also in global variables according to which 
-    " these variables will be set for new buffers
-    let g:jukit_last_output_title = b:jukit_output_title
-    let g:jukit_last_ipython = b:jukit_ipython
-    " create new window
-    silent exec "!kitty @ launch --keep-focus --title " . b:jukit_output_title
-        \ . " --cwd=current"
-
-    " if an argument was given, execute it in new kitty terminal window before
-    " starting python shell
-    if a:0 > 0
-        silent exec '!kitty @ send-text --match title:' . b:jukit_output_title
-            \ . " " . a:1 . "\r"
-    endif
-
-    if b:jukit_inline_plotting == 1
-        " open python, add path to backend  and import matplotlib with the required
-        " backend first
-        silent exec '!kitty @ send-text --match title:' . b:jukit_output_title
-            \ . " " . s:jukit_python_cmd . " -i -c \"\\\"import sys;
-            \ sys.path.append('" . s:plugin_path . "/helpers'); import matplotlib;
-            \ matplotlib.use('module://matplotlib-backend-kitty')\\\"\"\r"
-    else
-        " if no inline plotting is desired, simply open python
-        silent exec '!kitty @ send-text --match title:' . b:jukit_output_title
-            \ . " " . s:jukit_python_cmd . "\r"
+        return 1
     endif
 endfun
 
+fun! s:replace_marker(id1, id2, lnum) abort
+    let id1 = a:id1 != -1 ? a:id1 : jukit#util#get_unique_id()
+    let id2 = a:id2 != -1 ? a:id2 : jukit#util#get_unique_id()
+    let lnum = a:lnum != -1 ? a:lnum : line('.')-1
 
+    if g:jukit_use_tcomment == 1
+        call setline(lnum, '|%%--%%| <' . id1 . '|' . id2 . '>')
+        try
+            call tcomment#Comment(lnum, lnum)
+        catch
+            call setline(lnum, g:jukit_comment_mark . '|%%--%%| <' . id1 . '|' . id2 . '>')
+            echom '[vim-jukit] tcomment#Comment could not be executed, using '
+                \. 'g:jukit_comment_mark...'
+        endtry
+    else
+        call setline(lnum, g:jukit_comment_mark . '|%%--%%| <' . id1 . '|' . id2 . '>')
+    endif
+
+    return [id1, id2]
+endfun
+
+fun! s:fix_duplicate_ids(ids) abort
+    let save_view = winsaveview()
+    let bnr = bufnr('%', 1)
+    echom '[vim-jukit] Duplicate cell_ids detected: ' . join(uniq(a:ids), ', ')
+    for id in a:ids
+        call cursor(1,1)
+        let lnum = search('|' . id . '>')
+
+        if !lnum
+            continue
+        endif
+
+        echom '[vim-jukit] Replacing first found occurence of id ' . id
+            \. ' in line ' . lnum
+        let id1 = jukit#util#get_marker_below()['ids'][0]
+        call s:replace_marker(id1, -1, lnum)
+        break
+    endfor
+    call winrestview(save_view)
+endfun
+
+fun! s:rename_first_cell() abort
+    let save_view = winsaveview()
+    call cursor(1,1)
+    let ids_below = jukit#util#get_marker_below()
+    call s:replace_marker(-1, ids_below['ids'][1], ids_below['pos'])
+    call winrestview(save_view)
+endfun
+
+fun! s:fix_pos(i, ids) abort
+    call add(s:fix_pos, '{' . a:ids['pos'][a:i] . ';' . a:ids['pos'][a:i+1] . '}')
+    let id = matchstr(getline(a:ids['pos'][a:i]), '|%%--%%|.*<.*|\zs.*\ze>')
+    let fixed = substitute(getline(a:ids['pos'][a:i+1]), '|%%--%%|.*<\zs.*\ze|.*>', id, 'g')
+    call setline(a:ids['pos'][a:i+1], fixed)
+endfun
+
+fun! jukit#check_ids() abort
+    if !g:jukit_save_output
+        return
+    endif
+
+    let ids = jukit#util#get_all_ids()
+    let ids2_unique = len(uniq(sort(copy(ids[2])))) == len(ids[2])
+    let ids1_unique = len(uniq(sort(copy(ids[1])))) == len(ids[1])
+    let is_consistent = ids[1][1:]==ids[2][:-2] && ids1_unique && ids2_unique
+
+    if is_consistent
+        return
+    elseif !ids2_unique
+        let s:duplicates = []
+        call uniq(sort(copy(ids[2])), function('s:comp_func'))
+        call s:fix_duplicate_ids(s:duplicates)
+    endif
+
+    let s:fix_pos = []
+    let idx_fix = filter(range(len(ids[1])-1), {k,v -> ids[1][v+1] != ids[2][v]})
+    call map(idx_fix, {k,v -> s:fix_pos(v, ids)})
+
+    if len(s:fix_pos)
+        echom '[vim-jukit] Inconsistent cell-ids corrected in lines: ' . join(s:fix_pos, ', ')
+    endif
+
+    let ids = jukit#util#get_all_ids()
+    let ids1_unique = len(uniq(sort(copy(ids[1])))) == len(ids[1])
+    if !ids1_unique
+        call s:rename_first_cell()
+    endif
+    echom "[vim-jukit] -> Try to use jukit-functions to create/delete/modify cells!"
+        \. "Otherwise saved output may be assigned to unexpected cell-ids!"
+endfun
+
+""""""""""""""
+" highlighting
+fun! s:add_signs_in_region(lnum_end) abort
+    if line('.')>a:lnum_end
+        let num_end = line('$')
+    else
+        let num_end = a:lnum_end
+    endif
+
+    let lines = range(line('.'), num_end)
+    let sign_list = map(lines, {l, v -> {
+        \ 'buffer': bufnr('%', 1), 
+        \ 'group': 'jukit_textcells', 
+        \ 'name': 'jukit_textcells', 
+        \ 'id': l, 
+        \ 'lnum': v,
+        \ 'priority': 1}})
+    call sign_placelist(sign_list)
+endfun
+
+fun! s:highlight_sep_lines(val) abort
+    call sign_place(a:val, 'jukit_cell_markers', 'jukit_cell_markers',
+        \ bufnr('%', 1), {'lnum': a:val, 'priority': 2})
+endfun
+
+fun! jukit#place_markdown_cell_signs(force) abort
+    if line('$') == s:textcell_nlines && !a:force
+        return
+    endif
+    let s:textcell_nlines = line('$')
+
+    let save_view = winsaveview()
+
+    call sign_unplace('jukit_textcells', {'buffer': bufnr('%', 1)})
+
+    silent exe 'g/' . s:md_start_pattern
+        \ . "/call s:add_signs_in_region(search('" . s:md_end_pattern . "', 'n'))"
+
+    call winrestview(save_view)
+endfun
+
+fun! jukit#highlight_markers(force) abort
+    if line('$') == s:markers_nlines && !a:force
+        return
+    endif
+    let s:markers_nlines = line('$')
+
+    call sign_unplace('jukit_cell_markers', {'buffer': bufnr('%', 1)})
+    let lines = getline(1, '$')
+    call map(lines, {l, v -> v =~ '|%%--%%|' ? s:highlight_sep_lines(l+1) : 0})
+endfun
+
+fun! jukit#highlighting_setup(aupat) abort
+    if !filereadable(g:jukit_text_syntax_file)
+        echom "[vim-jukit] Given syntax_file (`g:jukit_text_syntax_file='"
+            \ . g:jukit_text_syntax_file . "'`) not found. Make sure to specify absolute path!"
+    endif
+
+    if g:jukit_enable_textcell_syntax
+        exe 'autocmd BufNewFile,BufReadPost ' . a:aupat . ' call s:textcell_syn_match()'
+    endif
+
+    if g:jukit_highlight_markers
+        if !hlexists('jukit_cellmarker_colors')
+            highlight jukit_cellmarker_colors guifg=#1d615a guibg=#1d615a ctermbg=22 ctermfg=22
+        endif
+
+        sign define jukit_cell_markers linehl=jukit_cellmarker_colors
+        exe 'autocmd BufEnter,TextChangedI,TextChanged ' . a:aupat
+            \ . ' call jukit#highlight_markers(0)'
+    endif
+
+    if g:jukit_enable_textcell_bg_hl
+        if !hlexists('jukit_textcell_bg_colors')
+            highlight jukit_textcell_bg_colors guibg=#131628 ctermbg=16
+        endif
+
+        sign define jukit_textcells linehl=jukit_textcell_bg_colors
+        exe 'autocmd BufEnter,TextChangedI,TextChanged ' . a:aupat
+            \ . ' call jukit#place_markdown_cell_signs(0)'
+    endif
+endfun
+
+fun! s:textcell_syn_match() abort
+    if exists('b:current_syntax')
+        unlet b:current_syntax
+    endif
+
+    if !hlexists('jukit_textcell_quotes')
+        highlight jukit_textcell_quotes guifg=#212d3d ctermfg=Darkgrey
+    endif
+
+    if filereadable(g:jukit_text_syntax_file)
+        exe 'syn include @markdown_cells ' . g:jukit_text_syntax_file
+    endif
+
+    exe 'syn match jukit_textcell_quotes /' . s:md_start_pattern . '\|' 
+        \. s:md_end_pattern . '/ containedin=textcell'
+    exe 'syn region textcell keepend start=/' . s:md_start_pattern . '/ end=/' 
+        \. s:md_end_pattern . '/ contains=@markdown_cells containedin=ALL'
+endfun
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" make users of old vim-jukit version aware of breaking changes in new version
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+let s:msg = "[vim-jukit] Trying to use a deprecated function. Please visit https://github.com/luk400/vim-jukit to read about the new vim-jukit release!"
+fun! jukit#PythonSplit()
+    echom s:msg
+endfun
 fun! jukit#WindowSplit()
-    " Opens a new kitty terminal window
-
-    let b:jukit_ipython = 0
-    let b:jukit_output_title=strftime("%Y%m%d%H%M%S")
-    let g:jukit_last_output_title = b:jukit_output_title
-    let g:jukit_last_ipython = b:jukit_ipython
-    silent exec "!kitty @ launch  --title " . b:jukit_output_title . " --cwd=current"
+    echom s:msg
 endfun
-
-
 fun! jukit#SendLine()
-    " Sends a single line to the other kitty terminal window
-
-    if !exists('b:jukit_output_title')
-        echo "No split window found (buffer variable 'b:jukit_output_title' not set)"
-        return
-    endif
-
-    if b:jukit_ipython==1
-        " if ipython is used, copy code to system clipboard and '%paste'
-        " to register
-        normal! 0v$"+y
-        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
-    else
-        " otherwise yank line to register
-        exec 'normal! 0v$"' . s:jukit_register . 'y'
-        silent exec s:ParseRegister()
-    endif
-    " send register content to window
-    normal! j
-    redraw!
+    echom s:msg
 endfun
-
-
 fun! jukit#SendSelection()
-    " Sends visually selected text to the other kitty terminal window
-    
-    if !exists('b:jukit_output_title')
-        echo "No split window found (buffer variable 'b:jukit_output_title' not set)"
-        return
-    endif
-
-    if b:jukit_ipython==1
-        " if ipython is used, copy visual selection to system clipboard and 
-        " '%paste' to register
-        let @+ = s:GetVisualSelection() 
-        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
-    else
-        " otherwise yank content of visual selection to register
-        exec 'let @' . s:jukit_register . ' = s:GetVisualSelection()'
-        silent exec s:ParseRegister()
-    endif
-    " send register content to window
-    redraw!
+    echom s:msg
 endfun
-
-
 fun! jukit#SendSection()
-    " Sends the section of current cursor position to window
-
-    " first select the whole current section
-    call s:SelectSection()
-    if b:jukit_ipython==1
-        " if ipython is used, copy whole section to system clipboard and 
-        " '%paste' to register
-        normal! "+y
-        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
-    else
-        " otherwise yank content of section to register
-        exec 'normal! "' . s:jukit_register . 'y'
-        silent exec s:ParseRegister()
-    endif
-    " send register content to window
-    redraw!
-
-    set nowrapscan
-    " move to next section
-    silent! exec '/|%%--%%|'
-    let &wrapscan = s:wrapscan
-    nohl
-    normal! j
+    echom s:msg
 endfun
-
-
 fun! jukit#SendUntilCurrentSection()
-    " Sends all code until (and including) the current section to window
-
-    " save current window view to restore after jumping to file beginning
-    let save_view = winsaveview()
-    " go to end of current section
-    silent! exec '/|%%--%%|'
-    if b:jukit_ipython==1
-        " if ipython is used, copy from end of current section until 
-        " file beginning to system clipboard and yank '%paste' to register
-        normal! k$vgg0"+y
-        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
-    else
-        " otherwise simply yank everything from beginning to current
-        " section to register
-        exec 'normal! k$vgg0"' . s:jukit_register . 'y'
-        silent exec s:ParseRegister()
-    endif
-    " restore previous window view
-    call winrestview(save_view)
-    nohl
-    redraw!
+    echom s:msg
 endfun
-
-
 fun! jukit#SendAll()
-    " Sends all code in file to window
-    
-    let save_view = winsaveview()
-    if b:jukit_ipython==1
-        " if ipython is used, copy all code in file  to system clipboard 
-        " and yank '%paste' to register
-        normal! gg0vG$"+y
-        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
-    else
-        " otherwise copy yank whole file content to register
-        exec 'normal! gg0vG$"' . s:jukit_register . 'y'
-        silent exec s:ParseRegister()
-    endif
-    " send register content to window
-    call winrestview(save_view)
-    redraw!
+    echom s:msg
 endfun
-
-
 fun! jukit#NewMarker()
-    " Creates a new cell marker below
-
-    if s:jukit_use_tcomment == 1
-        " use tcomment plugin to automaticall detect comment mark of 
-        " current filetype and comment line if specified
-        exec "normal! o0\<c-d>\|%%--%%\|"
-        call tcomment#operator#Line('g@$')
-    else
-        " otherwise simply prepend line with user b:jukit_comment_mark variable
-        exec "normal! o0\<c-d>" . b:jukit_comment_mark . " \|%%--%%\|"
-    endif
-    normal! j
+    echom s:msg
 endfun
-
-
 fun! jukit#NotebookConvert()
-    " Converts from .ipynb to .py and vice versa
-
-    if (expand("%:e")=="ipynb")
-        if !empty(glob(expand("%:r") . '.py'))
-            let answer = confirm(expand("%:r")
-                \ . '.py already exists. Do you want to replace it?', "&Yes\n&No", 1)
-            if answer == 0 || answer == 2
-                return
-            endif
-        endif
-        silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert " 
-            \ . expand("%") . " " . expand("%:r") . '.py'
-        exec 'e ' . expand("%:r") . '.py'
-    elseif (expand("%:e")=="py")
-        if !empty(glob(expand("%:r") . '.ipynb'))
-            let answer = confirm(expand("%:r")
-                \ . '.ipynb already exists. Do you want to replace it?', "&Yes\n&No", 1)
-            if answer == 0 || answer == 2
-                return
-            endif
-        endif
-        silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert "
-            \ . expand("%") . " " . expand("%:r") . '.ipynb'
-        exec 'e ' . expand("%:r") . '.ipynb'
-    else
-        throw "File must be .py or .ipynb!"
-    endif
-    redraw!
+    echom s:msg
 endfun
-
-
-fun! jukit#SaveNBToFile(run, open, to)
-    " Converts the existing .ipynb to the given filetype (a:to) - e.g. html or
-    " pdf - and open with specified file viewer
-
-    silent exec "!" . s:python_path . " " . s:plugin_path . "/helpers/ipynb_py_convert "
-        \ . expand("%") . " " . expand("%:r") . '.ipynb'
-    if a:run == 1
-        let command = "!jupyter nbconvert --to " . a:to
-            \ . " --allow-errors --execute --log-level='ERROR' "
-            \ . "--HTMLExporter.theme=dark " . expand("%:r") . '.ipynb '
-    else
-        let command = "!jupyter nbconvert --to " . a:to . " --log-level='ERROR' "
-            \ . "--HTMLExporter.theme=dark " . expand("%:r") . '.ipynb '
-    endif
-    if a:open == 1
-        exec 'let command = command . "&& " . s:jukit_' . a:to . '_viewer . " '
-            \ . expand("%:r") . '.' . a:to . ' &"'
-    else
-        let command = command . "&"
-    endif
-    silent! exec command
-    redraw!
+fun! jukit#SaveNBToFile(arg1, arg2, arg3)
+    echom s:msg
 endfun
-
-
+fun! jukit#SaveNBToFile(arg1, arg2, arg3)
+    echom s:msg
+endfun
+fun! jukit#SaveNBToFile(arg1, arg2, arg3)
+    echom s:msg
+endfun
+fun! jukit#SaveNBToFile(arg1, arg2, arg3)
+    echom s:msg
+endfun
 fun! jukit#PythonHelp()
-    " send to terminal
-    if b:jukit_ipython==1
-        " if ipython is used, copy all code in file  to system clipboard 
-        " and yank '%paste' to register
-        let @+ = 'help(' . s:GetVisualSelection() . ')'
-        silent exe '!kitty @ send-text --match title:' . b:jukit_output_title . ' "\%paste\r"'
-    else
-        " otherwise yank line to register
-        exec 'let @' . s:jukit_register . ' = "help(' . s:GetVisualSelection() . ')"'
-        silent exec s:ParseRegister()
-    endif
-    " send register content to window
-    silent exec "!kitty @ focus-window --match title:" . b:jukit_output_title
-    redraw!
-    nohl
+    echom s:msg
 endfun
-
-
-fun! s:GetPluginPath(plugin_script_path)
-    " Gets the absolute path to the plugin (i.e. to the folder vim-jukit/) 
-    
-    let plugin_path = a:plugin_script_path
-    let plugin_path = split(plugin_path, "/")[:-3]
-    return "/" . join(plugin_path, "/")
-endfun
-
-
-fun! s:InitBufVar()
-    " Initialize buffer variables
-
-    if !exists('b:jukit_buffer_vars_set') && exists("g:jukit_last_output_title") && exists("g:jukit_last_ipython")
-        let b:jukit_buffer_vars_set = 1
-        let b:jukit_output_title = g:jukit_last_output_title
-        let b:jukit_ipython = g:jukit_last_ipython
-    endif
-
-    let b:jukit_inline_plotting = s:jukit_inline_plotting_default
-    if s:jukit_use_tcomment != 1
-        let b:jukit_comment_mark = s:jukit_comment_mark_default
-    endif
-endfun
-
-
-""""""""""""""""""
-" helper variables
-let s:wrapscan = &wrapscan 
-let s:plugin_path = s:GetPluginPath(expand("<sfile>"))
-
-" get path of python executable that vim is using
-python3 << EOF
-import vim
-import sys
-vim.command("let s:python_path = '{}'".format(sys.executable))
-EOF
-
-
-"""""""""""""""""""""""""
-" User defined variables:
-let s:jukit_use_tcomment = get(g:, 'jukit_use_tcomment', 0)
-let s:jukit_inline_plotting_default = get(g:, 'jukit_inline_plotting_default', 1)
-let s:jukit_comment_mark_default = get(g:, 'jukit_comment_mark_default', '#')
-let s:jukit_python_cmd = get(g:, 'jukit_python_cmd', 'ipython3')
-let s:jukit_register = get(g:, 'jukit_register', 'x')
-let s:jukit_html_viewer = get(g:, 'jukit_html_viewer', 'firefox')
-let s:jukit_pdf_viewer = get(g:, 'jukit_pdf_viewer', 'zathura')
-
-
-"""""""""""""""""""""""""""""
-" initialize buffer variables
-call s:InitBufVar()
-autocmd BufEnter * call s:InitBufVar()
