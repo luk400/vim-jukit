@@ -67,7 +67,7 @@ Plug 'luk400/vim-jukit'
 
 ### Basic usage in a nutshell (assuming default mappings)
 
-* **Example using python:**
+* **Example using ipython:**
 
 If you have an ipynb file containing python code which you first need to convert, simply open it and press `<leader>np`. This will also preseve saved outputs.
 
@@ -149,7 +149,7 @@ let g:jukit_max_size = 20
 let g:jukit_show_prompt = 0
 "    - Whether to show (1) or hide (0) the previous ipython prompt after code is sent to the ipython shell
 
-" IF AN IPYTHON SHELL-COMMAND IS USED (see `g:jukit_shell_cmd`):
+" IF AN IPYTHON SHELL COMMAND IS USED:
 let g:jukit_save_output = 1
 "    - Whether to save ipython output or not. This is the default value if an ipython shell command is used.
 " ELSE:
