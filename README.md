@@ -365,6 +365,7 @@ Below you'll find the currently supported languages for converting notebooks to 
 Already supported:
 * python
 * r
+* matlab
 * julia
 * java
 
