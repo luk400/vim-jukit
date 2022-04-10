@@ -1,14 +1,13 @@
 # vim-jukit
 ## REPL plugin and Jupyter-Notebook alternative for Vim and Neovim
 
-This plugin is aimed at users in search for a REPL plugin with lots of additional features:
+This plugin is aimed at users in search for a REPL plugin with lots of additional features, including but not limited to the following:
 * Easily send code to a split window running your preferred shell
 * Structure your code with cell markers and use convenient cell operations
 * Dedicated markdown cells with markdown syntax
 * Seamlessly convert from and to .ipynb notebooks
-* Easily convert convert to html or pdf
 * Display plots inside the terminal if you're using kitty terminal and python's matplotlib
-* Save outputs of cell executions when using IPython
+* Save outputs of cell executions when using IPython and display saved outputs on demand
 
 
 ## Preview
