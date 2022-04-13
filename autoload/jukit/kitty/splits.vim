@@ -3,7 +3,7 @@ call jukit#util#ipython_info_write('terminal', 'kitty')
 fun! jukit#kitty#splits#output(...) abort
     let g:jukit_output_title=jukit#util#get_unique_id()
 
-    let launch_args = [g:jukit_output_title, '--keep-focus', '--cwd=current']
+    let launch_args = [g:jukit_output_title, '--keep-focus', '--cwd=' . getcwd()]
     if g:jukit_output_bg_color != ''
         let launch_args += ['--color', 'background=' . g:jukit_output_bg_color]
     endif
@@ -33,7 +33,7 @@ fun! jukit#kitty#splits#term(...) abort
 
     let g:_jukit_python = 0
     let g:jukit_output_title=jukit#util#get_unique_id()
-    let launch_args = [g:jukit_output_title, '--keep-focus', '--cwd=current']
+    let launch_args = [g:jukit_output_title, '--keep-focus', '--cwd=' . getcwd()]
     if g:jukit_output_new_os_window
         let launch_args += ['--type=os-window']
     endif
@@ -46,7 +46,7 @@ fun! jukit#kitty#splits#history() abort
     endif
 
     let g:jukit_outhist_title=jukit#util#get_unique_id()
-    let launch_args = [g:jukit_outhist_title, '--keep-focus', '--cwd=current']
+    let launch_args = [g:jukit_outhist_title, '--keep-focus', '--cwd=' . getcwd()]
     if g:jukit_outhist_bg_color != -1
         let launch_args += ['--color', 'background=' . g:jukit_outhist_bg_color]
     endif
@@ -59,7 +59,7 @@ fun! jukit#kitty#splits#history() abort
     let response = call('jukit#kitty#cmd#launch', launch_args)
 
     if type(response) == 7
-        call jukit#kitty#cmd#launch(g:jukit_outhist_title, '--keep-focus', '--cwd=current')
+        call jukit#kitty#cmd#launch(g:jukit_outhist_title, '--keep-focus', '--cwd=' . getcwd())
     endif
 
     call jukit#kitty#cmd#send_text(g:jukit_outhist_title, jukit#splits#_build_shell_cmd('outhist'))
