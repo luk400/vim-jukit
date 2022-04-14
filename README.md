@@ -326,7 +326,7 @@ This will open a new output split, activate the virtual conda-environment, and t
 
 Using `jukit#send#send_to_split`, you can create mappings for commands you often use in your programming workflow. Here are a few examples which I personally use regularly:
 
-* Example 1: When working with pandas in python, I often find myself typing `df.columns` to print out the columns of the dataframe in the shell. The following makes it so I can simply visually select the variable, press `C`, and `df.columns` will be sent to the output split.
+* Example 1: When working with pandas in python, I often find myself typing `df.columns` to print out the columns of the dataframe in the shell. The following makes it so I can simply visually select the variable `df`, press `C`, and `df.columns` will be sent to the output split.
 ```vim
 fun! DFColumns()
     let visual_selection = jukit#util#get_visual_selection()
