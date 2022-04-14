@@ -78,7 +78,7 @@ Create a new cell below by pressing `<leader>co`, or `<leader>cO` to create one 
 
 Now say you've been coding for a while and want to know what the output of a specific cell was. Instead of searching for it by scrolling up in your shell or completely re-running it (which is often inconvenient for long-running code), you can press `<leader>hs` which will create a new split window where saved outputs will be displayed. Press `<leader>so` to display saved output of the current cell. To scroll up or down in the output-history-split, simply press `<leader>j` or `<leader>k`. If you don't need the output-history split anymore, simply press `<leader>hd` to close it again. 
 
-If you want to convert your py file back to a ipynb notebook, simply press `<leader>np` again. It'll convert it back and open it using `jupyter-notebook`. 
+If you want to convert your .py file back to a .ipynb notebook, simply press `<leader>np` again. It'll convert it back and open it using `jupyter-notebook`. 
 For all other functions and custimization options, please see the definitions and comments in the next sections.
 
 * **Example using julia (or any other supported language):**
@@ -89,7 +89,7 @@ Now you can start sending code to the shell. Simply press `<enter>` to send the 
 
 Create a new cell below by pressing `<leader>co`, or `<leader>cO` to create one above. If you want to create a text/markdown cell below, use `<leader>ct`, or `<leader>cT` to create one above. You can also move cells up or down, split cells, or merge cells (see the mappings and explanations below).
 
-If you want to convert your py file back to a ipynb notebook, simply press `<leader>np` again. It'll convert it back and open it using `jupyter-notebook`. 
+If you want to convert your .jl file back to a .ipynb notebook, simply press `<leader>np` again. It'll convert it back and open it using `jupyter-notebook`. 
 For all other functions and custimization options, please see the definitions and comments in the next sections.
 
 ### Options and global variables
