@@ -69,7 +69,7 @@ fun! s:send(bufnr, text) abort
 endfun
 
 fun! s:send_to_split(magic_cmd, code, save, ...) abort
-    if g:jukit_ipython==1
+    if g:_jukit_python && g:jukit_ipython
         let param = g:jukit_ipy_opts
         if !a:0 && g:jukit_save_output && a:save
             let param = param . ' -s'
