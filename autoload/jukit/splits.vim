@@ -205,11 +205,11 @@ fun! jukit#splits#_build_shell_cmd(...) abort
         let cmd = cmd
             \. "from IPython import get_ipython;"
             \. "__shell = get_ipython();"
-            \. '__shell.magic("%load_ext jukit_run");'
-            \. '__shell.magic("%jukit_init ' . expand('%:p') . ' '
+            \. '__shell.run_line_magic("load_ext", "jukit_run");'
+            \. '__shell.run_line_magic("jukit_init", "' . expand('%:p') . ' '
             \. g:jukit_in_style . ' --max_size=' . g:jukit_max_size . '");'
         if !g:jukit_debug
-            let cmd = cmd . '__shell.magic("%clear");'
+            let cmd = cmd . '__shell.run_line_magic("clear", "");'
         endif
     endif
 

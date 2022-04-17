@@ -267,7 +267,7 @@ class JukitRun(TerminalMagics):
         )
 
         self.shell.prompts = MyPrompt(self.shell)
-        self.shell.magic("%clear")
+        self.shell.run_line_magic("clear", "")
         x, _ = os.get_terminal_size()
 
         if not os.path.isfile(self.outhist_file):
