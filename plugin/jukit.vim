@@ -25,6 +25,7 @@ let g:jukit_auto_output_hist = get(g:, 'jukit_auto_output_hist', 0)
 let g:jukit_mappings = get(g:, 'jukit_mappings', 1)
 
 let g:jukit_ipython = get(g:, 'jukit_ipython', split(g:jukit_shell_cmd, '/')[-1] =~ 'ipython')
+let g:jukit_debug = get(g:, 'jukit_debug', 0)
 let g:_jukit_python = split(g:jukit_shell_cmd, '/')[-1] =~ 'python'
 let g:_jukit_md_mark = '°°°'
 let g:jukit_version = 'v1.0'
