@@ -46,8 +46,9 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 * vim users: version >= 8.2
 * neovim users: version >= 0.4
 * vim/neovim must have python3 support (check using `:echo has('python3')`)
-* ipython users:
+* (i)python users:
     - ipython version >= 7.3.0
+    - matplotlib version >= 3.2.0
 * kitty terminal users: 
     - kitty version >= 0.22
     - remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf), or alternatively you can also always start kitty using `kitty -o allow_remote_control=yes`
