@@ -147,10 +147,11 @@ class JukitRun(TerminalMagics):
     @line_magic
     def jukit_init(self, param: str):
         args = parse_argstring(self.jukit_init, param)
-        dir_, fname = os.path.split(args.py_file)
+        py_file = args.py_file.replace('<JUKIT_WS_PH>', ' ')
+        dir_, fname = os.path.split(py_file)
         fname_outhist = os.path.splitext(fname)[0] + "_outhist.json"
 
-        self.py_file = args.py_file
+        self.py_file = py_file
         self.jukit_dir = os.path.join(dir_, ".jukit/")
         self.cmd_file = os.path.join(dir_, ".jukit/", ".cmd")
         self.info_file = os.path.join(self.jukit_dir, ".jukit_info.json")

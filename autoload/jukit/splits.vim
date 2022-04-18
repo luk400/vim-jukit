@@ -202,11 +202,12 @@ fun! jukit#splits#_build_shell_cmd(...) abort
     endif
 
     if use_ipy
+        let pyfile_ws_sub = substitute(expand('%:p'), ' ', '<JUKIT_WS_PH>', 'g')
         let cmd = cmd
             \. "from IPython import get_ipython;"
             \. "__shell = get_ipython();"
             \. '__shell.run_line_magic("load_ext", "jukit_run");'
-            \. '__shell.run_line_magic("jukit_init", "' . expand('%:p') . ' '
+            \. '__shell.run_line_magic("jukit_init", "' . pyfile_ws_sub . ' '
             \. g:jukit_in_style . ' --max_size=' . g:jukit_max_size . '");'
         if !g:jukit_debug
             let cmd = cmd . '__shell.run_line_magic("clear", "");'

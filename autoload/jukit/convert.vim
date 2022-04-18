@@ -78,11 +78,11 @@ endfun
 fun! jukit#convert#notebook_convert(...) abort
     " Converts from .ipynb to .py and vice versa
 
-    call s:check_filetype()
     write
     if expand("%:e") == "ipynb"
         call s:convert_to_script()
     else
+        call s:check_filetype()
         call s:convert_to_ipynb(a:000)
     endif
     redraw!
