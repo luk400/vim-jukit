@@ -368,6 +368,7 @@ Already supported:
 * matlab
 * julia
 * java
+* rust
 
 ### Notes to be aware of
 
