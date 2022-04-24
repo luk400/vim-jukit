@@ -4,4 +4,5 @@ languages = {
     "julia": {"ext": "jl", "cchar": "#", "multiline_start": '#=', "multiline_end": '=#', "kernel_name": "julia"},
     "java": {"ext": "java", "cchar": "//", "multiline_start": '/*', "multiline_end": '*/', "kernel_name": "java"},
     "matlab": {"ext": "m", "cchar": "%", "multiline_start": '%{', "multiline_end": '%}', "kernel_name": "matlab"},
+    "rust": {"ext": "rs", "cchar": "//", "multiline_start": '/*', "multiline_end": '*/', "kernel_name": "rust"},
 }
