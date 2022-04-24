@@ -369,6 +369,7 @@ Already supported:
 * julia
 * java
 * rust
+* lua
 
 ### Notes to be aware of
 
