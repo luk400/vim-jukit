@@ -196,9 +196,6 @@ class JukitRun(TerminalMagics):
                     }
                     captured_out = re.sub("\n*" + pattern + "\n*", "\n", captured_out)
                 except IndexError:
-                    util.jukit_info(
-                        "Execution result could not be extracted from captured out"
-                    )
                     exec_result = None
             else:
                 exec_result = None
