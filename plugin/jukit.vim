@@ -50,6 +50,7 @@ let g:jukit_outhist_new_os_window = get(g:, 'jukit_outhist_new_os_window', 0)
 let g:jukit_mpl_style = get(g:, 'jukit_mpl_style', '') "this value is changed for kitty after version checking below
 let g:jukit_savefig_dpi = get(g:, 'jukit_savefig_dpi', 150)
 let g:jukit_inline_plotting = get(g:, 'jukit_inline_plotting', 1)
+let g:jukit_mpl_block = get(g:, 'jukit_mpl_block', 1)
 
 " cell highlighting/syntax
 let g:jukit_hl_ext_enabled = get(g:, 'jukit_hl_ext_enabled', '*')

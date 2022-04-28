@@ -178,15 +178,8 @@ class JukitRun(TerminalMagics):
         with JukitCaptureOutput(self.max_bytes, cell_id=args.cell_id) as io:
             result = self.shell.run_cell(cell).result
 
-            all_plots_visible = all(
-                [
-                    plt.figure(k).canvas.isVisible()
-                    for k in plt.get_fignums()
-                    if hasattr(plt.figure(k).canvas, "isVisible")
-                ]
-            )
-            if not all_plots_visible:
-                plt.show()
+            if any([plt.figure(k).stale for k in plt.get_fignums()]):
+                self.shell.run_cell("plt.show()")
 
             captured_out = str(io)
 

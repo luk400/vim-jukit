@@ -191,7 +191,7 @@ fun! jukit#splits#_build_shell_cmd(...) abort
         let cmd = cmd
             \. "import matplotlib.pyplot as plt;"
             \. "from matplotlib_show_wrapper import show_wrapper;"
-            \. "plt.show = show_wrapper(plt.show);"
+            \. "plt.show = show_wrapper(plt.show, " . g:jukit_mpl_block . ");"
             \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
     endif
 
