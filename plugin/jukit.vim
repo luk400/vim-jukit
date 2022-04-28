@@ -28,7 +28,7 @@ let g:jukit_ipython = get(g:, 'jukit_ipython', split(g:jukit_shell_cmd, '/')[-1]
 let g:jukit_debug = get(g:, 'jukit_debug', 0)
 let g:_jukit_python = split(g:jukit_shell_cmd, '/')[-1] =~ 'python'
 let g:_jukit_md_mark = '°°°'
-let g:jukit_version = 'v1.0.1'
+let g:jukit_version = 'v1.0.2'
 
 " (i)python
 let g:jukit_in_style = get(g:, 'jukit_in_style', 2)
