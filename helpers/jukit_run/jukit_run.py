@@ -54,8 +54,8 @@ class monitor_execution_count(object):
 class MyPrompt(Prompts):
     def in_prompt_tokens(self):
         # NOTE: for some reason, simply returning [] or [(Token.Prompt, "")]
-        # or even [(Token.Prompt, " ")] caused a segmentation fault for 
-        # (n)vimterm after specific resize operations of the terminal, while 
+        # or even [(Token.Prompt, " ")] caused a segmentation fault for
+        # (n)vimterm after specific resize operations of the terminal, while
         # using two or more spaces did not.
         return [(Token.Prompt, "  ")]
 
@@ -147,7 +147,7 @@ class JukitRun(TerminalMagics):
     @line_magic
     def jukit_init(self, param: str):
         args = parse_argstring(self.jukit_init, param)
-        py_file = args.py_file.replace('<JUKIT_WS_PH>', ' ')
+        py_file = args.py_file.replace("<JUKIT_WS_PH>", " ")
         dir_, fname = os.path.split(py_file)
         fname_outhist = os.path.splitext(fname)[0] + "_outhist.json"
 
@@ -160,7 +160,7 @@ class JukitRun(TerminalMagics):
         if self.display_input is None:
             self.display_input = display_style_2
 
-        self.max_bytes = args.max_size * 2 ** 20
+        self.max_bytes = args.max_size * 2**20
 
         if not os.path.isdir(self.jukit_dir):
             os.mkdir(self.jukit_dir)
@@ -178,7 +178,14 @@ class JukitRun(TerminalMagics):
         with JukitCaptureOutput(self.max_bytes, cell_id=args.cell_id) as io:
             result = self.shell.run_cell(cell).result
 
-            if len(plt.get_fignums()):
+            all_plots_visible = all(
+                [
+                    plt.figure(k).canvas.isVisible()
+                    for k in plt.get_fignums()
+                    if hasattr(plt.figure(k).canvas, "isVisible")
+                ]
+            )
+            if not all_plots_visible:
                 plt.show()
 
             captured_out = str(io)

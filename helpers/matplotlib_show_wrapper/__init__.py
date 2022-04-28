@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import codecs, io, sys
+import functools
 
 
 def _store_img_for_ipynb(img_hex_code):
@@ -17,7 +18,8 @@ def _store_img_for_ipynb(img_hex_code):
     sys.stdout.add_jukit_plot(b64)
 
 
-def show_wrapper(show):
+def show_wrapper(show, mpl_block=False):
+    @functools.wraps(show)
     def _wrapped(*args, **kwargs):
         if hasattr(sys.stdout, "add_jukit_plot"):
             fignums = plt.get_fignums()

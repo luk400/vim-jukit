@@ -61,9 +61,19 @@ class JukitFigureManager(FigureManagerBase):
             icat("--align", align, "--silent", output=False, input=buf.getbuffer())
 
 
+class JukitCanvas(FigureCanvasAgg):
+    visible = False
+
+    def isVisible(self):
+        return self.visible
+
+    def setVisible(self, visible):
+        self.visible = visible
+
+
 @_Backend.export
 class JukitBackend(_Backend):
-    FigureCanvas = FigureCanvasAgg
+    FigureCanvas = JukitCanvas
     FigureManager = JukitFigureManager
     mainloop = lambda: None
 
@@ -76,4 +86,5 @@ class JukitBackend(_Backend):
             scaling = kwargs.get("scaling", 0.9)
             align = kwargs.get("align", "center")
             manager.show(scaling, align)
+            manager.canvas.setVisible(True)
         Gcf.destroy_all()
