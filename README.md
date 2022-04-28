@@ -167,6 +167,8 @@ let g:jukit_savefig_dpi = 150
 "    - Value for `dpi` argument for matplotlibs `savefig` function
 let g:jukit_inline_plotting = 1
 "    - Whether to enable inside-terminal-plotting or not. Only supported for kitty terminal
+let g:jukit_mpl_block = 1
+"    - If set to 0, then `plt.show()` will by default be executed as if `plt.show(block=False)` was specified.
 
 " IF KITTY IS USED:
 let g:jukit_mpl_style = jukit#util#plugin_path() . '/helpers/matplotlib-backend-kitty/backend.mplstyle'
