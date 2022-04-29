@@ -49,7 +49,7 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 * (i)python users:
     - ipython version >= 7.3.0
     - matplotlib version >= 3.2.0
-* kitty terminal users: 
+* [kitty](https://sw.kovidgoyal.net/kitty/overview/) terminal users: 
     - kitty version >= 0.22
     - remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf), or alternatively you can also always start kitty using `kitty -o allow_remote_control=yes`
     - ImageMagick for displaying plots in the terminal must be installed (install using e.g. `sudo apt-get install imagemagick`)
