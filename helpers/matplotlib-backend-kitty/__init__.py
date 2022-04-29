@@ -38,7 +38,7 @@ def _store_img_for_ipynb(img_hex_code):
 
 
 class JukitFigureManager(FigureManagerBase):
-    def show(self, scaling=0.75, align='center'):
+    def jukit_show(self, scaling=0.75, align="center"):
         term_width, term_height = icat("--print-window-size").split("x")
         term_width, term_height = int(term_width), int(term_height)
 
@@ -59,6 +59,13 @@ class JukitFigureManager(FigureManagerBase):
         with io.BytesIO() as buf:
             self.canvas.figure.savefig(buf, format="png")
             icat("--align", align, "--silent", output=False, input=buf.getbuffer())
+
+    def show(self, *_, **kwargs):
+        scaling = kwargs.get("scaling", 0.9)
+        align = kwargs.get("align", "center")
+        self.jukit_show(scaling, align)
+        self.canvas.setVisible(True)
+        Gcf.destroy_all()
 
 
 class JukitCanvas(FigureCanvasAgg):
@@ -86,5 +93,3 @@ class JukitBackend(_Backend):
             scaling = kwargs.get("scaling", 0.9)
             align = kwargs.get("align", "center")
             manager.show(scaling, align)
-            manager.canvas.setVisible(True)
-        Gcf.destroy_all()
