@@ -38,7 +38,7 @@ def _store_img_for_ipynb(img_hex_code):
 
 
 class JukitFigureManager(FigureManagerBase):
-    def show(self, scaling, align):
+    def show(self, scaling=0.75, align='center'):
         term_width, term_height = icat("--print-window-size").split("x")
         term_width, term_height = int(term_width), int(term_height)
 
