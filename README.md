@@ -43,7 +43,7 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 
 * **For iTerm2 users: in-terminal plotting in tmux via matplotlib (experimental)**
 
-![tmux_recording](https://user-images.githubusercontent.com/57172028/172947901-679b57a4-0782-4958-a52c-1281d7765cb3.gif)
+![tmux_demo](https://user-images.githubusercontent.com/57172028/172963181-a23b61f9-1f6b-4fa1-a895-ecdc4d7b313b.gif)
 
 
 ### Requirements
