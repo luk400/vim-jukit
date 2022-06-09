@@ -28,7 +28,7 @@ if g:jukit_ipython
     endif
 endif
 
-let s:supported_graphical_term = ['kitty']
+let s:supported_graphical_term = ['kitty', 'tmux']
 let s:inline_plot_psbl = index(s:supported_graphical_term, g:jukit_terminal) >= 0
 if !s:inline_plot_psbl && g:jukit_inline_plotting
     echom '[vim-jukit] inline plotting only supported for values: [' 
@@ -183,10 +183,34 @@ fun! jukit#splits#_build_shell_cmd(...) abort
 
     if g:jukit_inline_plotting
         let cmd = cmd
-            \. "import matplotlib;"
-            \. "import matplotlib.pyplot as plt;"
-            \. 'matplotlib.use("module://matplotlib-backend-kitty")' . ";"
+                \. "import matplotlib;"
+                \. "import matplotlib.pyplot as plt;"
+
+        if g:jukit_terminal == 'kitty'
+            let cmd = cmd
+                \. 'matplotlib.use("module://matplotlib-backend-kitty");'
+                \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+        elseif g:jukit_terminal == 'tmux'
+            let current_pane = matchstr(system('tmux run "echo #{pane_id}"'), '%\d*')
+            if is_outhist
+                let target_pane = g:jukit_outhist_title
+            else
+                let target_pane = g:jukit_output_title
+            endif
+            let cmd = cmd
+                \. 'matplotlib.use("module://imgcat");'
+                \. 'plt.show.__annotations__["tmux_panes"] = ["' 
+                \. current_pane . '", "' . target_pane . '"];'
+                \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+        else
+            echom "[vim-jukit] No inline plotting for `g:jukit_terminal = "
+                \ . g:jukit_terminal . "` supported"
+        endif
+    elseif g:jukit_custom_backend != -1
+        let cmd = cmd
+            \. 'matplotlib.use("module://' . g:jukit_custom_backend . '");'
             \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+
     elseif !is_outhist
         let cmd = cmd
             \. "import matplotlib.pyplot as plt;"

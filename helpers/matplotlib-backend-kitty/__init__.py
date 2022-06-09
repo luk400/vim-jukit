@@ -51,6 +51,8 @@ class JukitFigureManager(FigureManagerBase):
         if hasattr(sys.stdout, "add_jukit_plot"):
             if "save_dpi" in plt.show.__annotations__.keys():
                 dpi = plt.show.__annotations__["save_dpi"]
+            else:
+                dpi = 150
 
             with io.BytesIO() as save_buf:
                 self.canvas.figure.savefig(save_buf, format="png", dpi=dpi)

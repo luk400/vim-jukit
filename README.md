@@ -33,13 +33,18 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 
 ![convert_to_html_pdf_new](https://user-images.githubusercontent.com/57172028/162511885-03675901-c701-4c9e-be41-bb68ef8a2707.gif)
 
+* **For kitty-terminal users: optionally open splits in seperate os-windows** (useful if you have multiple monitors)
+
+![seperate_os_window_new](https://user-images.githubusercontent.com/57172028/162546384-3e4ba886-a6ac-47a3-96e4-5033fd3f8308.gif)
+
 * **For kitty-terminal users: in-terminal plotting via matplotlib**
 
 ![inline_plotting_new](https://user-images.githubusercontent.com/57172028/162511949-7c521780-a6fb-4a57-b889-7b1e47f5edff.gif)
 
-* **For kitty-terminal users: optionally open splits in seperate os-windows** (useful if you have multiple monitors)
+* **For iTerm2 users: in-terminal plotting in tmux via matplotlib (experimental)**
 
-![seperate_os_window_new](https://user-images.githubusercontent.com/57172028/162546384-3e4ba886-a6ac-47a3-96e4-5033fd3f8308.gif)
+![tmux_recording](https://user-images.githubusercontent.com/57172028/172947901-679b57a4-0782-4958-a52c-1281d7765cb3.gif)
+
 
 ### Requirements
 
@@ -54,6 +59,8 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
     - remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf), or alternatively you can also always start kitty using `kitty -o allow_remote_control=yes`
     - ImageMagick for displaying plots in the terminal must be installed (install using e.g. `sudo apt-get install imagemagick`)
     - If you're using neovim with kitty, you need to launch kitty with the ``--listen-on`` option and specify an address to listen on ([more information](https://sw.kovidgoyal.net/kitty/invocation.html)). Furthermore, if you want to have different kitty instances simultaneously using this plugin and sending code to split windows, different addresses will need to be specified. One possible way to do this on linux machines is by simply always starting kitty with e.g. `kitty --listen-on=unix:@"$(date +%s%N)"`, which will make sure different kitty instances are launched with different, abstract sockets to listen on. On MacOS it should work using e.g. `kitty --listen-on=/tmp/kitty_"$(date +%s%N)"`. If you want, you can then simply specify an alias (i.e. put `alias jukit_kitty="kitty --listen-on=unix:@"$(date +%s%N)" -o allow_remote_control=yes"` in your .bashrc/.zshrc) which you can use to always start kitty with the necessary arguments.
+* iTerm2+tmux:
+    - currently only tested using iTerm2 Build 3.4.15 + tmux version 3.2a
 * to use the `jukit#convert#save_nb_to_file()` function (see function mappings below), make sure `jupyter` is installed in your environment.
 
 ### Installation
@@ -100,7 +107,7 @@ For variable explanations see the comments underneath each variable
 let g:jukit_shell_cmd = 'ipython3'
 "    - Specifies the command used to start a shell in the output split. Can also be an absolute path. Can also be any other shell command, e.g. `R`, `julia`, etc. (note that output saving is only possible for ipython)
 let g:jukit_terminal = ''
-"   - Terminal to use. Can be one of '', 'kitty', 'vimterm', or 'nvimterm'. If '' is given then will try to detect terminal
+"   - Terminal to use. Can be one of '', 'kitty', 'vimterm', 'nvimterm' or 'tmux'. If '' is given then will try to detect terminal
 let g:jukit_auto_output_hist = 0
 "   - If set to 1, will create an autocmd with event `CursorHold` to show saved ipython output of current cell in output-history split. Might slow down (n)vim significantly, you can use `set updatetime=<number of milliseconds>` to control the time to wait until CursorHold events are triggered, which might improve performance if set to a higher number (e.g. `set updatetime=1000`).
 let g:jukit_use_tcomment = 0
@@ -165,10 +172,10 @@ let g:jukit_clean_outhist_freq = 60 * 10
 ```vim
 let g:jukit_savefig_dpi = 150
 "    - Value for `dpi` argument for matplotlibs `savefig` function
-let g:jukit_inline_plotting = 1
-"    - Whether to enable inside-terminal-plotting or not. Only supported for kitty terminal
 let g:jukit_mpl_block = 1
-"    - If set to 0, then `plt.show()` will by default be executed as if `plt.show(block=False)` was specified.
+"    - If set to 0, then `plt.show()` will by default be executed as if `plt.show(block=False)` was specified
+let g:jukit_custom_backend = -1
+"    - Custom matplotlib backend to use
 
 " IF KITTY IS USED:
 let g:jukit_mpl_style = jukit#util#plugin_path() . '/helpers/matplotlib-backend-kitty/backend.mplstyle'
@@ -176,6 +183,13 @@ let g:jukit_mpl_style = jukit#util#plugin_path() . '/helpers/matplotlib-backend-
 " ELSE:
 let g:jukit_mpl_style = ''
 "    - File specifying matplotlib plot options. This is the default value if kitty terminal is NOT used. If '' is specified, no custom mpl-style is applied.
+
+" IF KITTY OR TMUX IS USED:
+let g:jukit_inline_plotting = 1
+"    - Enable in-terminal-plotting. Only supported for kitty terminal or tmux with iTerm2 terminal
+" ELSE:
+let g:jukit_inline_plotting = 0
+"    - Disable in-terminal-plotting
 ```
 
 ###### Split layout
@@ -383,4 +397,4 @@ Already supported:
 
 ### Credit
 
-vim-jukit uses a for this plugin modified version of the module [ipynb_py_convert](https://github.com/kiwi0fruit/ipynb-py-convert) as well as a modified version of [matplotlib-backend-kitty](https://github.com/jktr/matplotlib-backend-kitty), which were the starting point and the initial inspiration for this plugin.
+vim-jukit uses a for this plugin modified version of the module [ipynb_py_convert](https://github.com/kiwi0fruit/ipynb-py-convert) as well as a modified version of [matplotlib-backend-kitty](https://github.com/jktr/matplotlib-backend-kitty), which were the starting point and the initial inspiration for this plugin. It also uses the imgcat script from [python-imgcat](https://github.com/wookayin/python-imgcat) for displaying matplotlib plots in terminal when using tmux+iterm2.

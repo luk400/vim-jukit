@@ -63,6 +63,8 @@ fun! s:send(bufnr, text) abort
         call chansend(a:bufnr, a:text . "\r")
         exe bufwinnr(g:jukit_output_buf) . 'wincmd w'
         call feedkeys("G:wincmd p\<cr>", "nxt")
+    elseif g:jukit_terminal == 'tmux'
+        call jukit#tmux#cmd#send_text(g:jukit_output_title, a:text)
     else
         echom '[vim-jukit] Terminal `' . g:jukit_terminal . '` not supported'
     endif

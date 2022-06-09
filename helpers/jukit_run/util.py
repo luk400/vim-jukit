@@ -111,7 +111,7 @@ def display_outputs(outputs: List[dict], term: str, shell: InteractiveShell):
                     )
                     continue
 
-                if term != "kitty":
+                if term not in ["kitty", "tmux"]:
                     jukit_info("PLOT", color="\u001b[33m")
 
                 im = base64.b64decode(data)

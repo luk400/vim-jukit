@@ -28,7 +28,7 @@ let g:jukit_ipython = get(g:, 'jukit_ipython', split(g:jukit_shell_cmd, '/')[-1]
 let g:jukit_debug = get(g:, 'jukit_debug', 0)
 let g:_jukit_python = split(g:jukit_shell_cmd, '/')[-1] =~ 'python'
 let g:_jukit_md_mark = '°°°'
-let g:jukit_version = 'v1.0.3'
+let g:jukit_version = 'v1.1.0'
 
 " (i)python
 let g:jukit_in_style = get(g:, 'jukit_in_style', 2)
@@ -49,7 +49,7 @@ let g:jukit_outhist_new_os_window = get(g:, 'jukit_outhist_new_os_window', 0)
 " matplotlib
 let g:jukit_mpl_style = get(g:, 'jukit_mpl_style', '') "this value is changed for kitty after version checking below
 let g:jukit_savefig_dpi = get(g:, 'jukit_savefig_dpi', 150)
-let g:jukit_inline_plotting = get(g:, 'jukit_inline_plotting', 1)
+let g:jukit_custom_backend = get(g:, 'jukit_custom_backend', -1)
 let g:jukit_mpl_block = get(g:, 'jukit_mpl_block', 1)
 
 " cell highlighting/syntax
@@ -102,7 +102,7 @@ else
     endif
 endif
 
-let supported_term = ['vimterm', 'nvimterm', 'kitty']
+let supported_term = ['vimterm', 'nvimterm', 'kitty', 'tmux']
 if g:jukit_terminal is# ''
     let g:jukit_terminal = jukit#util#get_terminal()
 elseif index(supported_term, g:jukit_terminal) < 0
@@ -114,6 +114,14 @@ elseif index(supported_term, g:jukit_terminal) < 0
     endif
     echom '[vim-jukit] Invalid value for g:jukit_terminal: ' . s:invalid_term
         \ . ' -> Using `' . g:jukit_terminal . '` instead!'
+endif
+
+if !exists('g:jukit_inline_plotting')
+    if index(['vimterm', 'nvimterm'], g:jukit_terminal) >= 0
+        let g:jukit_inline_plotting = 0
+    else
+        let g:jukit_inline_plotting = 1
+    endif
 endif
 
 
