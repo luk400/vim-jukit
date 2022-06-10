@@ -6,7 +6,7 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 * Structure your code with cell markers and use convenient cell operations
 * Dedicated markdown cells with markdown syntax
 * Seamlessly convert from and to .ipynb notebooks
-* Display plots inside the terminal if you're using kitty terminal and python's matplotlib
+* Display plots inside the terminal if you're using kitty terminal or iTerm2+tmux and python's matplotlib
 * Save outputs of cell executions when using IPython and display saved outputs on demand
 
 
