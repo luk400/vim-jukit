@@ -109,8 +109,6 @@ class StringIOWrapper(object):
             return getattr(self._wrapped_stdout, attr)
         elif hasattr(self._sys_stdout, attr):
             return getattr(self._sys_stdout, attr)
-        else:
-            raise ValueError('Attribute not found on wrapped stdout')
 
     def write(self, text):
         self._wrapped_stdout.write(text)
