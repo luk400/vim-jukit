@@ -61,6 +61,13 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
     - If you're using neovim with kitty, you need to launch kitty with the ``--listen-on`` option and specify an address to listen on ([more information](https://sw.kovidgoyal.net/kitty/invocation.html)). Furthermore, if you want to have different kitty instances simultaneously using this plugin and sending code to split windows, different addresses will need to be specified. One possible way to do this on linux machines is by simply always starting kitty with e.g. `kitty --listen-on=unix:@"$(date +%s%N)"`, which will make sure different kitty instances are launched with different, abstract sockets to listen on. On MacOS it should work using e.g. `kitty --listen-on=/tmp/kitty_"$(date +%s%N)"`. If you want, you can then simply specify an alias (i.e. put `alias jukit_kitty="kitty --listen-on=unix:@"$(date +%s%N)" -o allow_remote_control=yes"` in your .bashrc/.zshrc) which you can use to always start kitty with the necessary arguments.
 * iTerm2+tmux:
     - currently only tested using iTerm2 Build 3.4.15 + tmux version 3.2a
+    - There's a good chance it won't work with a different tmux version. To install the exact version it was tested with, use the following commands:
+        ```
+        wget https://raw.githubusercontent.com/Homebrew/homebrew-core/e44425df5a8b3c8c24073486fa7e355f3ac19657/Formula/tmux.rb
+        brew install ./tmux.rb
+        tmux -V # make sure it says tmux 3.2a
+        brew pin tmux # prevent unintentional upgrade in the future
+        ```
 * to use the `jukit#convert#save_nb_to_file()` function (see function mappings below), make sure `jupyter` is installed in your environment.
 
 ### Installation
