@@ -37,13 +37,9 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 
 ![seperate_os_window_new](https://user-images.githubusercontent.com/57172028/162546384-3e4ba886-a6ac-47a3-96e4-5033fd3f8308.gif)
 
-* **For kitty-terminal users: in-terminal plotting via matplotlib**
+* **For kitty-terminal users (and for iTerm2+tmux users): in-terminal plotting via matplotlib**
 
 ![inline_plotting_new](https://user-images.githubusercontent.com/57172028/162511949-7c521780-a6fb-4a57-b889-7b1e47f5edff.gif)
-
-* **For iTerm2 users: in-terminal plotting in tmux via matplotlib (experimental)**
-
-![tmux_demo](https://user-images.githubusercontent.com/57172028/172963181-a23b61f9-1f6b-4fa1-a895-ecdc4d7b313b.gif)
 
 
 ### Requirements
@@ -59,7 +55,7 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
     - remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf), or alternatively you can also always start kitty using `kitty -o allow_remote_control=yes`
     - ImageMagick for displaying plots in the terminal must be installed (install using e.g. `sudo apt-get install imagemagick`)
     - If you're using neovim with kitty, you need to launch kitty with the ``--listen-on`` option and specify an address to listen on ([more information](https://sw.kovidgoyal.net/kitty/invocation.html)). Furthermore, if you want to have different kitty instances simultaneously using this plugin and sending code to split windows, different addresses will need to be specified. One possible way to do this on linux machines is by simply always starting kitty with e.g. `kitty --listen-on=unix:@"$(date +%s%N)"`, which will make sure different kitty instances are launched with different, abstract sockets to listen on. On MacOS it should work using e.g. `kitty --listen-on=/tmp/kitty_"$(date +%s%N)"`. If you want, you can then simply specify an alias (i.e. put `alias jukit_kitty="kitty --listen-on=unix:@"$(date +%s%N)" -o allow_remote_control=yes"` in your .bashrc/.zshrc) which you can use to always start kitty with the necessary arguments.
-* iTerm2+tmux:
+* iTerm2+tmux (experimental):
     - currently only tested using iTerm2 Build 3.4.15 + tmux version 3.2a
     - There's a good chance it won't work with a different tmux version. To install the exact version it was tested with, use the following commands:
         ```
@@ -68,10 +64,10 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
         tmux -V # make sure it says tmux 3.2a
         brew pin tmux # prevent unintentional upgrade in the future
         ```
-* to use the `jukit#convert#save_nb_to_file()` function (see function mappings below), make sure `jupyter` is installed in your environment.
 * windows users:
     - make sure `python3` - and not just `python` - is a valid command in your terminal, if it's not then set `let g:_jukit_python_os_cmd = 'python'` in your vim config
     - This plugin has not been extensively tested on windows and some features may not work yet. If you encounter any problems, please open an issue and I'll try my best to fix it
+* to use the `jukit#convert#save_nb_to_file()` function (see function mappings below), make sure `jupyter` is installed in your environment.
 
 
 ### Installation
