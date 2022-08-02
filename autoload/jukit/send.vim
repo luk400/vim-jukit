@@ -40,7 +40,7 @@ current_ids = vim.eval('all_ids')
 
 fname = vim.eval("expand('%:p')")
 dir_, f = os.path.split(fname)
-outhist_file = os.path.join(dir_, '.jukit/', f'{os.path.splitext(f)[0]}_outhist.json')
+outhist_file = os.path.join(dir_, '.jukit', f'{os.path.splitext(f)[0]}_outhist.json')
 
 util.clear_obsolete_output(current_ids, outhist_file)
 EOF
@@ -58,9 +58,21 @@ fun! s:send(bufnr, text) abort
     if g:jukit_terminal == 'kitty'
         call jukit#kitty#cmd#send_text(g:jukit_output_title, a:text)
     elseif g:jukit_terminal == 'vimterm'
-        call term_sendkeys(a:bufnr, a:text . "\r")
+        if g:_jukit_is_windows
+            call term_sendkeys(a:bufnr, a:text)
+            exec "sleep " . g:_jukit_send_delay
+            call term_sendkeys(a:bufnr, "\r")
+        else
+            call term_sendkeys(a:bufnr, a:text . "\r")
+        endif
     elseif g:jukit_terminal == 'nvimterm'
-        call chansend(a:bufnr, a:text . "\r")
+        if g:_jukit_is_windows
+            call chansend(a:bufnr, a:text)
+            exec "sleep " . g:_jukit_send_delay
+            call chansend(a:bufnr, "\r")
+        else
+            call chansend(a:bufnr, a:text . "\r")
+        endif
         exe bufwinnr(g:jukit_output_buf) . 'wincmd w'
         call feedkeys("G:wincmd p\<cr>", "nxt")
     elseif g:jukit_terminal == 'tmux'

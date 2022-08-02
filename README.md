@@ -69,6 +69,10 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
         brew pin tmux # prevent unintentional upgrade in the future
         ```
 * to use the `jukit#convert#save_nb_to_file()` function (see function mappings below), make sure `jupyter` is installed in your environment.
+* windows users:
+    - make sure `python3` - and not just `python` - is a valid command in your terminal, if it's not then set `let g:_jukit_python_os_cmd = 'python'` in your vim config
+    - This plugin has not been extensively tested on windows and some features may not work yet. If you encounter any problems, please open an issue and I'll try my best to fix it
+
 
 ### Installation
 

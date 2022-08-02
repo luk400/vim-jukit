@@ -4,7 +4,7 @@ let s:jukit_textcell_regex = b:jukit_md_start . '\_.{-}' . b:jukit_md_end
 fun! s:copy_output(from_id, to_id) abort
 python3 << EOF
 import vim, os, sys
-sys.path.append(vim.eval('jukit#util#plugin_path() . "/helpers"'))
+sys.path.append(vim.eval('jukit#util#plugin_path() . g:_jukit_ps . "helpers"'))
 from ipynb_convert import util
 
 from_id = vim.eval('a:from_id')
@@ -12,7 +12,7 @@ to_id = vim.eval('a:to_id')
 
 fname = vim.eval("expand('%:p')")
 dir_, f = os.path.split(fname)
-outhist_file = os.path.join(dir_, '.jukit/', f'{os.path.splitext(f)[0]}_outhist.json')
+outhist_file = os.path.join(dir_, '.jukit', f'{os.path.splitext(f)[0]}_outhist.json')
 
 util.copy_output(from_id, to_id, outhist_file)
 EOF
@@ -21,7 +21,7 @@ endfun
 fun! s:merge_outputs(cell_above, cell_below, new_id) abort
 python3 << EOF
 import vim, os, sys
-sys.path.append(vim.eval('jukit#util#plugin_path() . "/helpers"'))
+sys.path.append(vim.eval('jukit#util#plugin_path() . g:_jukit_ps . "helpers"'))
 from ipynb_convert import util
 
 cell_above = vim.eval('a:cell_above')
@@ -30,7 +30,7 @@ new_id = vim.eval('a:new_id')
 
 fname = vim.eval("expand('%:p')")
 dir_, f = os.path.split(fname)
-outhist_file = os.path.join(dir_, '.jukit/', f'{os.path.splitext(f)[0]}_outhist.json')
+outhist_file = os.path.join(dir_, '.jukit', f'{os.path.splitext(f)[0]}_outhist.json')
 
 util.merge_outputs(outhist_file, cell_above, cell_below, new_id)
 EOF
@@ -39,14 +39,14 @@ endfun
 fun! s:delete_output(cell_id) abort
 python3 << EOF
 import vim, os, sys
-sys.path.append(vim.eval('jukit#util#plugin_path() . "/helpers"'))
+sys.path.append(vim.eval('jukit#util#plugin_path() . g:_jukit_ps . "helpers"'))
 from ipynb_convert import util
 
 cell_id = vim.eval('a:cell_id')
 
 fname = vim.eval("expand('%:p')")
 dir_, f = os.path.split(fname)
-outhist_file = os.path.join(dir_, '.jukit/', f'{os.path.splitext(f)[0]}_outhist.json')
+outhist_file = os.path.join(dir_, '.jukit', f'{os.path.splitext(f)[0]}_outhist.json')
 
 util.delete_cell_output(outhist_file, cell_id)
 EOF

@@ -1,4 +1,4 @@
-let s:layout_kitten = jukit#util#plugin_path() . '/helpers/layout_kitten.py'
+let s:layout_kitten = jukit#util#plugin_path() . g:_jukit_ps . 'helpers' . g:_jukit_ps . 'layout_kitten.py'
 
 fun! jukit#kitty#layouts#set_layout(layout) abort
     let args = ['kitten', s:layout_kitten, json_encode(a:layout)]

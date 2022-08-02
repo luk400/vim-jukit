@@ -23,12 +23,19 @@ let g:jukit_use_tcomment = get(g:, 'jukit_use_tcomment', 0)
 let g:jukit_comment_mark = get(g:, 'jukit_comment_mark', '#')
 let g:jukit_auto_output_hist = get(g:, 'jukit_auto_output_hist', 0)
 let g:jukit_mappings = get(g:, 'jukit_mappings', 1)
+let g:_jukit_python_os_cmd = get(g:, 'jukit_python_os_cmd', 'python3')
 
 let g:jukit_ipython = get(g:, 'jukit_ipython', split(g:jukit_shell_cmd, '/')[-1] =~ 'ipython')
 let g:jukit_debug = get(g:, 'jukit_debug', 0)
-let g:_jukit_python = split(g:jukit_shell_cmd, '/')[-1] =~ 'python'
+if has('win32')
+    let g:_jukit_is_windows = 1
+    let g:_jukit_python = split(g:jukit_shell_cmd, '\')[-1] =~ 'python'
+else
+    let g:_jukit_is_windows = 0
+    let g:_jukit_python = split(g:jukit_shell_cmd, '/')[-1] =~ 'python'
+endif
 let g:_jukit_md_mark = '°°°'
-let g:jukit_version = 'v1.1.2'
+let g:jukit_version = 'v1.1.3'
 
 " (i)python
 let g:jukit_in_style = get(g:, 'jukit_in_style', 2)
@@ -53,8 +60,12 @@ let g:jukit_custom_backend = get(g:, 'jukit_custom_backend', -1)
 let g:jukit_mpl_block = get(g:, 'jukit_mpl_block', 1)
 
 " cell highlighting/syntax
+if g:_jukit_is_windows
+    let g:jukit_text_syntax_file = get(g:, 'jukit_text_syntax_file', $VIMRUNTIME . '\syntax\' . 'markdown.vim')
+else
+    let g:jukit_text_syntax_file = get(g:, 'jukit_text_syntax_file', $VIMRUNTIME . '/syntax/' . 'markdown.vim')
+endif
 let g:jukit_hl_ext_enabled = get(g:, 'jukit_hl_ext_enabled', '*')
-let g:jukit_text_syntax_file = get(g:, 'jukit_text_syntax_file', $VIMRUNTIME . '/syntax/' . 'markdown.vim')
 let g:jukit_highlight_markers = get(g:, 'jukit_highlight_markers', 1)
 let g:jukit_enable_textcell_bg_hl = get(g:, 'jukit_enable_textcell_bg_hl', 1)
 let g:jukit_enable_textcell_syntax = get(g:, 'jukit_enable_textcell_syntax', 1)
@@ -124,6 +135,14 @@ if !exists('g:jukit_inline_plotting')
     endif
 endif
 
+if g:_jukit_is_windows
+    let g:_jukit_ps = '\\'
+    let g:_jukit_send_delay = "100m"
+    let g:_jukit_is_windows = 1
+else
+    let g:_jukit_ps = '/'
+    let g:_jukit_is_windows = 0
+endif
 
 """"""""""
 " autocmds 

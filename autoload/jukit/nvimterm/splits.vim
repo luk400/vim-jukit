@@ -5,6 +5,20 @@ fun! s:outhist_normal_mode(stay) abort
     call feedkeys("\<c-\>\<c-N>", "nxt")
 endfun
 
+fun! s:chan_send(chan, keys, add_enter) abort
+    if g:_jukit_is_windows
+        call chansend(a:chan, a:keys)
+        if a:add_enter
+            exec "sleep " . g:_jukit_send_delay
+            call chansend(a:chan, "\r")
+        endif
+    elseif a:add_enter
+        call chansend(a:chan, a:keys . "\r")
+    else
+        call chansend(a:chan, a:keys)
+    endif
+endfun
+
 fun! s:setup_term() abort
     let g:_jukit_main_buf = bufnr('%', 1)
     split | term
@@ -20,10 +34,10 @@ fun! jukit#nvimterm#splits#output(...) abort
     let g:jukit_output_buf = ids[1]
 
     if a:0 > 0
-        call chansend(g:jukit_output_title, a:1 . "\r")
+        call s:chan_send(g:jukit_output_title, a:1, 1)
     endif
 
-    call chansend(g:jukit_output_title, jukit#splits#_build_shell_cmd() . "\r")
+    call s:chan_send(g:jukit_output_title, jukit#splits#_build_shell_cmd(), 1)
     call jukit#util#ipython_info_write('import_complete', 0)
 endfun
 
@@ -40,7 +54,7 @@ fun! jukit#nvimterm#splits#history() abort
     let g:jukit_outhist_title = ids[0]
     let g:jukit_outhist_buf = ids[1]
 
-    call chansend(g:jukit_outhist_title, jukit#splits#_build_shell_cmd("outhist") . "\r")
+    call s:chan_send(g:jukit_outhist_title, jukit#splits#_build_shell_cmd("outhist"), 1)
     call jukit#util#ipython_info_write('import_complete', 0)
 
     if g:jukit_auto_output_hist
@@ -99,7 +113,7 @@ fun! jukit#nvimterm#splits#show_last_cell_output(force) abort
 
     if complete[0] && !complete[1]
         " seems hacky
-        call chansend(g:jukit_outhist_title, "")
+        call s:chan_send(g:jukit_outhist_title, "", 0)
     endif
 
     let g:jukit_outhist_last_cell = cell_id
@@ -109,7 +123,7 @@ fun! jukit#nvimterm#splits#show_last_cell_output(force) abort
     let md_cur = search(b:jukit_md_start, 'nbW') > search('|%%--%%| <.*|' . cell_id, 'nbW')
     call winrestview(save_view)
     call jukit#util#ipython_info_write(['outhist_cell', 'is_md'], [cell_id, md_cur])
-    call chansend(g:jukit_outhist_title, '%jukit_out_hist' . "\r")
+    call s:chan_send(g:jukit_outhist_title, '%jukit_out_hist', 1)
     exe bufwinnr(g:jukit_outhist_buf) . 'wincmd w'
     call feedkeys("G:wincmd p\<cr>", "nxt")
 endfun

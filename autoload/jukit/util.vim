@@ -113,8 +113,12 @@ endfun
 
 fun! jukit#util#plugin_path() abort
     " Gets absolute path to the vim-jukit/ folder
-    let plugin_path = split(s:script_path, "/")[:-3]
-    return "/" . join(plugin_path, "/")
+    let plugin_path = split(s:script_path, g:_jukit_ps)[:-3]
+    if g:_jukit_is_windows
+        return join(plugin_path, g:_jukit_ps)
+    else
+        return g:_jukit_ps . join(plugin_path, g:_jukit_ps)
+    endif
 endfun
 
 fun! jukit#util#ipython_info_write(keys, texts) abort
@@ -122,7 +126,7 @@ fun! jukit#util#ipython_info_write(keys, texts) abort
         return
     endif
 
-    let dir = expand('%:p:h') . '/.jukit/'
+    let dir = expand('%:p:h') . g:_jukit_ps . '.jukit' . g:_jukit_ps
     let file = dir . '.jukit_info.json'
     if !isdirectory(dir)
         call mkdir(dir)
@@ -165,7 +169,7 @@ fun! jukit#util#ipython_info_get(keys, ...) abort
         let quiet = 0
     endif
 
-    let dir = expand('%:p:h') . '/.jukit/'
+    let dir = expand('%:p:h') . g:_jukit_ps . '.jukit' . g:_jukit_ps
     let file = dir . '.jukit_info.json'
     if (empty(glob(file)) || !isdirectory(dir)) && !quiet
         echom '[vim-jukit] File ' . file . ' not found!'
@@ -236,7 +240,7 @@ endfun
 fun! jukit#util#get_lang_info() abort
 python3 << EOF
 import vim, os, sys, json
-sys.path.append(vim.eval('jukit#util#plugin_path() . "/helpers"'))
+sys.path.append(vim.eval('jukit#util#plugin_path() . g:_jukit_ps . "helpers"'))
 from ipynb_convert import languages
 
 vim.command(f"let json='{json.dumps(languages)}'")

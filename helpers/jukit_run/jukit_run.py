@@ -155,8 +155,10 @@ class JukitRun(TerminalMagics):
         fname_outhist = os.path.splitext(fname)[0] + "_outhist.json"
 
         self.py_file = py_file
-        self.jukit_dir = os.path.join(dir_, ".jukit/")
-        self.cmd_file = os.path.join(dir_, ".jukit/", ".cmd")
+
+        self.jukit_dir = os.path.join(dir_, ".jukit")
+        self.cmd_file = os.path.join(dir_, ".jukit", ".cmd")
+
         self.info_file = os.path.join(self.jukit_dir, ".jukit_info.json")
         self.outhist_file = os.path.join(self.jukit_dir, fname_outhist)
         self.display_input = display_functions.get(args.in_style)
@@ -268,7 +270,9 @@ class JukitRun(TerminalMagics):
         )
 
         self.shell.prompts = MyPrompt(self.shell)
-        self.shell.run_line_magic("clear", "")
+        if os.name != "nt":
+            self.shell.run_line_magic("clear", "")
+
         x, _ = os.get_terminal_size()
 
         if not os.path.isfile(self.outhist_file):

@@ -13,7 +13,7 @@ if g:jukit_terminal == 'kitty'
             \ . g:jukit_terminal . ' instead!'
     else
         let g:jukit_mpl_style = jukit#util#plugin_path()
-            \ . '/helpers/matplotlib-backend-kitty/backend.mplstyle'
+            \ . g:_jukit_ps . join(['helpers', 'matplotlib-backend-kitty', 'backend.mplstyle'], g:_jukit_ps)
     endif
 endif
 
@@ -161,8 +161,13 @@ fun! jukit#splits#_build_shell_cmd(...) abort
     let is_outhist = a:0 > 0 && a:1 == 'outhist'
 
     if !is_outhist
-        let g:_jukit_python = stridx(split(g:jukit_shell_cmd, '/')[-1], 'python') >= 0
-        let g:jukit_ipython = stridx(split(g:jukit_shell_cmd, '/')[-1], 'ipython') >= 0
+        if g:_jukit_is_windows
+            let g:_jukit_python = stridx(split(g:jukit_shell_cmd, '/')[-1], 'python') >= 0
+            let g:jukit_ipython = stridx(split(g:jukit_shell_cmd, '/')[-1], 'ipython') >= 0
+        else
+            let g:_jukit_python = stridx(split(g:jukit_shell_cmd, '\')[-1], 'python') >= 0
+            let g:jukit_ipython = stridx(split(g:jukit_shell_cmd, '\')[-1], 'ipython') >= 0
+        endif
         let use_py = g:_jukit_python
         let use_ipy = g:jukit_ipython
         let shell_cmd = g:jukit_shell_cmd
@@ -176,10 +181,8 @@ fun! jukit#splits#_build_shell_cmd(...) abort
         return g:jukit_shell_cmd
     endif
 
-    let cmd = shell_cmd . " -i -c "
-        \. "'"
-        \. "import sys;"
-        \. 'sys.path.append("' . jukit#util#plugin_path() . '/helpers")' . ";"
+    let cmd = "import sys;"
+        \. 'sys.path.append("' . jukit#util#plugin_path() . g:_jukit_ps . 'helpers")' . ";"
 
     if g:jukit_inline_plotting
         let cmd = cmd
@@ -226,20 +229,25 @@ fun! jukit#splits#_build_shell_cmd(...) abort
     endif
 
     if use_ipy
-        let pyfile_ws_sub = substitute(expand('%:p'), ' ', '<JUKIT_WS_PH>', 'g')
+        let pyfile_ws_sub = substitute(escape(expand('%:p'), ' \'), ' ', '<JUKIT_WS_PH>', 'g')
         let cmd = cmd
             \. "from IPython import get_ipython;"
             \. "__shell = get_ipython();"
             \. '__shell.run_line_magic("load_ext", "jukit_run");'
             \. '__shell.run_line_magic("jukit_init", "' . pyfile_ws_sub . ' '
             \. g:jukit_in_style . ' --max_size=' . g:jukit_max_size . '");'
-        if !g:jukit_debug
+        if !g:jukit_debug && !g:_jukit_is_windows
             let cmd = cmd . '__shell.run_line_magic("clear", "");'
         endif
     endif
 
-    let cmd = cmd . "'"
-    return cmd
+    if g:_jukit_is_windows
+        let cmd = shell_cmd . " -i -c \"" . escape(cmd, '"') . "\""
+        return cmd
+    else
+        let cmd = shell_cmd . " -i -c '" . cmd . "'"
+        return cmd
+    endif
 endfun
 
 fun! jukit#splits#_get_mpl_style_file() abort

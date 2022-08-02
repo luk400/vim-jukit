@@ -18,9 +18,9 @@ fun! s:convert_to_ipynb(args) abort
         endif
     endif
 
-    let out_file = system("python3 " . jukit#util#plugin_path() 
-        \ . "/helpers/ipynb_convert/convert.py --lang="
-        \ . &ft . ' ' . escape(file_current, ' '))
+    let out_file = system(g:_jukit_python_os_cmd . " " . jukit#util#plugin_path() . g:_jukit_ps
+        \ . join(["helpers", "ipynb_convert", "convert.py "], g:_jukit_ps)
+        \ . "--lang=" . &ft . ' ' . escape(file_current, ' \'))
 
     redraw!
     if !len(a:args)
@@ -36,7 +36,7 @@ fun! s:convert_to_ipynb(args) abort
         return
     endif
     echom '[vim-jukit] Opening file. Press CTRL+C to cancel.'
-    call system(a:args[0] . " " . escape(out_file, ' '))
+    call system(a:args[0] . " " . escape(out_file, ' \'))
 endfun
 
 fun! s:convert_to_script() abort
@@ -44,7 +44,7 @@ fun! s:convert_to_script() abort
 
 python3 << EOF
 import vim, os, sys, json
-sys.path.append(vim.eval('jukit#util#plugin_path() . "/helpers"'))
+sys.path.append(vim.eval('jukit#util#plugin_path() . g:_jukit_ps . "helpers"'))
 from ipynb_convert import convert
 
 in_file = vim.eval('file_current')
@@ -61,8 +61,9 @@ EOF
         endif
     endif
 
-    let cmd = "python3 " . jukit#util#plugin_path() . "/helpers/"
-            \ . "ipynb_convert/convert.py " . escape(file_current, ' ')
+    let cmd = g:_jukit_python_os_cmd . " " . jukit#util#plugin_path() . g:_jukit_ps
+        \. join(["helpers", "ipynb_convert", "convert.py "], g:_jukit_ps)
+        \. escape(file_current, ' \')
     if g:jukit_save_output
         let cmd = cmd . ' --jukit-copy'
     endif
@@ -72,7 +73,7 @@ EOF
         echom '[vim-jukit] Conversion error! ' . response
         return
     endif
-    exe 'e ' . escape(response, ' ')
+    exe 'e ' . escape(response, ' \')
 endfun
 
 fun! jukit#convert#notebook_convert(...) abort
@@ -106,9 +107,9 @@ fun! jukit#convert#save_nb_to_file(run, open, to) abort
     let fname = expand("%:p:r")
     let ipynb_file = fname . '.ipynb'
     let html_theme = get(g:, 'jukit_html_theme', 'dark')
-    call system("python3 " . jukit#util#plugin_path() 
-            \ . "/helpers/ipynb_convert/convert.py --lang="
-            \ . &ft . ' ' . escape(file_current, ' '))
+    call system(g:_jukit_python_os_cmd . " " . jukit#util#plugin_path() . g:_jukit_ps
+        \ . join(["helpers", "ipynb_convert", "convert.py "], g:_jukit_ps)
+        \ . "--lang=" . &ft . ' ' . escape(file_current, ' \'))
 
     let rerun = a:run ? ' --execute' : ''
     let cmd = "jupyter nbconvert --to " . a:to . rerun . " --allow-errors"

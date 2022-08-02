@@ -1,5 +1,19 @@
 call jukit#util#ipython_info_write('terminal', 'vimterm')
 
+fun! s:send_keys(buffer, keys, add_enter) abort
+    if g:_jukit_is_windows
+        call term_sendkeys(a:buffer, a:keys)
+        if a:add_enter
+            exec "sleep " . g:_jukit_send_delay
+            call term_sendkeys(a:buffer, "\r")
+        endif
+    elseif a:add_enter
+        call term_sendkeys(a:buffer, a:keys . "\r")
+    else
+        call term_sendkeys(a:buffer, a:keys)
+    endif
+endfun
+
 fun! s:outhist_job_mode(stay) abort
     if term_getstatus(g:jukit_outhist_title) =~? 'normal'
         exe bufwinnr(g:jukit_outhist_title) . 'wincmd w'
@@ -36,10 +50,10 @@ fun! jukit#vimterm#splits#output(...) abort
     let g:jukit_output_title = s:setup_term()
 
     if a:0 > 0
-        call term_sendkeys(g:jukit_output_title, a:1 . "\r")
+        call s:send_keys(g:jukit_output_title, a:1, 1)
     endif
 
-    call term_sendkeys(g:jukit_output_title, jukit#splits#_build_shell_cmd() . "\r")
+    call s:send_keys(g:jukit_output_title, jukit#splits#_build_shell_cmd(), 1)
     call jukit#util#ipython_info_write('import_complete', 0)
 endfun
 
@@ -51,7 +65,7 @@ endfun
 fun! jukit#vimterm#splits#history() abort
     let g:jukit_outhist_title = s:setup_term()
 
-    call term_sendkeys(g:jukit_outhist_title, jukit#splits#_build_shell_cmd("outhist") . "\r")
+    call s:send_keys(g:jukit_outhist_title, jukit#splits#_build_shell_cmd("outhist"), 1)
     call jukit#util#ipython_info_write('import_complete', 0)
 
     if g:jukit_auto_output_hist
@@ -118,7 +132,7 @@ fun! jukit#vimterm#splits#show_last_cell_output(force) abort
 
     if complete[0] && !complete[1]
         " seems hacky
-        call term_sendkeys(g:jukit_outhist_title, "")
+        call s:send_keys(g:jukit_outhist_title, "", 0)
     endif
 
     let g:jukit_outhist_last_cell = cell_id
@@ -128,7 +142,7 @@ fun! jukit#vimterm#splits#show_last_cell_output(force) abort
     let md_cur = search(b:jukit_md_start, 'nbW') > search('|%%--%%| <.*|' . cell_id, 'nbW')
     call winrestview(save_view)
     call jukit#util#ipython_info_write(['outhist_cell', 'is_md'], [cell_id, md_cur])
-    call term_sendkeys(g:jukit_outhist_title, '%jukit_out_hist' . "\r")
+    call s:send_keys(g:jukit_outhist_title, '%jukit_out_hist', 1)
 endfun
 
 fun! jukit#vimterm#splits#exists(...) abort

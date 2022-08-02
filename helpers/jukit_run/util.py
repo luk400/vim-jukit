@@ -140,9 +140,11 @@ def display_outputs(outputs: List[dict], term: str, shell: InteractiveShell):
             else:
                 jukit_info(f"Output type `{out['output_type']}` could not be displayed")
     except KeyboardInterrupt:
-        shell.run_line_magic("clear", "")
+        if os.name != "nt":
+            shell.run_line_magic("clear", "")
     except BufferError:
-        shell.run_line_magic("clear", "")
+        if os.name != "nt":
+            shell.run_line_magic("clear", "")
 
 
 def check_output_size(captured_out: str, outhist_file: str, max_bytes: int) -> str:

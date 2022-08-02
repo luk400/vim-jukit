@@ -108,7 +108,8 @@ def script_to_nb(py_str, out_hist, language="python"):
 def convert(in_file, language, jukit_copy, create=True):
     dir_, fname = os.path.split(in_file)
     name, in_ext = os.path.splitext(fname)
-    jukit_dir = os.path.join(dir_, ".jukit/")
+    jukit_dir = os.path.join(dir_, ".jukit")
+
     outhist_file = os.path.join(jukit_dir, f"{name}_outhist.json")
 
     if in_ext != ".ipynb" and jukit_copy:
