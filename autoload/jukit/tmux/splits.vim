@@ -1,4 +1,4 @@
-call jukit#util#ipython_info_write('terminal', 'tmux')
+call jukit#util#ipython_info_write({'terminal': 'tmux'})
 
 fun! s:wait_for_pane(pane, num_tries, delay)
     let num_tries = a:num_tries
@@ -28,7 +28,7 @@ fun! jukit#tmux#splits#output(...) abort
     endif
 
     call jukit#tmux#cmd#send_text(g:jukit_output_title, jukit#splits#_build_shell_cmd())
-    call jukit#util#ipython_info_write('import_complete', 0)
+    call jukit#util#ipython_info_write({'import_complete': 0})
 endfun
 
 fun! jukit#tmux#splits#term(...) abort
@@ -58,7 +58,7 @@ fun! jukit#tmux#splits#history() abort
     endif
 
     call jukit#tmux#cmd#send_text(g:jukit_outhist_title, jukit#splits#_build_shell_cmd('outhist'))
-    call jukit#util#ipython_info_write('import_complete', 0)
+    call jukit#util#ipython_info_write({'import_complete': 0})
 
     " TODO: the following shouldn't be necessary. But otherwise if output
     " split and history split are started together for some reason proportions
@@ -114,12 +114,8 @@ fun! jukit#tmux#splits#show_last_cell_output(force) abort
 
     let g:jukit_outhist_last_cell = cell_id
 
-    let save_view = winsaveview()
-    call cursor(line('.')+1, '$')
-    let md_cur = search(b:jukit_md_start, 'nbW') > search('|%%--%%| <.*|' . cell_id, 'nbW')
-    call winrestview(save_view)
-    call jukit#util#ipython_info_write(['outhist_cell', 'outhist_title', 'is_md'],
-        \ [cell_id, g:jukit_outhist_title, md_cur])
+    let md_cur = jukit#util#is_md_cell(cell_id)
+    call jukit#util#ipython_info_write({'outhist_cell': cell_id, 'outhist_title': g:jukit_outhist_title, 'is_md': md_cur})
 
     " first quit copy mode if active
     call jukit#tmux#cmd#tmux_command('copy-mode', '-t', g:jukit_outhist_title, '-q')

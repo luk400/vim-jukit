@@ -52,15 +52,24 @@ fun! jukit#splits#split_exists(...) abort
 endfun
 
 fun! jukit#splits#out_hist_scroll(down) abort
-    exe 'call jukit#' . g:jukit_terminal . '#splits#out_hist_scroll(a:down)'
+    if !g:jukit_hist_use_ueberzug
+        exe 'call jukit#' . g:jukit_terminal . '#splits#out_hist_scroll(a:down)'
+    else
+        call jukit#ueberzug#scroll(a:down)
+    endif
 endfun
 
 fun! jukit#splits#show_last_cell_output(force) abort
-    if !jukit#splits#split_exists('outhist')
+    if !jukit#splits#split_exists('outhist') && !g:jukit_hist_use_ueberzug
         echom '[vim-jukit] Output-history split not found. Please create if first.'
         return
     endif
-    exe 'call jukit#' . g:jukit_terminal . '#splits#show_last_cell_output(a:force)'
+
+    if !g:jukit_hist_use_ueberzug
+        exe 'call jukit#' . g:jukit_terminal . '#splits#show_last_cell_output(a:force)'
+    else
+        exe 'call jukit#ueberzug#show_last_cell_output(a:force)'
+    endif
 endfun
 
 fun! jukit#splits#close_history() abort
@@ -101,6 +110,13 @@ fun! jukit#splits#history() abort
             \. "before creating a new one!"
         return
     endif
+
+    if g:jukit_hist_use_ueberzug
+        echom "[vim-jukit] No output-history split possible when using"
+            \. "`g:jukit_hist_use_ueberzug = 1`"
+        return
+    endif
+
     call s:create_autocmd_close_splits()
 
     exe 'call jukit#' . g:jukit_terminal . '#splits#history()'
@@ -228,14 +244,27 @@ fun! jukit#splits#_build_shell_cmd(...) abort
             \. 'plt.style.use("' . mpl_style . '")' . ";"
     endif
 
+    let ueberzug_opt = ""
+    if g:jukit_hist_use_ueberzug
+        let ueberzug_opt = " --ueberzug_opt="
+            \. g:jukit_ueberzug_border_color . ","
+            \. g:jukit_ueberzug_theme . ","
+            \. g:jukit_ueberzug_python_cmd . ","
+            \. g:jukit_ueberzug_jupyter_cmd . ","
+            \. g:jukit_ueberzug_cutycapt_cmd . ","
+            \. g:jukit_ueberzug_imagemagick_cmd
+    endif
+
     if use_ipy
         let pyfile_ws_sub = substitute(escape(expand('%:p'), ' \'), ' ', '<JUKIT_WS_PH>', 'g')
+        let store_png = g:jukit_hist_use_ueberzug ? ' --store_png' : ''
         let cmd = cmd
             \. "from IPython import get_ipython;"
             \. "__shell = get_ipython();"
             \. '__shell.run_line_magic("load_ext", "jukit_run");'
             \. '__shell.run_line_magic("jukit_init", "' . pyfile_ws_sub . ' '
-            \. g:jukit_in_style . ' --max_size=' . g:jukit_max_size . '");'
+            \. g:jukit_in_style . ' --max_size=' . g:jukit_max_size . store_png
+            \. ueberzug_opt . '");'
         if !g:jukit_debug && !g:_jukit_is_windows
             let cmd = cmd . '__shell.run_line_magic("clear", "");'
         endif

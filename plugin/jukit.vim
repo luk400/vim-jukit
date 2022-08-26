@@ -25,6 +25,7 @@ let g:jukit_auto_output_hist = get(g:, 'jukit_auto_output_hist', 0)
 let g:jukit_mappings = get(g:, 'jukit_mappings', 1)
 let g:_jukit_python_os_cmd = get(g:, 'jukit_python_os_cmd', 'python3')
 
+let g:jukit_html_viewer = get(g:, 'jukit_html_viewer', 'xdg-open')
 let g:jukit_ipython = get(g:, 'jukit_ipython', split(g:jukit_shell_cmd, '/')[-1] =~ 'ipython')
 let g:jukit_debug = get(g:, 'jukit_debug', 0)
 if has('win32')
@@ -35,7 +36,7 @@ else
     let g:_jukit_python = split(g:jukit_shell_cmd, '/')[-1] =~ 'python'
 endif
 let g:_jukit_md_mark = '°°°'
-let g:jukit_version = 'v1.1.3'
+let g:jukit_version = 'v1.2.0'
 
 " (i)python
 let g:jukit_in_style = get(g:, 'jukit_in_style', 2)
@@ -69,6 +70,23 @@ let g:jukit_hl_ext_enabled = get(g:, 'jukit_hl_ext_enabled', '*')
 let g:jukit_highlight_markers = get(g:, 'jukit_highlight_markers', 1)
 let g:jukit_enable_textcell_bg_hl = get(g:, 'jukit_enable_textcell_bg_hl', 1)
 let g:jukit_enable_textcell_syntax = get(g:, 'jukit_enable_textcell_syntax', 1)
+
+" ueberzug
+let g:jukit_hist_use_ueberzug = get(g:, 'jukit_hist_use_ueberzug', 0)
+let g:jukit_ueberzug_use_cached = get(g:, 'jukit_ueberzug_use_cached', 1)
+let g:jukit_ueberzug_use_cached_md = get(g:, 'jukit_ueberzug_use_cached_md', 1)
+let g:jukit_ueberzug_pos = get(g:, 'jukit_ueberzug_pos', [0.25, 0.25, 0.4, 0.6])
+let g:jukit_ueberzug_pos_noout = get(g:, 'jukit_ueberzug_pos_noout', [0.25, 0.25, 0.4, 0.6])
+let g:jukit_ueberzug_term_hw_ratio = get(g:, 'jukit_ueberzug_term_hw_ratio', -1)
+let g:_jukit_mdnb_timer = get(g:, '_jukit_mdnb_timer', 0.5)
+
+let g:jukit_kill_ueberzug_on_focus_lost = get(g:, 'jukit_kill_ueberzug_on_focus_lost', 1)
+let g:jukit_ueberzug_border_color = get(g:, 'jukit_ueberzug_border_color', 'blue')
+let g:jukit_ueberzug_theme = get(g:, 'jukit_ueberzug_theme', 'dark')
+let g:jukit_ueberzug_python_cmd = get(g:, 'jukit_ueberzug_python_cmd', 'python3')
+let g:jukit_ueberzug_jupyter_cmd = get(g:, 'jukit_ueberzug_jupyter_cmd', 'jupyter')
+let g:jukit_ueberzug_cutycapt_cmd = get(g:, 'jukit_ueberzug_cutycapt_cmd', 'cutycapt')
+let g:jukit_ueberzug_imagemagick_cmd = get(g:, 'jukit_ueberzug_imagemagick_cmd', 'convert')
 
 " requirements
 let g:jukit_required_kitty_version = [0,22,0]
@@ -199,13 +217,16 @@ if g:jukit_mappings == 1
         nnoremap <leader>ohd :call jukit#splits#close_output_and_history(1)<cr>
     endif
     if !hasmapto('jukit#splits#out_hist_scroll(1)', 'n')
-        nnoremap <leader>j :call jukit#splits#out_hist_scroll(1)<cr>
+        nnoremap J :call jukit#splits#out_hist_scroll(1)<cr>
     endif
     if !hasmapto('jukit#splits#out_hist_scroll(0)', 'n')
-        nnoremap <leader>k :call jukit#splits#out_hist_scroll(0)<cr>
+        nnoremap K :call jukit#splits#out_hist_scroll(0)<cr>
     endif
     if !hasmapto('jukit#splits#show_last_cell_output(1)', 'n')
         nnoremap <leader>so :call jukit#splits#show_last_cell_output(1)<cr>
+    endif
+    if !hasmapto('jukit#ueberzug#set_default_pos()', 'n')
+        nnoremap <leader>pos :call jukit#ueberzug#set_default_pos()<cr>
     endif
     if !hasmapto('jukit#splits#toggle_auto_hist()', 'n')
         nnoremap <leader>ah :call jukit#splits#toggle_auto_hist()<cr>
@@ -263,10 +284,10 @@ if g:jukit_mappings == 1
         nnoremap <leader>cj :call jukit#cells#move_down()<cr>
     endif
     if !hasmapto('jukit#cells#delete_outputs(0)', 'n')
-        nnoremap <leader>do :call jukit#cells#delete_outputs(0)<cr>
+        nnoremap <leader>ddo :call jukit#cells#delete_outputs(0)<cr>
     endif
     if !hasmapto('jukit#cells#delete_outputs(1)', 'n')
-        nnoremap <leader>dao :call jukit#cells#delete_outputs(1)<cr>
+        nnoremap <leader>dda :call jukit#cells#delete_outputs(1)<cr>
     endif
 
     " ipynb conversion

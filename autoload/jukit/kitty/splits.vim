@@ -1,4 +1,4 @@
-call jukit#util#ipython_info_write('terminal', 'kitty')
+call jukit#util#ipython_info_write({'terminal': 'kitty'})
 
 fun! jukit#kitty#splits#output(...) abort
     let g:jukit_output_title=jukit#util#get_unique_id()
@@ -25,7 +25,7 @@ fun! jukit#kitty#splits#output(...) abort
     endif
 
     call jukit#kitty#cmd#send_text(g:jukit_output_title, jukit#splits#_build_shell_cmd())
-    call jukit#util#ipython_info_write('import_complete', 0)
+    call jukit#util#ipython_info_write({'import_complete': 0})
 endfun
 
 fun! jukit#kitty#splits#term(...) abort
@@ -63,7 +63,7 @@ fun! jukit#kitty#splits#history() abort
     endif
 
     call jukit#kitty#cmd#send_text(g:jukit_outhist_title, jukit#splits#_build_shell_cmd('outhist'))
-    call jukit#util#ipython_info_write('import_complete', 0)
+    call jukit#util#ipython_info_write({'import_complete': 0})
 endfun
 
 fun! jukit#kitty#splits#out_hist_scroll(down) abort
@@ -114,13 +114,8 @@ fun! jukit#kitty#splits#show_last_cell_output(force) abort
     endif
 
     let g:jukit_outhist_last_cell = cell_id
-
-    let save_view = winsaveview()
-    call cursor(line('.')+1, '$')
-    let md_cur = search(b:jukit_md_start, 'nbW') > search('|%%--%%| <.*|' . cell_id, 'nbW')
-    call winrestview(save_view)
-    call jukit#util#ipython_info_write(['outhist_cell', 'outhist_title', 'is_md'],
-        \ [cell_id, g:jukit_outhist_title, md_cur])
+    let md_cur = jukit#util#is_md_cell(cell_id)
+    call jukit#util#ipython_info_write({'outhist_cell': cell_id, 'outhist_title': g:jukit_outhist_title, 'is_md': md_cur})
     call jukit#kitty#cmd#send_text(g:jukit_outhist_title, '%jukit_out_hist')
 endfun
 

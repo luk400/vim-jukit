@@ -1,4 +1,18 @@
-call jukit#util#ipython_info_write('terminal', 'vimterm')
+call jukit#util#ipython_info_write({'terminal': 'vimterm'})
+
+fun! s:send_keys(buffer, keys, add_enter) abort
+    if g:_jukit_is_windows
+        call term_sendkeys(a:buffer, a:keys)
+        if a:add_enter
+            exec "sleep " . g:_jukit_send_delay
+            call term_sendkeys(a:buffer, "\r")
+        endif
+    elseif a:add_enter
+        call term_sendkeys(a:buffer, a:keys . "\r")
+    else
+        call term_sendkeys(a:buffer, a:keys)
+    endif
+endfun
 
 fun! s:send_keys(buffer, keys, add_enter) abort
     if g:_jukit_is_windows
@@ -110,10 +124,8 @@ fun! jukit#vimterm#splits#show_last_cell_output(force) abort
     endif
 
     call jukit#util#ipython_info_write(
-        \ ['vimterm_x', 'vimterm_y'],
-        \ [winwidth(bufwinnr(g:jukit_outhist_title)), 
-        \ winheight(bufwinnr(g:jukit_outhist_title))]
-        \ )
+        \ {'vimterm_x': winwidth(bufwinnr(g:jukit_outhist_title), 
+        \ 'vimterm_y': winheight(bufwinnr(g:jukit_outhist_title)}
 
     let cell_id = jukit#util#get_current_cell_id()
     

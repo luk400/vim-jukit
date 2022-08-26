@@ -121,7 +121,8 @@ fun! jukit#util#plugin_path() abort
     endif
 endfun
 
-fun! jukit#util#ipython_info_write(keys, texts) abort
+fun! jukit#util#ipython_info_write(dict) abort
+    " TODO: is this check necessary?
     if !g:jukit_ipython
         return
     endif
@@ -138,18 +139,7 @@ fun! jukit#util#ipython_info_write(keys, texts) abort
         let json = {}
     endif
 
-    if type(a:keys) == 3
-        if len(a:keys) != len(a:texts)
-            echom "[vim-jukit] Keys and texts must have same length!"
-            return
-        endif
-
-        for i in range(len(a:keys))
-            let json[a:keys[i]] = a:texts[i]
-        endfor
-    else
-        let json[a:keys] = a:texts
-    endif
+    call extend(json, a:dict, "force")
     call writefile([json_encode(json)], file, 'b')
 endfun
 
@@ -264,6 +254,10 @@ EOF
 endfun
 
 fun! jukit#util#md_buffer_vars() abort
+    " TODO: this function shouldn't be unnecessarily called so often (even if
+    " it doesn't take much time) as it is now, it's ugly. just init the buffer
+    " variables in plugin/init.vim instead of everytime a buffer variable is
+    " needed! then i can drop the exists() check below
     if exists('b:jukit_md_start')
         return
     endif
@@ -290,4 +284,12 @@ fun! jukit#util#is_valid_version(vcur, vreq) abort
     let valid3 = a:vcur[0] > a:vreq[0] || a:vcur[1] > a:vreq[1] || valid1 && valid2 && a:vcur[2] >= a:vreq[2]
 
     return (valid1 && valid2 && valid3)
+endfun
+
+fun! jukit#util#is_md_cell(cell_id) abort
+    let save_view = winsaveview()
+    call cursor(line('.')+1, '$')
+    let md_cur = search(b:jukit_md_start, 'nbW') > search('|%%--%%| <.*|' . a:cell_id, 'nbW')
+    call winrestview(save_view)
+    return md_cur
 endfun

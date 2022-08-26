@@ -1,4 +1,5 @@
 import json, sys, os, random, string, re
+import shutil
 from typing import Union
 
 
@@ -53,9 +54,18 @@ def create_output_history(outhist_file, nb=None):
 
 
 def delete_cell_output(outhist_file, cell_id=None):
+    jukit_path, fname = os.path.split(outhist_file)
+    fname_noext = os.path.splitext(fname)[0]
+    img_dir = os.path.join(jukit_path, f"{fname_noext}_img")
+
     if cell_id is None:
         with open(outhist_file, "w+") as f:
             json.dump({}, f)
+
+        if os.path.isdir(img_dir):
+            shutil.rmtree(img_dir)
+
+        return
 
     outhist = get_json(outhist_file)
 
@@ -65,6 +75,10 @@ def delete_cell_output(outhist_file, cell_id=None):
     outhist.pop(cell_id)
     with open(outhist_file, "w+") as f:
         json.dump(outhist, f)
+
+    img_file = os.path.join(img_dir, f"test_outhist_{cell_id}.png")
+    if os.path.isfile(img_file):
+        os.remove(img_file)
 
 
 def copy_output(from_id: str, to_ids: Union[str, list], outhist_file: str):
@@ -84,7 +98,7 @@ def copy_output(from_id: str, to_ids: Union[str, list], outhist_file: str):
         json.dump(outhist, f)
 
 
-def clear_obsolete_output(current_ids, outhist_file):
+def clear_obsolete_output(current_ids, outhist_file, clear_img = True):
     outhist = get_json(outhist_file)
 
     keys_deleted = False
@@ -98,6 +112,25 @@ def clear_obsolete_output(current_ids, outhist_file):
 
     with open(outhist_file, "w+") as f:
         json.dump(outhist, f)
+
+    if not clear_img:
+        return
+
+    dir_, fname = os.path.split(outhist_file)
+    fname_noext = os.path.splitext(fname)[0]
+    img_dir = os.path.join(dir_, f"{fname_noext}_img")
+
+    if not os.path.isdir(img_dir):
+        return
+    
+    _remove_obsolete_imgs(img_dir, current_ids)
+
+
+def _remove_obsolete_imgs(dir_, ids):
+    """ remove files in dir_ which don't contain any of the ids """
+    for f in os.listdir(dir_):
+        if not any(id_ in f for id_ in ids):
+            os.remove(os.path.join(dir_, f))
 
 
 def merge_outputs(outhist_file, cell_above, cell_below, new_id):

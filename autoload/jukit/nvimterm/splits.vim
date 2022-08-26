@@ -1,4 +1,4 @@
-call jukit#util#ipython_info_write('terminal', 'nvimterm')
+call jukit#util#ipython_info_write({'terminal': 'nvimterm'})
 
 fun! s:outhist_normal_mode(stay) abort
     exe bufwinnr(g:jukit_outhist_buf) . 'wincmd w'

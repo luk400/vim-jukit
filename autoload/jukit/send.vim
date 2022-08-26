@@ -95,7 +95,7 @@ fun! s:send_to_split(magic_cmd, code, save, ...) abort
             let param = param . ' -p'
         endif
 
-        call jukit#util#ipython_info_write(['cmd_opts', 'cmd'], [param, a:code])
+        call jukit#util#ipython_info_write({'cmd_opts': param, 'cmd': a:code})
         call s:send(g:jukit_output_title, a:magic_cmd)
     else
         call s:send(g:jukit_output_title, a:code)
@@ -153,10 +153,7 @@ fun! jukit#send#section(move_next) abort
     let code = join(getline(pos1, pos2), "\n")
 
     let cell_id = jukit#util#get_current_cell_id()
-    let save_view = winsaveview()
-    call cursor(line('.')+1, '$')
-    let md_cur = search(b:jukit_md_start, 'nbW') > search('|%%--%%| <.*|' . cell_id, 'nbW')
-    call winrestview(save_view)
+    let md_cur = jukit#util#is_md_cell(cell_id)
     let param = g:jukit_ipy_opts . ' --cell_id=' . cell_id
     if g:jukit_save_output && !md_cur
         let param = param . ' -s'

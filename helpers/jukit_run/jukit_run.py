@@ -8,9 +8,11 @@ from pygments.token import Token
 
 import io, json, re, os, sys
 from matplotlib import pyplot as plt
+from multiprocessing import Process
 from typing import Optional, Any, TextIO
 
 from ipynb_convert import add_to_output_history, HEADER
+from ueberzug_output.show_output import create_png
 from . import util
 from .input_styles import display_functions, display_style_2
 
@@ -147,6 +149,13 @@ class JukitRun(TerminalMagics):
     @argument("py_file", type=str, help="Absolute path to current .py file")
     @argument("in_style", type=int, help="Input-display style to use")
     @argument("--max_size", type=int, help="Max size of .ipynb file in MiB", default=20)
+    @argument("--store_png", action="store_true", help="Store images for ueberzug")
+    @argument(
+        "--ueberzug_opt",
+        default=None,
+        type=str,
+        help="options for ueberzug script",
+    )
     @line_magic
     def jukit_init(self, param: str):
         args = parse_argstring(self.jukit_init, param)
@@ -154,6 +163,11 @@ class JukitRun(TerminalMagics):
         dir_, fname = os.path.split(py_file)
         fname_outhist = os.path.splitext(fname)[0] + "_outhist.json"
 
+        self.ueberzug_options = args.ueberzug_opt
+        if self.ueberzug_options is not None:
+            self.ueberzug_options = self.ueberzug_options.split(',')
+
+        self.store_png = args.store_png
         self.py_file = py_file
 
         self.jukit_dir = os.path.join(dir_, ".jukit")
@@ -176,6 +190,7 @@ class JukitRun(TerminalMagics):
 
     @magic_arguments()
     @argument("--cell_id", type=str)
+    @argument("--create_png", action="store_true")
     @cell_magic
     def jukit_capture(self, param: str, cell: str):
         args = parse_argstring(self.jukit_capture, param)
@@ -213,6 +228,17 @@ class JukitRun(TerminalMagics):
                 add_to_output_history(
                     captured_out, args.cell_id, self.outhist_file, exec_result
                 )
+                if args.create_png and self.ueberzug_options is not None:
+                    p = Process(
+                        target=create_png,
+                        args=(
+                            args.cell_id,
+                            self.outhist_file,
+                            False,
+                            self.ueberzug_options,
+                        ),
+                    )
+                    p.start()
 
     @line_magic
     def jukit_run(self, cmd_param: Optional[str] = None):
@@ -235,7 +261,9 @@ class JukitRun(TerminalMagics):
         else:
             sys.stdout.write("\r")
 
-        if "s" in opts and cmd not in ["", "\n"]:
+        if "s" in opts and self.store_png and cmd not in ["", "\n"]:
+            cmd = f"%%jukit_capture --cell_id={opts.cell_id} --create_png\n" + cmd
+        elif "s" in opts and cmd not in ["", "\n"]:
             cmd = f"%%jukit_capture --cell_id={opts.cell_id}\n" + cmd
 
         with monitor_execution_count(self.shell):

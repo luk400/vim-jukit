@@ -29,6 +29,10 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 
 ![output_saving_new](https://user-images.githubusercontent.com/57172028/162511959-d2b9393a-21b1-4781-b415-e07213ab8313.gif)
 
+* **(Experimental) display saved outputs in terminal using überzug**
+
+![überzug_new](https://user-images.githubusercontent.com/57172028/186850822-4ae0768d-bce7-4718-9f97-174774a34be1.gif)
+
 * **Preview file as pdf, html**
 
 ![convert_to_html_pdf_new](https://user-images.githubusercontent.com/57172028/162511885-03675901-c701-4c9e-be41-bb68ef8a2707.gif)
@@ -68,6 +72,18 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
     - make sure `python3` - and not just `python` - is a valid command in your terminal, if it's not then set `let g:_jukit_python_os_cmd = 'python'` in your vim config
     - This plugin has not been extensively tested on windows and some features may not work yet. If you encounter any problems, please open an issue and I'll try my best to fix it
 * to use the `jukit#convert#save_nb_to_file()` function (see function mappings below), make sure `jupyter` is installed in your environment.
+* überzug (only for linux users):
+    - required python packages:
+        - pillow
+        - beautifulsoup4
+        - ueberzug
+        - numpy
+        - nbconvert >= 6.4.4
+    - CLI tools:
+        - imagemagick
+        - cutycapt (alternatively you can also use wkhtmltoimage, if you decide to use wkhtmltoimage, `let g:jukit_ueberzug_cutycapt_cmd = '/path/to/wkhtmltoimage'` has to specified in your vim config)
+
+
 
 
 ### Installation
@@ -172,7 +188,7 @@ let g:jukit_save_output = 0
 "    - Whether to save ipython output or not. This is the default value if ipython is not used.
 
 let g:jukit_clean_outhist_freq = 60 * 10
-"    - Frequency in seconds with which to delete saved ipython output of cells which are not present anymore. (After executing a cell of a buffer for the first time in a session, a CursorHold autocmd is created for this buffer which checks whether the last time obsolete output got deleted was more than `g:jukit_clean_outhist_freq` seconds ago, and if so, deletes all saved output of cells which are not present in the buffer anymore from the output-history-json)
+"    - Frequency in seconds with which to delete saved ipython output (including cached überzug images) of cells which are not present anymore. (After executing a cell of a buffer for the first time in a session, a CursorHold autocmd is created for this buffer which checks whether the last time obsolete output got deleted was more than `g:jukit_clean_outhist_freq` seconds ago, and if so, deletes all saved output of cells which are not present in the buffer anymore from the output-history-json)
 ```
 
 ###### Matplotlib
@@ -248,6 +264,39 @@ let g:jukit_layout = {
 " To not use any layout, specify `let g:jukit_layout=-1`
 ```
 
+###### Überzug
+```vim
+let g:jukit_hist_use_ueberzug = 0
+"   - Set to 1 to use Überzug to display saved outputs instead of an ipython split window
+let g:jukit_ueberzug_use_cached = 1
+"   - Whether to cache created images of saved outputs. If set to 0, will convert saved outputs to png from scratch each time. Note that this will make displaying saved outputs significantly slower. 
+let g:jukit_ueberzug_pos = [0.25, 0.25, 0.4, 0.6]
+"   - position and dimension of Überzug window WITH output split present - [x, y, width, height]. Use `:call jukit#ueberzug#set_default_pos()` to modify/visualize.
+let g:jukit_ueberzug_pos_noout = [0.25, 0.25, 0.4, 0.6]
+"   - position and dimension of Überzug window WITHOUT output split present - [x, y, width, height]. Use `:call jukit#ueberzug#set_default_pos()` to modify/visualize.
+let g:jukit_kill_ueberzug_on_focus_lost = 1
+"   - whether to kill ueberzug when the focus to neovim is lost (detecting focus might only work on neovim). if set to 0, the ueberzug image keeps being displayed even when neovim loses focus (e.g. when switching tabs in terminal).
+
+let g:jukit_ueberzug_border_color = get(g:, 'jukit_ueberzug_border_color', 'blue')
+"   - border color of Überzug images
+let g:jukit_ueberzug_theme = 'dark'
+"   - choose dark or light theme for markdown cells
+let g:jukit_ueberzug_term_hw_ratio = -1
+"   - this is relevant in case the shown ueberzug image is cut off horizontally. In that case, the determined width/height ratio of your terminal cells is determined incorrectly. A value of -1 means the ratio should be determined automatically. A ratio of 2.2 is used by default if the ratio can't be determined automatically. If you get a cut off image, try setting this parameter and vary the values around 2.0 (e.g. `let g:jukit_ueberzug_term_hw_ratio = 2.3` or `let g:jukit_ueberzug_term_hw_ratio = 1.9`) until the image is displayed correctly to determine your needed ratio.
+let g:jukit_ueberzug_python_cmd = 'python3'
+"   - path to python3 executable for which the überzug requirements (beautifulsoup4, pillow, ueberzug) are installed. By default it just uses the python3 command found in your environment. If you started an output split in a virtual environment, make sure that you either have all the requirements in the virtual requirements or set the absolute path to the python3 command.
+let g:jukit_ueberzug_jupyter_cmd = 'jupyter'
+"   - path to jupyter executable. By default it just uses the jupyter command found in your environment. If you started an output split in a virtual environment, make sure that you either have jupyter installed in that environment or set the absolute path to the python3 command.
+let g:jukit_ueberzug_cutycapt_cmd = 'cutycapt'
+"   - path to cutycapt executable
+let g:jukit_ueberzug_imagemagick_cmd = 'convert'
+"   - path to imagemagick (`convert` command) executable
+```
+
+*Notes:*
+ * *If you're using ueberzug with virtual environments, be sure that all required packages and commands are available in that environment **OR** specify absolute paths in ueberzug variables above*
+ * *If ueberzug is used and the python process is killed while the saved output is converted to an image (which is done automatically each time a cell is executed), it's possible that a template image (i.e. update images which are shown during the process of converting) is cached as the final image and so ueberzug will be stuck displaying this image. If this ever happens, you can simply use `:let g:jukit_ueberzug_use_cached = 0 | call jukit#splits#show_last_cell_output(1) | let g:jukit_ueberzug_use_cached = 1` to recreate the image (or you can just re-execute the cell, which will also recreate the image)*
+
 ### Functions and Default Mappings
 For function explanations see the comments below each mapping
 ###### Splits
@@ -312,9 +361,9 @@ nnoremap <leader>ck :call jukit#cells#move_up()<cr>
 "   - Move current cell up
 nnoremap <leader>cj :call jukit#cells#move_down()<cr>
 "   - Move current cell down
-nnoremap <leader>do :call jukit#cells#delete_outputs(0)<cr>
+nnoremap <leader>ddo :call jukit#cells#delete_outputs(0)<cr>
 "   - Delete saved output of current cell. Argument: Whether to delete all saved outputs (1) or only saved output of current cell (0)
-nnoremap <leader>dao :call jukit#cells#delete_outputs(1)<cr>
+nnoremap <leader>dda :call jukit#cells#delete_outputs(1)<cr>
 "   - Delete saved outputs of all cells. Argument: Whether to delete all saved outputs (1) or only saved output of current cell (0)
 ```
 ###### ipynb conversion
@@ -329,6 +378,12 @@ nnoremap <leader>pd :call jukit#convert#save_nb_to_file(0,1,'pdf')<cr>
 "   - Convert file to pdf (including all saved outputs) and open it using the command specified in `g:jukit_pdf_viewer'. If `g:jukit_pdf_viewer` is not defined, then will default to `g:jukit_pdf_viewer='xdg-open'`. Arguments: 1.: Whether to rerun all cells when converting 2.: Whether to open it after converting 3.: filetype to convert to
 nnoremap <leader>rpd :call jukit#convert#save_nb_to_file(1,1,'pdf')<cr>
 "   - same as above, but will (re-)run all cells when converting to pdf
+```
+
+###### Überzug
+```vim
+nnoremap <leader>pos :call jukit#ueberzug#set_default_pos()<cr>
+"   - set position and dimension of überzug window
 ```
 
 ### Commands
