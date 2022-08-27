@@ -29,7 +29,7 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 
 ![output_saving_new](https://user-images.githubusercontent.com/57172028/162511959-d2b9393a-21b1-4781-b415-e07213ab8313.gif)
 
-* **Optionally display saved outputs as images using [überzug](https://github.com/seebye/ueberzug) instead of printing in split window (experimental)**
+* **Optionally display saved outputs in terminal as images using [überzug](https://github.com/seebye/ueberzug) instead of printing in split window (experimental)**
 
 ![überzug_new](https://user-images.githubusercontent.com/57172028/186850822-4ae0768d-bce7-4718-9f97-174774a34be1.gif)
 
