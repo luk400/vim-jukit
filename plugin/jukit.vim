@@ -36,7 +36,7 @@ else
     let g:_jukit_python = split(g:jukit_shell_cmd, '/')[-1] =~ 'python'
 endif
 let g:_jukit_md_mark = '°°°'
-let g:jukit_version = 'v1.2.1'
+let g:jukit_version = 'v1.3.1'
 
 " (i)python
 let g:jukit_in_style = get(g:, 'jukit_in_style', 2)
@@ -288,6 +288,12 @@ if g:jukit_mappings == 1
     endif
     if !hasmapto('jukit#cells#delete_outputs(1)', 'n')
         nnoremap <leader>dda :call jukit#cells#delete_outputs(1)<cr>
+    endif
+    if !hasmapto('jukit#cells#jump_to_next_cell()', 'n')
+        nnoremap <leader>J :call jukit#cells#jump_to_next_cell()<cr>
+    endif
+    if !hasmapto('jukit#cells#jump_to_previous_cell()', 'n')
+        nnoremap <leader>K :call jukit#cells#jump_to_previous_cell()<cr>
     endif
 
     " ipynb conversion

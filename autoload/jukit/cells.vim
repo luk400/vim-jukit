@@ -103,6 +103,30 @@ fun! s:set_marker_below(id1, id2) abort
     endif
 endfun
 
+fun! jukit#cells#jump_to_next_cell() abort
+    let next_cell_pos = search('|%%--%%|', 'nW')
+    if next_cell_pos == 0
+        return
+    endif
+    call cursor(next_cell_pos+1, 1)
+endfun
+
+fun! jukit#cells#jump_to_previous_cell() abort
+    let markers = jukit#util#get_adjacent_markers()
+    if !markers['above']['pos']
+        call cursor(1, 1)
+        return
+    endif
+
+    let marker_pos_other = search('|%%--%%|\(.*<' 
+        \. join(markers['above']['ids'], '|') . '>\)\@!', 'nbW')
+    if marker_pos_other == 0
+        call cursor(1, 1)
+        return
+    endif
+    call cursor(marker_pos_other+1, 1)
+endfun
+
 fun! jukit#cells#delete_outputs(all) abort
     if a:all
         call s:delete_output(v:null)
