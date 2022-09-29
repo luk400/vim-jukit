@@ -216,10 +216,10 @@ if g:jukit_mappings == 1
     if !hasmapto('jukit#splits#close_output_and_history', 'n')
         nnoremap <leader>ohd :call jukit#splits#close_output_and_history(1)<cr>
     endif
-    if !hasmapto('jukit#splits#out_hist_scroll', 'n')
+    if !hasmapto('jukit#splits#out_hist_scroll(1)', 'n')
         nnoremap <leader>j :call jukit#splits#out_hist_scroll(1)<cr>
     endif
-    if !hasmapto('jukit#splits#out_hist_scroll', 'n')
+    if !hasmapto('jukit#splits#out_hist_scroll(0)', 'n')
         nnoremap <leader>k :call jukit#splits#out_hist_scroll(0)<cr>
     endif
     if !hasmapto('jukit#splits#show_last_cell_output', 'n')
@@ -259,16 +259,16 @@ if g:jukit_mappings == 1
     if !hasmapto('jukit#cells#split', 'n')
         nnoremap <leader>cs :call jukit#cells#split()<cr>
     endif
-    if !hasmapto('jukit#cells#create_below', 'n')
+    if !hasmapto('jukit#cells#create_below(0)', 'n')
         nnoremap <leader>co :call jukit#cells#create_below(0)<cr>
     endif
-    if !hasmapto('jukit#cells#create_above', 'n')
+    if !hasmapto('jukit#cells#create_above(0)', 'n')
         nnoremap <leader>cO :call jukit#cells#create_above(0)<cr>
     endif
-    if !hasmapto('jukit#cells#create_below', 'n')
+    if !hasmapto('jukit#cells#create_below(1)', 'n')
         nnoremap <leader>ct :call jukit#cells#create_below(1)<cr>
     endif
-    if !hasmapto('jukit#cells#create_above', 'n')
+    if !hasmapto('jukit#cells#create_above(1)', 'n')
         nnoremap <leader>cT :call jukit#cells#create_above(1)<cr>
     endif
     if !hasmapto('jukit#cells#merge_above', 'n')
@@ -283,10 +283,10 @@ if g:jukit_mappings == 1
     if !hasmapto('jukit#cells#move_down', 'n')
         nnoremap <leader>cj :call jukit#cells#move_down()<cr>
     endif
-    if !hasmapto('jukit#cells#delete_outputs', 'n')
+    if !hasmapto('jukit#cells#delete_outputs(0)', 'n')
         nnoremap <leader>ddo :call jukit#cells#delete_outputs(0)<cr>
     endif
-    if !hasmapto('jukit#cells#delete_outputs', 'n')
+    if !hasmapto('jukit#cells#delete_outputs(1)', 'n')
         nnoremap <leader>dda :call jukit#cells#delete_outputs(1)<cr>
     endif
     if !hasmapto('jukit#cells#jump_to_next_cell', 'n')
