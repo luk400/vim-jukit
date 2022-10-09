@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 import codecs, sys, io, subprocess
-from matplotlib.backend_bases import _Backend, FigureManagerBase, Gcf
-from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.backend_bases import _Backend, FigureCanvasBase, FigureManagerBase, Gcf
 import matplotlib.pyplot as plt
 
 
@@ -70,8 +69,9 @@ class JukitFigureManager(FigureManagerBase):
         Gcf.destroy_all()
 
 
-class JukitCanvas(FigureCanvasAgg):
+class JukitCanvas(FigureCanvasBase):
     visible = False
+    manager_class = JukitFigureManager
 
     def isVisible(self):
         return self.visible

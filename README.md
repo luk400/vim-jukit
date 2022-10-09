@@ -53,7 +53,7 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 * vim/neovim must have python3 support (check using `:echo has('python3')`)
 * (i)python users:
     - ipython version >= 7.3.0
-    - matplotlib version >= 3.2.0
+    - matplotlib version >= 3.4.0
 * [kitty](https://sw.kovidgoyal.net/kitty/overview/) terminal users: 
     - kitty version >= 0.22
     - remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf), or alternatively you can also always start kitty using `kitty -o allow_remote_control=yes`
@@ -361,6 +361,10 @@ nnoremap <leader>ck :call jukit#cells#move_up()<cr>
 "   - Move current cell up
 nnoremap <leader>cj :call jukit#cells#move_down()<cr>
 "   - Move current cell down
+nnoremap <leader>J :call jukit#cells#jump_to_next_cell()<cr>
+"   - Jump to the next cell below
+nnoremap <leader>K :call jukit#cells#jump_to_previous_cell()<cr>
+"   - Jump to the previous cell above
 nnoremap <leader>ddo :call jukit#cells#delete_outputs(0)<cr>
 "   - Delete saved output of current cell. Argument: Whether to delete all saved outputs (1) or only saved output of current cell (0)
 nnoremap <leader>dda :call jukit#cells#delete_outputs(1)<cr>

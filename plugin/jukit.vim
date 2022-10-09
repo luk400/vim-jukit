@@ -36,7 +36,7 @@ else
     let g:_jukit_python = split(g:jukit_shell_cmd, '/')[-1] =~ 'python'
 endif
 let g:_jukit_md_mark = '°°°'
-let g:jukit_version = 'v1.2.0'
+let g:jukit_version = 'v1.3.1'
 
 " (i)python
 let g:jukit_in_style = get(g:, 'jukit_in_style', 2)
@@ -195,25 +195,25 @@ command! -nargs=1 JukitOutHist :call jukit#splits#output_and_history(<q-args>)
 
 if g:jukit_mappings == 1
     " splits
-    if !hasmapto('jukit#splits#output()', 'n')
+    if !hasmapto('jukit#splits#output', 'n')
         nnoremap <leader>os :call jukit#splits#output()<cr>
     endif
-    if !hasmapto('jukit#splits#term()', 'n')
+    if !hasmapto('jukit#splits#term', 'n')
         nnoremap <leader>ts :call jukit#splits#term()<cr>
     endif
-    if !hasmapto('jukit#splits#history()', 'n')
+    if !hasmapto('jukit#splits#history', 'n')
         nnoremap <leader>hs :call jukit#splits#history()<cr>
     endif
-    if !hasmapto('jukit#splits#output_and_history()', 'n')
+    if !hasmapto('jukit#splits#output_and_history', 'n')
         nnoremap <leader>ohs :call jukit#splits#output_and_history()<cr>
     endif
-    if !hasmapto('jukit#splits#close_history()', 'n')
+    if !hasmapto('jukit#splits#close_history', 'n')
         nnoremap <leader>hd :call jukit#splits#close_history()<cr>
     endif
-    if !hasmapto('jukit#splits#close_output_split()', 'n')
+    if !hasmapto('jukit#splits#close_output_split', 'n')
         nnoremap <leader>od :call jukit#splits#close_output_split()<cr>
     endif
-    if !hasmapto('jukit#splits#close_output_and_history(1)', 'n')
+    if !hasmapto('jukit#splits#close_output_and_history', 'n')
         nnoremap <leader>ohd :call jukit#splits#close_output_and_history(1)<cr>
     endif
     if !hasmapto('jukit#splits#out_hist_scroll(1)', 'n')
@@ -222,41 +222,41 @@ if g:jukit_mappings == 1
     if !hasmapto('jukit#splits#out_hist_scroll(0)', 'n')
         nnoremap <leader>k :call jukit#splits#out_hist_scroll(0)<cr>
     endif
-    if !hasmapto('jukit#splits#show_last_cell_output(1)', 'n')
+    if !hasmapto('jukit#splits#show_last_cell_output', 'n')
         nnoremap <leader>so :call jukit#splits#show_last_cell_output(1)<cr>
     endif
-    if !hasmapto('jukit#ueberzug#set_default_pos()', 'n')
+    if !hasmapto('jukit#ueberzug#set_default_pos', 'n')
         nnoremap <leader>pos :call jukit#ueberzug#set_default_pos()<cr>
     endif
-    if !hasmapto('jukit#splits#toggle_auto_hist()', 'n')
+    if !hasmapto('jukit#splits#toggle_auto_hist', 'n')
         nnoremap <leader>ah :call jukit#splits#toggle_auto_hist()<cr>
     endif
-    if !hasmapto('jukit#layouts#set_layout()', 'n')
+    if !hasmapto('jukit#layouts#set_layout', 'n')
         nnoremap <leader>sl :call jukit#layouts#set_layout()<cr>
     endif
 
     " sending code
-    if !hasmapto('jukit#send#line()', 'n')
+    if !hasmapto('jukit#send#line', 'n')
         nnoremap <cr> :call jukit#send#line()<cr>
     endif
-    if !hasmapto('jukit#send#selection()', 'v')
+    if !hasmapto('jukit#send#selection', 'v')
         vnoremap <cr> :<C-U>call jukit#send#selection()<cr>
     endif
-    if !hasmapto('jukit#send#section(0)', 'n')
+    if !hasmapto('jukit#send#section', 'n')
         nnoremap <leader><space> :call jukit#send#section(0)<cr>
     endif
-    if !hasmapto('jukit#send#until_current_section()', 'n')
+    if !hasmapto('jukit#send#until_current_section', 'n')
         nnoremap <leader>cc :call jukit#send#until_current_section()<cr>
     endif
-    if !hasmapto('jukit#send#all()', 'n')
+    if !hasmapto('jukit#send#all', 'n')
         nnoremap <leader>all :call jukit#send#all()<cr>
     endif
 
     " cells
-    if !hasmapto('jukit#cells#delete()', 'n')
+    if !hasmapto('jukit#cells#delete', 'n')
         nnoremap <leader>cd :call jukit#cells#delete()<cr>
     endif
-    if !hasmapto('jukit#cells#split()', 'n')
+    if !hasmapto('jukit#cells#split', 'n')
         nnoremap <leader>cs :call jukit#cells#split()<cr>
     endif
     if !hasmapto('jukit#cells#create_below(0)', 'n')
@@ -271,16 +271,16 @@ if g:jukit_mappings == 1
     if !hasmapto('jukit#cells#create_above(1)', 'n')
         nnoremap <leader>cT :call jukit#cells#create_above(1)<cr>
     endif
-    if !hasmapto('jukit#cells#merge_above()', 'n')
+    if !hasmapto('jukit#cells#merge_above', 'n')
         nnoremap <leader>cM :call jukit#cells#merge_above()<cr>
     endif
-    if !hasmapto('jukit#cells#merge_below()', 'n')
+    if !hasmapto('jukit#cells#merge_below', 'n')
         nnoremap <leader>cm :call jukit#cells#merge_below()<cr>
     endif
-    if !hasmapto('jukit#cells#move_up()', 'n')
+    if !hasmapto('jukit#cells#move_up', 'n')
         nnoremap <leader>ck :call jukit#cells#move_up()<cr>
     endif
-    if !hasmapto('jukit#cells#move_down(0)', 'n')
+    if !hasmapto('jukit#cells#move_down', 'n')
         nnoremap <leader>cj :call jukit#cells#move_down()<cr>
     endif
     if !hasmapto('jukit#cells#delete_outputs(0)', 'n')
@@ -288,6 +288,12 @@ if g:jukit_mappings == 1
     endif
     if !hasmapto('jukit#cells#delete_outputs(1)', 'n')
         nnoremap <leader>dda :call jukit#cells#delete_outputs(1)<cr>
+    endif
+    if !hasmapto('jukit#cells#jump_to_next_cell', 'n')
+        nnoremap <leader>J :call jukit#cells#jump_to_next_cell()<cr>
+    endif
+    if !hasmapto('jukit#cells#jump_to_previous_cell', 'n')
+        nnoremap <leader>K :call jukit#cells#jump_to_previous_cell()<cr>
     endif
 
     " ipynb conversion

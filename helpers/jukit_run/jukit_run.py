@@ -12,7 +12,6 @@ from multiprocessing import Process
 from typing import Optional, Any, TextIO
 
 from ipynb_convert import add_to_output_history, HEADER
-from ueberzug_output.show_output import create_png
 from . import util
 from .input_styles import display_functions, display_style_2
 
@@ -164,8 +163,11 @@ class JukitRun(TerminalMagics):
         fname_outhist = os.path.splitext(fname)[0] + "_outhist.json"
 
         self.ueberzug_options = args.ueberzug_opt
+        self.create_png = None
         if self.ueberzug_options is not None:
             self.ueberzug_options = self.ueberzug_options.split(',')
+            from ueberzug_output.show_output import create_png
+            self.create_png = create_png
 
         self.store_png = args.store_png
         self.py_file = py_file
@@ -228,9 +230,9 @@ class JukitRun(TerminalMagics):
                 add_to_output_history(
                     captured_out, args.cell_id, self.outhist_file, exec_result
                 )
-                if args.create_png and self.ueberzug_options is not None:
+                if args.create_png and self.create_png is not None:
                     p = Process(
-                        target=create_png,
+                        target=self.create_png,
                         args=(
                             args.cell_id,
                             self.outhist_file,

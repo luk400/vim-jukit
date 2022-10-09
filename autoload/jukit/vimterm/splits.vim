@@ -68,7 +68,7 @@ fun! jukit#vimterm#splits#output(...) abort
     endif
 
     call s:send_keys(g:jukit_output_title, jukit#splits#_build_shell_cmd(), 1)
-    call jukit#util#ipython_info_write('import_complete', 0)
+    call jukit#util#ipython_info_write({'import_complete': 0})
 endfun
 
 fun! jukit#vimterm#splits#term() abort
@@ -80,7 +80,7 @@ fun! jukit#vimterm#splits#history() abort
     let g:jukit_outhist_title = s:setup_term()
 
     call s:send_keys(g:jukit_outhist_title, jukit#splits#_build_shell_cmd("outhist"), 1)
-    call jukit#util#ipython_info_write('import_complete', 0)
+    call jukit#util#ipython_info_write({'import_complete': 0})
 
     if g:jukit_auto_output_hist
         call jukit#splits#toggle_auto_hist(1)
@@ -153,7 +153,7 @@ fun! jukit#vimterm#splits#show_last_cell_output(force) abort
     call cursor(line('.')+1, '$')
     let md_cur = search(b:jukit_md_start, 'nbW') > search('|%%--%%| <.*|' . cell_id, 'nbW')
     call winrestview(save_view)
-    call jukit#util#ipython_info_write(['outhist_cell', 'is_md'], [cell_id, md_cur])
+    call jukit#util#ipython_info_write({'outhist_cell': cell_id, 'is_md': md_cur})
     call s:send_keys(g:jukit_outhist_title, '%jukit_out_hist', 1)
 endfun
 
