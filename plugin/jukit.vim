@@ -36,7 +36,7 @@ else
     let g:_jukit_python = split(g:jukit_shell_cmd, '/')[-1] =~ 'python'
 endif
 let g:_jukit_md_mark = '°°°'
-let g:jukit_version = 'v1.3.0'
+let g:jukit_version = 'v1.3.1'
 
 " (i)python
 let g:jukit_in_style = get(g:, 'jukit_in_style', 2)
