@@ -191,6 +191,7 @@ endfun
 
 fun! s:textcell_syn_match() abort
     if exists('b:current_syntax')
+        let current_syntax = b:current_syntax
         unlet b:current_syntax
     endif
 
@@ -201,6 +202,12 @@ fun! s:textcell_syn_match() abort
     if filereadable(g:jukit_text_syntax_file)
         exe 'syn include @markdown_cells ' . g:jukit_text_syntax_file
     endif
+
+    if exists('current_syntax')
+        let b:current_syntax = current_syntax
+    endif
+
+    syntax spell default
 
     exe 'syn match jukit_textcell_quotes /' . s:md_start_pattern . '\|' 
         \. s:md_end_pattern . '/ containedin=textcell'
