@@ -130,7 +130,7 @@ For variable explanations see the comments underneath each variable
 let g:jukit_shell_cmd = 'ipython3'
 "    - Specifies the command used to start a shell in the output split. Can also be an absolute path. Can also be any other shell command, e.g. `R`, `julia`, etc. (note that output saving is only possible for ipython)
 let g:jukit_terminal = ''
-"   - Terminal to use. Can be one of '', 'kitty', 'vimterm', 'nvimterm' or 'tmux'. If '' is given then will try to detect terminal
+"   - Terminal to use. Can be one of '', 'kitty', 'vimterm', 'nvimterm' or 'tmux'. If '' is given then will try to detect terminal (though this might fail, in which case it simply defaults to 'vimterm' or 'nvimterm' - depending on the output of `has("nvim")`)
 let g:jukit_auto_output_hist = 0
 "   - If set to 1, will create an autocmd with event `CursorHold` to show saved ipython output of current cell in output-history split. Might slow down (n)vim significantly, you can use `set updatetime=<number of milliseconds>` to control the time to wait until CursorHold events are triggered, which might improve performance if set to a higher number (e.g. `set updatetime=1000`).
 let g:jukit_use_tcomment = 0
@@ -209,7 +209,7 @@ let g:jukit_mpl_style = ''
 
 " IF KITTY OR TMUX IS USED:
 let g:jukit_inline_plotting = 1
-"    - Enable in-terminal-plotting. Only supported for kitty terminal or tmux with iTerm2 terminal
+"    - Enable in-terminal-plotting. Only supported for kitty or tmux+iTerm2 -> BE SURE TO SPECIFY THE TERMINAL VIA `g:jukit_terminal`! (see variables in section 'Basic jukit options')
 " ELSE:
 let g:jukit_inline_plotting = 0
 "    - Disable in-terminal-plotting
