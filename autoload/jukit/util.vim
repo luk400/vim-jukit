@@ -215,11 +215,8 @@ fun! jukit#util#get_terminal() abort
     let kitty_detected = system('perl -lpe "s/\0/ /g" /proc/$(xdotool '
         \. 'getwindowpid $(xdotool getactivewindow))/cmdline') =~? 'kitty'
         \ || system('echo $TERM') =~? 'kitty'
-    let tmux_detected = system('if [ -n "$TMUX" ]; then echo 1; else echo 0; fi')
     if kitty_detected
         return 'kitty'
-    elseif tmux_detected
-        return 'tmux'
     elseif has('nvim')
         return 'nvimterm'
     else
