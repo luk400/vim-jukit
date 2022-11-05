@@ -10,12 +10,16 @@ fun! s:convert_to_ipynb(args) abort
     let file_current = expand("%:p")
     let ipynb_file = expand("%:p:r") . '.ipynb'
 
-    if !empty(glob(ipynb_file))
+    if !empty(glob(ipynb_file)) && g:jukit_convert_overwrite_default == -1
         let answer = confirm('[vim-jukit] ' . ipynb_file . ' already '
             \ . 'exists. Do you want to replace it?', "&Yes\n&No", 1)
         if answer == 0 || answer == 2
             return
         endif
+    elseif g:jukit_convert_overwrite_default == 0
+        echom '[vim-jukit] Converting unsuccessful: ' . ipynb_file . ' already exists!'
+        sleep 500m
+        return
     endif
 
     let out_file = system(g:_jukit_python_os_cmd . " " . jukit#util#plugin_path() . g:_jukit_ps
@@ -30,11 +34,18 @@ fun! s:convert_to_ipynb(args) abort
         return
     endif
 
-    let answer = confirm('[vim-jukit] ' . 'Converted to ' . out_file
-        \ . '! Do you want to open it now?', "&Yes\n&No", 1)
-    if answer == 0 || answer == 2
+    if g:jukit_convert_open_default == -1
+        let answer = confirm('[vim-jukit] ' . 'Converted to ' . out_file
+            \ . '! Do you want to open it now?', "&Yes\n&No", 1)
+        if answer == 0 || answer == 2
+            return
+        endif
+    elseif g:jukit_convert_open_default == 0
+        echom '[vim-jukit] Converted to ' . out_file[:-2] . '...'
+        sleep 500m
         return
     endif
+
     echom '[vim-jukit] Opening file. Press CTRL+C to cancel.'
     call system(a:args[0] . " " . escape(out_file, ' \'))
 endfun
@@ -53,12 +64,16 @@ out_file = convert(in_file, None, False, create=False)
 vim.command(f"let out_file='{out_file}'")
 EOF
 
-    if !empty(glob(out_file))
+    if !empty(glob(out_file)) && g:jukit_convert_overwrite_default == -1
         let answer = confirm('[vim-jukit] ' . out_file
             \ . ' already exists. Do you want to replace it?', "&Yes\n&No", 1)
         if answer == 0 || answer == 2
             return
         endif
+    elseif g:jukit_convert_overwrite_default == 0
+        echom '[vim-jukit] Converting unsuccessful: ' . out_file . ' already exists!'
+        sleep 500m
+        return
     endif
 
     let cmd = g:_jukit_python_os_cmd . " " . jukit#util#plugin_path() . g:_jukit_ps

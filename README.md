@@ -139,6 +139,10 @@ let g:jukit_comment_mark = '#'
 "   - See description of `g:jukit_use_tcomment` above
 let g:jukit_mappings = 1
 "   - If set to 0, none of the default function mappings (as specified further down) will be applied
+let g:jukit_convert_overwrite_default = -1
+"   - Default setting when converting from .ipynb to .py or vice versa and a file of the same name already exists. Can be of [-1, 0, 1], where -1 means no default (i.e. you'll be prompted to specify what to do), 0 means never overwrite, 1 means always overwrite
+let g:jukit_convert_open_default = -1
+"   - Default setting for whether the notebook should be opened after converting from .py to .ipynb. Can be of [-1, 0, 1], where -1 means no default (i.e. you'll be prompted to specify what to do), 0 means never open, 1 means always open
 ```
 
 ###### Cell highlighting/syntax

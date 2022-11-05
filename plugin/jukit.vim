@@ -37,6 +37,8 @@ else
 endif
 let g:_jukit_md_mark = '°°°'
 let g:jukit_version = 'v1.3.2'
+let g:jukit_convert_overwrite_default = get(g:, 'jukit_convert_overwrite_default', -1)
+let g:jukit_convert_open_default = get(g:, 'jukit_convert_open_default', -1)
 
 " (i)python
 let g:jukit_in_style = get(g:, 'jukit_in_style', 2)
