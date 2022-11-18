@@ -317,7 +317,6 @@ fun! s:set_mappings() abort
     endif
 endfun
 
-
 if type(g:jukit_mappings_ext_enabled) == 1
     let g:jukit_mappings_ext_enabled = [g:jukit_mappings_ext_enabled]
 endif
@@ -327,8 +326,6 @@ else
     let s:jukit_mappings_ext_aupat = '*.' . join(g:jukit_mappings_ext_enabled, ',*.')
 endif
 
-echom s:jukit_mappings_ext_aupat
-echom "autocmd BufEnter " . s:jukit_mappings_ext_aupat . " call s:set_mappings()"
 if g:jukit_mappings == 1
     exe "autocmd BufEnter " . s:jukit_mappings_ext_aupat . " call s:set_mappings()"
 endif
