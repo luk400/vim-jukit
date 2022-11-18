@@ -16,6 +16,7 @@ let s:default_layout = {
 \}
 
 " jukit 
+let g:jukit_mappings_ext_enabled = get(g:, 'jukit_mappings_ext_enabled', '*')
 let g:jukit_shell_cmd = get(g:, 'jukit_shell_cmd', 'ipython3')
 let g:jukit_layout = get(g:, 'jukit_layout', s:default_layout)
 let g:jukit_terminal = get(g:, 'jukit_terminal', '')
@@ -195,7 +196,7 @@ command! -nargs=1 JukitOutHist :call jukit#splits#output_and_history(<q-args>)
 " Mappings
 """"""""""
 
-if g:jukit_mappings == 1
+fun! s:set_mappings() abort
     " splits
     if !hasmapto('jukit#splits#output', 'n')
         nnoremap <buffer> <leader>os <cmd>call jukit#splits#output()<cr>
@@ -314,4 +315,20 @@ if g:jukit_mappings == 1
     if !hasmapto("jukit#convert#save_nb_to_file(1,1,'pdf')", 'n')
         nnoremap <buffer> <leader>rpd <cmd>call jukit#convert#save_nb_to_file(1,1,'pdf')<cr>
     endif
+endfun
+
+
+if type(g:jukit_mappings_ext_enabled) == 1
+    let g:jukit_mappings_ext_enabled = [g:jukit_mappings_ext_enabled]
+endif
+if index(g:jukit_mappings_ext_enabled, '*') >= 0
+    let s:jukit_mappings_ext_aupat = '*'
+else
+    let s:jukit_mappings_ext_aupat = '*.' . join(g:jukit_mappings_ext_enabled, ',*.')
+endif
+
+echom s:jukit_mappings_ext_aupat
+echom "autocmd BufEnter " . s:jukit_mappings_ext_aupat . " call s:set_mappings()"
+if g:jukit_mappings == 1
+    exe "autocmd BufEnter " . s:jukit_mappings_ext_aupat . " call s:set_mappings()"
 endif
