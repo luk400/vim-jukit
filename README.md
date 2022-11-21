@@ -139,6 +139,8 @@ let g:jukit_comment_mark = '#'
 "   - See description of `g:jukit_use_tcomment` above
 let g:jukit_mappings = 1
 "   - If set to 0, none of the default function mappings (as specified further down) will be applied
+let g:jukit_mappings_ext_enabled = "*"
+"   - String or list of strings specifying extensions for which the mappings will be created. For example, `let g:jukit_mappings_ext_enabled=['py', 'ipynb']` will enable the mappings only in `.py` and `.ipynb` files. Use `let g:jukit_mappings_ext_enabled='*'` to enable them for all files.
 let g:jukit_convert_overwrite_default = -1
 "   - Default setting when converting from .ipynb to .py or vice versa and a file of the same name already exists. Can be of [-1, 0, 1], where -1 means no default (i.e. you'll be prompted to specify what to do), 0 means never overwrite, 1 means always overwrite
 let g:jukit_convert_open_default = -1
@@ -156,7 +158,7 @@ let g:jukit_enable_textcell_syntax = 1
 let g:jukit_text_syntax_file = $VIMRUNTIME . '/syntax/' . 'markdown.vim'
 "    - Syntax file to use for textcells. If you want to define your own syntax matches inside of text cells, make sure to include `containedin=textcell`.
 let g:jukit_hl_ext_enabled = '*'
-"    - String or list of strings specifying extensions for which the relevant highlighting autocmds regarding marker-highlighting, textcell-highlighting, etc. will be created. For example, `let g:jukit_hl_extensions=['py', 'R']` will enable the defined highlighting options for `.py` and `.R` files. Use `let g:jukit_hl_extensions=*` to enable them for all files and `let g:jukit_hl_extensions=''` to disable them completely
+"    - String or list of strings specifying extensions for which the relevant highlighting autocmds regarding marker-highlighting, textcell-highlighting, etc. will be created. For example, `let g:jukit_hl_extensions=['py', 'R']` will enable the defined highlighting options for `.py` and `.R` files. Use `let g:jukit_hl_extensions='*'` to enable them for all files and `let g:jukit_hl_extensions=''` to disable them completely
 ```
 
 ###### Kitty
