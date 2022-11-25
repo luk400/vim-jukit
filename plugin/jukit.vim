@@ -243,7 +243,7 @@ fun! s:set_mappings() abort
         nnoremap <buffer> <cr> <cmd>call jukit#send#line()<cr>
     endif
     if !hasmapto('jukit#send#selection', 'v')
-        vnoremap <buffer> <cr> <cmd><C-U>call jukit#send#selection()<cr>
+        vnoremap <buffer> <cr> <esc><cmd>call jukit#send#selection()<cr>
     endif
     if !hasmapto('jukit#send#section', 'n')
         nnoremap <buffer> <leader><space> <cmd>call jukit#send#section(0)<cr>
