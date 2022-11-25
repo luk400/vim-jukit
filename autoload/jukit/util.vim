@@ -241,7 +241,7 @@ EOF
         let ext = ft_json['ext']
         let success = 1
     else
-        let md_start = "\"\"\"" . g:_jukit_md_mark
+        let md_start = "r\"\"\"" . g:_jukit_md_mark
         let md_end = g:_jukit_md_mark . "\"\"\""
         let cchar = "#"
         let ext = 'py'

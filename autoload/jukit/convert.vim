@@ -6,7 +6,18 @@ fun s:check_filetype()
     sleep 2
 endfun
 
+fun! s:replace_old_python_md_start() abort
+    let save_view = winsaveview()
+    silent! %s/^"""°°°/r"""°°°
+    nohlsearch
+    call winrestview(save_view)
+endfun
+
 fun! s:convert_to_ipynb(args) abort
+    " for compatibility with vim-jukit < 1.3.4:
+    call s:replace_old_python_md_start()
+    write
+
     let file_current = expand("%:p")
     let ipynb_file = expand("%:p:r") . '.ipynb'
 
