@@ -37,7 +37,7 @@ else
     let g:_jukit_python = split(g:jukit_shell_cmd, '/')[-1] =~ 'python'
 endif
 let g:_jukit_md_mark = '°°°'
-let g:jukit_version = 'v1.3.3'
+let g:jukit_version = 'v1.3.4'
 let g:jukit_convert_overwrite_default = get(g:, 'jukit_convert_overwrite_default', -1)
 let g:jukit_convert_open_default = get(g:, 'jukit_convert_open_default', -1)
 
