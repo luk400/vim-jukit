@@ -5,3 +5,4 @@ axes.facecolor : cccccc
 axes.titlecolor : cccccc
 axes.labelcolor : cccccc
 savefig.facecolor : (0,0,0,0)
+savefig.bbox : tight
