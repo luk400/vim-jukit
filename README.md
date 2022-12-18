@@ -470,3 +470,6 @@ Already supported:
 ### Credit
 
 vim-jukit uses a for this plugin modified version of the module [ipynb_py_convert](https://github.com/kiwi0fruit/ipynb-py-convert) as well as a modified version of [matplotlib-backend-kitty](https://github.com/jktr/matplotlib-backend-kitty), which were the starting point and the initial inspiration for this plugin. It also uses the imgcat script from [python-imgcat](https://github.com/wookayin/python-imgcat) for displaying matplotlib plots in terminal when using tmux+iterm2.
+
+---
+[![image](https://user-images.githubusercontent.com/57172028/208309179-2dc5b1d0-9421-46f1-a369-0c564e7d6fdb.png)](https://www.buymeacoffee.com/luk400)
