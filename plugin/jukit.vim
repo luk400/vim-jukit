@@ -25,6 +25,7 @@ let g:jukit_comment_mark = get(g:, 'jukit_comment_mark', '#')
 let g:jukit_auto_output_hist = get(g:, 'jukit_auto_output_hist', 0)
 let g:jukit_mappings = get(g:, 'jukit_mappings', 1)
 let g:_jukit_python_os_cmd = get(g:, 'jukit_python_os_cmd', 'python3')
+let g:_jukit_win_escape_char = get(g:, 'jukit_win_escape_char', '\\')
 
 let g:jukit_html_viewer = get(g:, 'jukit_html_viewer', 'xdg-open')
 let g:jukit_ipython = get(g:, 'jukit_ipython', split(g:jukit_shell_cmd, '/')[-1] =~ 'ipython')

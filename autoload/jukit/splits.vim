@@ -271,7 +271,7 @@ fun! jukit#splits#_build_shell_cmd(...) abort
     endif
 
     if g:_jukit_is_windows
-        let cmd = shell_cmd . " -i -c \"" . escape(cmd, '"') . "\""
+        let cmd = shell_cmd . " -i -c \"" . substitute(cmd, '"', g:_jukit_win_escape_char . '"', 'g') . "\""
         return cmd
     else
         let cmd = shell_cmd . " -i -c '" . cmd . "'"
