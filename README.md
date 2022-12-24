@@ -48,40 +48,58 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 
 ### Requirements
 
-* vim users: version >= 8.2
-* neovim users: version >= 0.4
-* vim/neovim must have python3 support (check using `:echo has('python3')`)
-* (i)python users:
-    - ipython version >= 7.3.0
-    - matplotlib version >= 3.4.0
-* [kitty](https://sw.kovidgoyal.net/kitty/overview/) terminal users: 
-    - kitty version >= 0.22
-    - remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf), or alternatively you can also always start kitty using `kitty -o allow_remote_control=yes`
-    - ImageMagick for displaying plots in the terminal must be installed (install using e.g. `sudo apt-get install imagemagick`)
-    - If you're using neovim with kitty, you need to launch kitty with the ``--listen-on`` option and specify an address to listen on ([more information](https://sw.kovidgoyal.net/kitty/invocation.html)). Furthermore, if you want to have different kitty instances simultaneously using this plugin and sending code to split windows, different addresses will need to be specified. One possible way to do this on linux machines is by simply always starting kitty with e.g. `kitty --listen-on=unix:@"$(date +%s%N)"`, which will make sure different kitty instances are launched with different, abstract sockets to listen on. On MacOS it should work using e.g. `kitty --listen-on=/tmp/kitty_"$(date +%s%N)"`. If you want, you can then simply specify an alias (i.e. put `alias jukit_kitty="kitty --listen-on=unix:@"$(date +%s%N)" -o allow_remote_control=yes"` in your .bashrc/.zshrc) which you can use to always start kitty with the necessary arguments.
-* iTerm2+tmux (experimental):
-    - currently only tested using iTerm2 Build 3.4.15 + tmux version 3.2a
-    - There's a good chance it won't work with a different tmux version. To install the exact version it was tested with, use the following commands:
-        ```
-        wget https://raw.githubusercontent.com/Homebrew/homebrew-core/e44425df5a8b3c8c24073486fa7e355f3ac19657/Formula/tmux.rb
-        brew install ./tmux.rb
-        tmux -V # make sure it says tmux 3.2a
-        brew pin tmux # prevent unintentional upgrade in the future
-        ```
-* windows users:
-    - make sure `python3` - and not just `python` - is a valid command in your terminal, if it's not then set `let g:_jukit_python_os_cmd = 'python'` in your vim config
-    - This plugin has not been extensively tested on windows and some features may not work yet. If you encounter any problems, please open an issue and I'll try my best to fix it
-* to use the `jukit#convert#save_nb_to_file()` function (see function mappings below), make sure `jupyter` is installed in your environment.
-* überzug (only for linux users):
-    - required python packages:
-        - pillow
-        - beautifulsoup4
-        - ueberzug
-        - numpy
-        - nbconvert >= 6.4.4
-    - CLI tools:
-        - imagemagick
-        - cutycapt (alternatively you can also use wkhtmltoimage, if you decide to use wkhtmltoimage, `let g:jukit_ueberzug_cutycapt_cmd = '/path/to/wkhtmltoimage'` has to specified in your vim config)
+<details><summary>vim users</summary><p>
+&emsp;&#x2022;&nbsp; vim version >= 8.2<br>
+&emsp;&#x2022;&nbsp; python3 support (check using `:echo has('python3')`)
+</p></details>
+
+<details><summary>neovim users</summary><p>
+&emsp;&#x2022;&nbsp; neovim version >= 0.4<br>
+&emsp;&#x2022;&nbsp; python3 support (check using `:echo has('python3')`)
+</p></details>
+
+<details><summary>(I)Python users</summary><p>
+&emsp;&#x2022;&nbsp; ipython version >= 7.3.0<br>
+&emsp;&#x2022;&nbsp; matplotlib version >= 3.4.0
+</p></details>
+
+<details><summary>kitty terminal users</summary><p>
+&emsp;&#x2022;&nbsp; kitty version >= 0.22<br>
+&emsp;&#x2022;&nbsp; remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf), or alternatively you can also always start kitty using `kitty -o allow_remote_control=yes`<br>
+&emsp;&#x2022;&nbsp; ImageMagick for displaying plots in the terminal must be installed (install using e.g. `sudo apt-get install imagemagick`)<br>
+&emsp;&#x2022;&nbsp; If you're using neovim with kitty, you need to launch kitty with the `--listen-on` option and specify an address to listen on. Furthermore, if you want to have different kitty instances simultaneously using this plugin and sending code to split windows, different addresses will need to be specified. One possible way to do this on linux machines is by simply always starting kitty with e.g. `kitty --listen-on=unix:@"$(date +%s%N)"`, which will make sure different kitty instances are launched with different, abstract sockets to listen on. On MacOS it should work using e.g. `kitty --listen-on=/tmp/kitty_"$(date +%s%N)"`. If you want, you can then simply specify an alias (i.e. put `alias jukit_kitty="kitty --listen-on=unix:@"$(date +%s%N)" -o allow_remote_control=yes"` in your .bashrc/.zshrc) which you can use to always start kitty with the necessary arguments.
+</p></details>
+
+<details><summary>iTerm2+tmux users (experimental)</summary><p>
+&emsp;&#x2022;&nbsp; currently only tested using iTerm2 Build 3.4.15 + tmux version 3.2a<br>
+&emsp;&#x2022;&nbsp; There's a good chance it won't work with a different tmux version. To install the exact version it was tested with, use the following commands:<br>
+&emsp;```<br>
+&emsp;wget https://raw.githubusercontent.com/Homebrew/homebrew-core/e44425df5a8b3c8c24073486fa7e355f3ac19657/Formula/tmux.rb<br>
+&emsp;brew install ./tmux.rb<br>
+&emsp;tmux -V # make sure it says tmux 3.2a<br>
+&emsp;brew pin tmux # prevent unintentional upgrade in the future<br>
+&emsp;```
+</p></details>
+
+<details><summary>windows users</summary><p>
+&emsp;&#x2022;&nbsp; make sure `python3` - and not just `python` - is a valid command in your terminal, if it's not then set `let g:_jukit_python_os_cmd = 'python'` in your vim config<br>
+&emsp;&#x2022;&nbsp; this plugin has not been extensively tested on windows and some features may not work
+</p></details>
+
+<details><summary>überzug users</summary><p>
+&emsp;&#x2022;&nbsp; make sure `python3` - and not just `python` - is a valid command in your terminal, if it's not then set `let g:_jukit_python_os_cmd = 'python'` in your vim config<br>
+&emsp;&#x2022;&nbsp; required python packages:<br>
+&emsp;&emsp; pillow<br>
+&emsp;&emsp; beautifulsoup4<br>
+&emsp;&emsp; ueberzug<br>
+&emsp;&emsp; numpy<br>
+&emsp;&emsp; nbconvert >= 6.4.4<br>
+&emsp;&#x2022;&nbsp; CLI tools:<br>
+&emsp;&emsp; imagemagick<br>
+&emsp;&emsp; cutycapt (alternatively you can also use wkhtmltoimage, if you decide to use wkhtmltoimage, `let g:jukit_ueberzug_cutycapt_cmd = '/path/to/wkhtmltoimage'` has to specified in your vim config)
+</p></details>
+
+
 
 
 
