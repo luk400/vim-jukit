@@ -46,10 +46,10 @@ if !isdirectory(s:test_dir)
 endif
 
 
-fun! jukit#tests#create_test_script() abort
+fun! jukit#tests#create_test_script(vim_cmd) abort
     let lines = []
     for key_val in items(s:all_tests)
-        call add(lines, "rm -f " . s:test_dir . "/.test.py && vim " . s:test_dir
+        call add(lines, "rm -f " . s:test_dir . "/.test.py && " . a:vim_cmd . " " . s:test_dir
             \. "/.test.py -c \"call jukit#tests#run_test('" . key_val[0] . "', 1)\"")
     endfor
 
