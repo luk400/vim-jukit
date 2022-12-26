@@ -43,7 +43,7 @@ fun! s:create_autocmd_close_splits() abort
 
     augroup jukit_auto_close
         autocmd!
-        autocmd QuitPre,BufDelete <buffer> call jukit#splits#close_output_and_history(1)
+        autocmd QuitPre,BufDelete <buffer> call jukit#splits#close_output_and_history(0)
     augroup END
 endfun
 

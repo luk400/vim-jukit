@@ -22,10 +22,13 @@ def _fix_db(shell):
     max_line = shell.execution_count
     sid = hist_manager.get_last_session_id()
 
-    hist_manager.db.execute(
-        f"DELETE FROM history WHERE line>={max_line} and session={sid}"
-    )
-    hist_manager.db.commit()
+    try:
+        hist_manager.db.execute(
+            f"DELETE FROM history WHERE line>={max_line} and session={sid}"
+        )
+        hist_manager.db.commit()
+    except Exception as e:
+        print(e)
 
 
 def monitor_excount_dec(func):

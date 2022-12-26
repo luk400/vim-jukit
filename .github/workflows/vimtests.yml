@@ -1,0 +1,46 @@
+name: vim-jukit tests
+on: [push]
+jobs:
+  vim_tests_ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: vim setup
+        run: |
+          vim --version
+          mkdir -p /home/runner/.vim/pack/plugins/start/
+          cp -r ../vim-jukit /home/runner/.vim/pack/plugins/start/
+          cp .github/workflows/vimrc /home/runner/.vimrc
+          pip install -r requirements.txt
+      - name: run tests (vim + vimterm)
+        run: |
+          {
+            vim -c "call jukit#tests#create_test_script('vim')"
+            bash -x /home/runner/.vim/pack/plugins/start/vim-jukit/tests/jukit_tests.sh
+          } > .dont_print_this
+          python3 /home/runner/.vim/pack/plugins/start/vim-jukit/.github/workflows/check_test_results.py
+## TODO: for whatever reason the same job does not work with neovim:
+#  nvim_tests_ubuntu:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v3
+#      - name: nvim setup
+#        run: |
+#          curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.deb
+#          sudo apt install ./nvim-linux64.deb
+#          nvim --version
+#          mkdir -p /home/runner/.local/share/nvim/site/pack/packer/start/
+#          mkdir -p /home/runner/.config/nvim/
+#          cp -r ../vim-jukit /home/runner/.local/share/nvim/site/pack/packer/start/
+#          cp .github/workflows/init.vim /home/runner/.config/nvim/init.vim
+#          pip install -r requirements.txt
+#          pip install pynvim
+#      - name: run tests (nvim + nvimterm)
+#        run: |
+#          {
+#            nvim -c "call jukit#tests#create_test_script('nvim')" # <- NOTE: here the error is thrown ("Error: Process completed with exit code 134")
+#            bash -x /home/runner/.local/share/nvim/site/pack/packer/start/vim-jukit/tests/jukit_tests.sh
+#          } > .dont_print_this
+#          python3 /home/runner/.local/share/nvim/site/pack/packer/start/vim-jukit/.github/workflows/check_test_results.py
