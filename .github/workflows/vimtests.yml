@@ -1,0 +1,21 @@
+name: vim-jukit tests
+on: [push]
+jobs:
+  vim_tests_ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: vim setup
+        run: |
+          mkdir -p /home/runner/.vim/pack/plugins/start/
+          cp -r ../vim-jukit /home/runner/.vim/pack/plugins/start/
+          cp .github/workflows/vimrc /home/runner/.vimrc
+          pip install -r requirements.txt
+      - name: run tests (vim + vimterm)
+        run: |
+          {
+            vim -c "call jukit#tests#create_test_script()"
+            bash -x /home/runner/.vim/pack/plugins/start/vim-jukit/tests/jukit_tests.sh
+          } > .dont_print_this
+          python3 /home/runner/.vim/pack/plugins/start/vim-jukit/.github/workflows/check_test_results.py

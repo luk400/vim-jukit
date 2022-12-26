@@ -124,8 +124,10 @@ fun! jukit#vimterm#splits#show_last_cell_output(force) abort
     endif
 
     call jukit#util#ipython_info_write(
-        \ {'vimterm_x': winwidth(bufwinnr(g:jukit_outhist_title), 
-        \ 'vimterm_y': winheight(bufwinnr(g:jukit_outhist_title)}
+        \ {
+        \     'vimterm_x': winwidth(bufwinnr(g:jukit_outhist_title)), 
+        \     'vimterm_y': winheight(bufwinnr(g:jukit_outhist_title))
+        \ })
 
     let cell_id = jukit#util#get_current_cell_id()
     
