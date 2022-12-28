@@ -56,10 +56,34 @@ def display_style_4(cmd, shell):
     sys.stdout.write(col_out + "▼\u001b[0m\n")
 
 
+def display_style_5(*_):
+    sys.stdout.write("\n")
+
+
+def display_style_6(cmd, shell):
+    max_lines_in_cmd = 7
+
+    col_in = "\u001b[32m"
+    sys.stdout.write("\n" + col_in + "╭───────── In ─────────•••\n")
+
+    cmd_lines = cmd.splitlines()
+    if len(cmd_lines) > max_lines_in_cmd:
+        cmd = "\n".join(cmd_lines[:max_lines_in_cmd] + ["..."])
+
+    cmd = re.sub(r"^\s+", "", cmd)
+    cmd = col_in + "│ " + shell.pycolorize(cmd)
+    cmd = re.sub(r"\s+$", "", cmd)
+    cmd = re.sub(r"\n", col_in + "\n│ ", cmd)
+    sys.stdout.write(cmd)
+    sys.stdout.write(col_in + "\n╰──────────────────────•••\u001b[0m\n")
+
+
 display_functions = {
     0: display_style_0,
     1: display_style_1,
     2: display_style_2,
     3: display_style_3,
     4: display_style_4,
+    5: display_style_5,
+    6: display_style_6,
 }
