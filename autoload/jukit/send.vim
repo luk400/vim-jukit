@@ -142,8 +142,7 @@ fun! jukit#send#section(move_next) abort
         return
     endif
    
-    let count = v:count1
-    if count == 1
+    if v:count1 == 1
         call s:send_single_section(a:move_next)
     else
         call s:send_multiple_sections(count)
