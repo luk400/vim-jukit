@@ -1,5 +1,6 @@
+from contextlib import suppress
 from datetime import datetime
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from bs4 import BeautifulSoup as bs
 import numpy as np
 import time
@@ -45,6 +46,29 @@ def _update_template_png(img_name, new_template_type):
     shutil.copyfile(
         os.path.join(MODULE_PATH, "templates", f"{new_template_type}.png"), img_name
     )
+
+
+def _write_loading_on_img(img_path):
+    img = Image.open(img_path)
+    img = img.convert("RGB")
+    img = img.resize((img.size[0] * 2, img.size[1] * 2))
+    img = img.convert("RGBA")
+
+    draw = ImageDraw.Draw(img)
+
+    with suppress(Exception):
+        font_path = os.path.join(MODULE_PATH, "arial.ttf")
+        font = ImageFont.truetype(font_path, size = max(img.size[0] // 30, 1))
+        text = "reloading..."
+        text_w, text_h = draw.textsize(text, font=font)
+        draw.text(
+            (img.size[0] - text_w - 30, img.size[1] - text_h - 30),
+            text,
+            font=font,
+            fill=(255, 0, 0, 255),
+        )
+
+        img.save(img_path)
 
 
 def png_success_check(
@@ -472,6 +496,8 @@ def show_markdown(cell_id, ipynb_file, use_cached=True):
     template_condition = not os.path.isfile(img_path) or not use_cached
     if template_condition:
         _update_template_png(img_path, "loading_template")
+    else:
+        _write_loading_on_img(img_path)
 
     def keep_converting(template_condition):
         display = True

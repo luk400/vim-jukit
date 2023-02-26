@@ -104,27 +104,31 @@ fun! s:set_marker_below(id1, id2) abort
 endfun
 
 fun! jukit#cells#jump_to_next_cell() abort
-    let next_cell_pos = search('|%%--%%|', 'nW')
-    if next_cell_pos == 0
-        return
-    endif
-    call cursor(next_cell_pos+1, 1)
+    for i in range(v:count1)
+        let next_cell_pos = search('|%%--%%|', 'nW')
+        if next_cell_pos == 0
+            return
+        endif
+        call cursor(next_cell_pos+1, 1)
+    endfor
 endfun
 
 fun! jukit#cells#jump_to_previous_cell() abort
-    let markers = jukit#util#get_adjacent_markers()
-    if !markers['above']['pos']
-        call cursor(1, 1)
-        return
-    endif
+    for i in range(v:count1)
+        let markers = jukit#util#get_adjacent_markers()
+        if !markers['above']['pos']
+            call cursor(1, 1)
+            return
+        endif
 
-    let marker_pos_other = search('|%%--%%|\(.*<' 
-        \. join(markers['above']['ids'], '|') . '>\)\@!', 'nbW')
-    if marker_pos_other == 0
-        call cursor(1, 1)
-        return
-    endif
-    call cursor(marker_pos_other+1, 1)
+        let marker_pos_other = search('|%%--%%|\(.*<' 
+            \. join(markers['above']['ids'], '|') . '>\)\@!', 'nbW')
+        if marker_pos_other == 0
+            call cursor(1, 1)
+            return
+        endif
+        call cursor(marker_pos_other+1, 1)
+    endfor
 endfun
 
 fun! jukit#cells#delete_outputs(all) abort
@@ -182,46 +186,48 @@ fun! jukit#cells#merge_below() abort
     " assign new cell id to: current cell (i.e. merged cell)
     " effect on output: merge outputs and assign to merged cell
 
-    call jukit#util#md_buffer_vars()
-    let markers = jukit#util#get_adjacent_markers()
-    let save_view = winsaveview()
-    if !markers['below']['pos']
-        echom "[vim-jukit] No cell below!"
-        return
-    endif
-    call cursor(markers['below']['pos'], 1)
-    let quotes_start_prev = search(b:jukit_md_start, 'nbW')
-    let quotes_start_next = search(b:jukit_md_start, 'nW')
-    call cursor(markers['below']['pos'] + 1, 1)
-    let marker_pos_next_but_one = search('|%%--%%|', 'nW')
-
-    if !marker_pos_next_but_one
-        let marker_pos_next_but_one = line('$')
-    endif
-
-    let md_cur = quotes_start_prev > markers['above']['pos']
-    let md_next = quotes_start_next < marker_pos_next_but_one && quotes_start_next
-
-    if md_cur != md_next
-        echom "[vim-jukit] Can only merge cells with the same type!"
-        call winrestview(save_view)
-        return
-    endif
-
-    if md_cur
+    for i in range(v:count1)
+        call jukit#util#md_buffer_vars()
+        let markers = jukit#util#get_adjacent_markers()
+        let save_view = winsaveview()
+        if !markers['below']['pos']
+            echom "[vim-jukit] No cell below!"
+            return
+        endif
         call cursor(markers['below']['pos'], 1)
-        let quotes_end_cur = search(b:jukit_md_end, 'nbW')
+        let quotes_start_prev = search(b:jukit_md_start, 'nbW')
+        let quotes_start_next = search(b:jukit_md_start, 'nW')
+        call cursor(markers['below']['pos'] + 1, 1)
+        let marker_pos_next_but_one = search('|%%--%%|', 'nW')
 
-        call deletebufline(bufnr('%'), quotes_end_cur, quotes_start_next)
-    else
-        call deletebufline(bufnr('%'), markers['below']['pos'])
-    endif
+        if !marker_pos_next_but_one
+            let marker_pos_next_but_one = line('$')
+        endif
 
-    call winrestview(save_view)
-    let cell_id = jukit#util#get_unique_id()
-    call s:merge_outputs(markers['below']['ids'][0], markers['below']['ids'][1], cell_id)
-    call s:set_marker_below(cell_id, -1)
-    call s:set_marker_above(-1, cell_id)
+        let md_cur = quotes_start_prev > markers['above']['pos']
+        let md_next = quotes_start_next < marker_pos_next_but_one && quotes_start_next
+
+        if md_cur != md_next
+            echom "[vim-jukit] Can only merge cells with the same type!"
+            call winrestview(save_view)
+            return
+        endif
+
+        if md_cur
+            call cursor(markers['below']['pos'], 1)
+            let quotes_end_cur = search(b:jukit_md_end, 'nbW')
+
+            call deletebufline(bufnr('%'), quotes_end_cur, quotes_start_next)
+        else
+            call deletebufline(bufnr('%'), markers['below']['pos'])
+        endif
+
+        call winrestview(save_view)
+        let cell_id = jukit#util#get_unique_id()
+        call s:merge_outputs(markers['below']['ids'][0], markers['below']['ids'][1], cell_id)
+        call s:set_marker_below(cell_id, -1)
+        call s:set_marker_above(-1, cell_id)
+    endfor
 endfun
 
 fun! jukit#cells#merge_above() abort
@@ -229,47 +235,49 @@ fun! jukit#cells#merge_above() abort
     " assign new cell id to: current cell (i.e. merged cell)
     " effect on output: merge outputs and assign to merged cell
 
-    call jukit#util#md_buffer_vars()
-    let markers = jukit#util#get_adjacent_markers()
-    let save_view = winsaveview()
-    if !markers['above']['pos']
-        echom "[vim-jukit] No cell above!"
-        return
-    endif
-    call cursor(markers['above']['pos'], 1)
-    let marker_pos_next = search('|%%--%%|', 'nbW')
-    let quotes_start_next = search(b:jukit_md_start, 'nbW')
-    let quotes_start_prev = search(b:jukit_md_start, 'nW')
-
-    if !markers['below']['pos']
-        let markers['below']['pos'] = line('$')
-    endif
-
-    let md_cur = quotes_start_prev < markers['below']['pos'] && quotes_start_prev
-    let md_next = quotes_start_next > marker_pos_next
-
-    if md_cur != md_next
-        echom "[vim-jukit] Can only merge cells with the same type!"
-        call winrestview(save_view)
-        return
-    endif
-
-    let delete_id = matchstr(getline(markers['above']['pos']), '|%%--%%|.*<\zs\(.*\)\ze>')
-    if md_cur
+    for i in range(v:count1)
+        call jukit#util#md_buffer_vars()
+        let markers = jukit#util#get_adjacent_markers()
+        let save_view = winsaveview()
+        if !markers['above']['pos']
+            echom "[vim-jukit] No cell above!"
+            return
+        endif
         call cursor(markers['above']['pos'], 1)
-        let quotes_end_next = search(b:jukit_md_end, 'nbW')
+        let marker_pos_next = search('|%%--%%|', 'nbW')
+        let quotes_start_next = search(b:jukit_md_start, 'nbW')
+        let quotes_start_prev = search(b:jukit_md_start, 'nW')
 
-        call winrestview(save_view)
-        call deletebufline(bufnr('%'), quotes_end_next, quotes_start_prev)
-    else
-        call winrestview(save_view)
-        call deletebufline(bufnr('%'), markers['above']['pos'])
-    endif
+        if !markers['below']['pos']
+            let markers['below']['pos'] = line('$')
+        endif
 
-    let cell_id = jukit#util#get_unique_id()
-    call s:merge_outputs(markers['above']['ids'][0], markers['above']['ids'][1], cell_id)
-    call s:set_marker_below(cell_id, -1)
-    call s:set_marker_above(-1, cell_id)
+        let md_cur = quotes_start_prev < markers['below']['pos'] && quotes_start_prev
+        let md_next = quotes_start_next > marker_pos_next
+
+        if md_cur != md_next
+            echom "[vim-jukit] Can only merge cells with the same type!"
+            call winrestview(save_view)
+            return
+        endif
+
+        let delete_id = matchstr(getline(markers['above']['pos']), '|%%--%%|.*<\zs\(.*\)\ze>')
+        if md_cur
+            call cursor(markers['above']['pos'], 1)
+            let quotes_end_next = search(b:jukit_md_end, 'nbW')
+
+            call winrestview(save_view)
+            call deletebufline(bufnr('%'), quotes_end_next, quotes_start_prev)
+        else
+            call winrestview(save_view)
+            call deletebufline(bufnr('%'), markers['above']['pos'])
+        endif
+
+        let cell_id = jukit#util#get_unique_id()
+        call s:merge_outputs(markers['above']['ids'][0], markers['above']['ids'][1], cell_id)
+        call s:set_marker_below(cell_id, -1)
+        call s:set_marker_above(-1, cell_id)
+    endfor
 endfun
 
 fun! jukit#cells#create_below(markdown) abort
@@ -277,39 +285,41 @@ fun! jukit#cells#create_below(markdown) abort
     " assign new cell id to: new cell
     " effect on output: -
 
-    let markers = jukit#util#get_adjacent_markers()
-    let cell_id = jukit#util#get_unique_id()
+    for i in range(v:count1)
+        let markers = jukit#util#get_adjacent_markers()
+        let cell_id = jukit#util#get_unique_id()
 
-    if markers['below']['pos']
-        call s:set_marker_below(cell_id, -1)
-        let pos = markers['below']['pos']
-        call append(pos-1, ['', '', ''])
-        call s:new_marker(markers['below']['ids'][0], cell_id, pos-1)
-        call cursor(pos+2, 1)
-    elseif markers['above']['pos']
-        call append(line('$'), ['', '', ''])
-        call s:new_marker(markers['above']['ids'][1], cell_id, line('$')-3)
-        call cursor(line('$')-1, 1)
-    else
-        call append(line('$'), ['', '', ''])
-        let ids = s:new_marker(-1, cell_id, line('$')-3)
-        call s:copy_output('NONE', ids[0])
-        call cursor(line('$')-1, 1)
-    endif
+        if markers['below']['pos']
+            call s:set_marker_below(cell_id, -1)
+            let pos = markers['below']['pos']
+            call append(pos-1, ['', '', ''])
+            call s:new_marker(markers['below']['ids'][0], cell_id, pos-1)
+            call cursor(pos+2, 1)
+        elseif markers['above']['pos']
+            call append(line('$'), ['', '', ''])
+            call s:new_marker(markers['above']['ids'][1], cell_id, line('$')-3)
+            call cursor(line('$')-1, 1)
+        else
+            call append(line('$'), ['', '', ''])
+            let ids = s:new_marker(-1, cell_id, line('$')-3)
+            call s:copy_output('NONE', ids[0])
+            call cursor(line('$')-1, 1)
+        endif
 
-    if a:markdown
-        call jukit#util#md_buffer_vars()
-        call setline(line('.')-1, b:jukit_md_start)
-        call setline(line('.')+1, b:jukit_md_end)
-    endif
+        if a:markdown
+            call jukit#util#md_buffer_vars()
+            call setline(line('.')-1, b:jukit_md_start)
+            call setline(line('.')+1, b:jukit_md_end)
+        endif
 
-    if g:jukit_highlight_markers
-        call jukit#highlight_markers(1)
-    endif
-    if g:jukit_enable_textcell_bg_hl
-        call jukit#place_markdown_cell_signs(1)
-    endif
-    startinsert
+        if g:jukit_highlight_markers
+            call jukit#highlight_markers(1)
+        endif
+        if g:jukit_enable_textcell_bg_hl
+            call jukit#place_markdown_cell_signs(1)
+        endif
+        startinsert
+    endfor
 endfun
 
 fun! jukit#cells#create_above(markdown) abort
@@ -317,39 +327,41 @@ fun! jukit#cells#create_above(markdown) abort
     " assign new cell id to: new cell
     " effect on output: -
 
-    let markers = jukit#util#get_adjacent_markers()
-    let cell_id = jukit#util#get_unique_id()
+    for i in range(v:count1)
+        let markers = jukit#util#get_adjacent_markers()
+        let cell_id = jukit#util#get_unique_id()
 
-    if markers['above']['pos'] != 0
-        call s:set_marker_above(cell_id, -1)
-        let pos = markers['above']['pos']
-        call append(pos-1, ['', '', ''])
-        call s:new_marker(markers['above']['ids'][0], cell_id, pos-1)
-        call cursor(pos+2, 1)
-    elseif markers['below']['pos'] != 0
-        call append(0, ['', '', ''])
-        call s:new_marker(cell_id, markers['below']['ids'][0], 3)
-        call cursor(2, 1)
-    else
-        call append(0, ['', '', ''])
-        let ids = s:new_marker(cell_id, -1, 3)
-        call s:copy_output('NONE', ids[1])
-        call cursor(2, 1)
-    endif
+        if markers['above']['pos'] != 0
+            call s:set_marker_above(cell_id, -1)
+            let pos = markers['above']['pos']
+            call append(pos-1, ['', '', ''])
+            call s:new_marker(markers['above']['ids'][0], cell_id, pos-1)
+            call cursor(pos+2, 1)
+        elseif markers['below']['pos'] != 0
+            call append(0, ['', '', ''])
+            call s:new_marker(cell_id, markers['below']['ids'][0], 3)
+            call cursor(2, 1)
+        else
+            call append(0, ['', '', ''])
+            let ids = s:new_marker(cell_id, -1, 3)
+            call s:copy_output('NONE', ids[1])
+            call cursor(2, 1)
+        endif
 
-    if a:markdown
-        call jukit#util#md_buffer_vars()
-        call setline(line('.')-1, b:jukit_md_start)
-        call setline(line('.')+1, b:jukit_md_end)
-    endif
+        if a:markdown
+            call jukit#util#md_buffer_vars()
+            call setline(line('.')-1, b:jukit_md_start)
+            call setline(line('.')+1, b:jukit_md_end)
+        endif
 
-    if g:jukit_highlight_markers
-        call jukit#highlight_markers(1)
-    endif
-    if g:jukit_enable_textcell_bg_hl
-        call jukit#place_markdown_cell_signs(1)
-    endif
-    startinsert
+        if g:jukit_highlight_markers
+            call jukit#highlight_markers(1)
+        endif
+        if g:jukit_enable_textcell_bg_hl
+            call jukit#place_markdown_cell_signs(1)
+        endif
+        startinsert
+    endfor
 endfun
 
 fun! jukit#cells#delete() abort
@@ -357,26 +369,28 @@ fun! jukit#cells#delete() abort
     " assign new cell id to: -
     " effect on output: -
 
-    let markers = jukit#util#get_adjacent_markers()
+    for i in range(v:count1)
+        let markers = jukit#util#get_adjacent_markers()
 
-    if markers['below']['pos'] == 0
-        let pos2 = line('$')
-    else
-        let pos2 = markers['below']['pos']-1
-    endif
+        if markers['below']['pos'] == 0
+            let pos2 = line('$')
+        else
+            let pos2 = markers['below']['pos']-1
+        endif
 
-    if markers['above']['pos'] == 0
-        let pos1 = 1
-        let pos2 += 1
-    else
-        let pos1 = markers['above']['pos']
-    endif
+        if markers['above']['pos'] == 0
+            let pos1 = 1
+            let pos2 += 1
+        else
+            let pos1 = markers['above']['pos']
+        endif
 
-    call deletebufline(bufnr('%'), pos1, pos2)
-    if markers['above']['pos'] && markers['below']['pos']
-        call s:set_marker_below(markers['above']['ids'][0], -1)
-    endif
-    call cursor(line('.')+1, 1)
+        call deletebufline(bufnr('%'), pos1, pos2)
+        if markers['above']['pos'] && markers['below']['pos']
+            call s:set_marker_below(markers['above']['ids'][0], -1)
+        endif
+        call cursor(line('.')+1, 1)
+    endfor
 endfun
 
 fun! jukit#cells#move_up() abort
@@ -384,41 +398,43 @@ fun! jukit#cells#move_up() abort
     " assign new cell id to: -
     " effect on output: -
     
-    let markers = jukit#util#get_adjacent_markers()
-    if !markers['above']['pos']
-        echom '[vim-jukit] No cell above!'
-        return
-    endif
+    for i in range(v:count1)
+        let markers = jukit#util#get_adjacent_markers()
+        if !markers['above']['pos']
+            echom '[vim-jukit] No cell above!'
+            return
+        endif
 
-    let marker_pos_current = markers['above']['pos']
-    let id_cur = markers['above']['ids'][1]
-    let marker_pos_other = search('|%%--%%|\(.*<' 
-        \. join(markers['above']['ids'], '|') . '>\)\@!', 'nbW')
-    let p1_other = marker_pos_other + 1
-    let p2_other = markers['above']['pos'] - 1
+        let marker_pos_current = markers['above']['pos']
+        let id_cur = markers['above']['ids'][1]
+        let marker_pos_other = search('|%%--%%|\(.*<' 
+            \. join(markers['above']['ids'], '|') . '>\)\@!', 'nbW')
+        let p1_other = marker_pos_other + 1
+        let p2_other = markers['above']['pos'] - 1
 
-    if !markers['below']['pos']
-        let p2 = line('$')
-    else
-        let p2 = markers['below']['pos'] - 1
-    endif
-    let p1 = markers['above']['pos'] + 1
+        if !markers['below']['pos']
+            let p2 = line('$')
+        else
+            let p2 = markers['below']['pos'] - 1
+        endif
+        let p1 = markers['above']['pos'] + 1
 
-    let cpos = getpos('.')
-    let ldelta = cpos[1] - marker_pos_current
-    call s:set_marker_below(markers['above']['ids'][0], -1)
-    call s:set_marker_above(id_cur, markers['above']['ids'][0])
-    silent exe p1_other . ',' . p2_other . 'move ' . marker_pos_current
-        \. ' | ' . p1 . ',' . p2 . 'move ' . marker_pos_other
-    call cursor(marker_pos_other + ldelta, cpos[2])
-    call s:set_marker_above(-1, id_cur)
+        let cpos = getpos('.')
+        let ldelta = cpos[1] - marker_pos_current
+        call s:set_marker_below(markers['above']['ids'][0], -1)
+        call s:set_marker_above(id_cur, markers['above']['ids'][0])
+        silent exe p1_other . ',' . p2_other . 'move ' . marker_pos_current
+            \. ' | ' . p1 . ',' . p2 . 'move ' . marker_pos_other
+        call cursor(marker_pos_other + ldelta, cpos[2])
+        call s:set_marker_above(-1, id_cur)
 
-    if g:jukit_highlight_markers
-        call jukit#highlight_markers(1)
-    endif
-    if g:jukit_enable_textcell_bg_hl
-        call jukit#place_markdown_cell_signs(1)
-    endif
+        if g:jukit_highlight_markers
+            call jukit#highlight_markers(1)
+        endif
+        if g:jukit_enable_textcell_bg_hl
+            call jukit#place_markdown_cell_signs(1)
+        endif
+    endfor
 endfun
 
 fun! jukit#cells#move_down() abort
@@ -426,40 +442,42 @@ fun! jukit#cells#move_down() abort
     " assign new cell id to: -
     " effect on output: -
 
-    let markers = jukit#util#get_adjacent_markers()
-    if !markers['below']['pos']
-        echom '[vim-jukit] No cell below!'
-        return
-    endif
+    for i in range(v:count1)
+        let markers = jukit#util#get_adjacent_markers()
+        if !markers['below']['pos']
+            echom '[vim-jukit] No cell below!'
+            return
+        endif
 
-    let id_cur = markers['below']['ids'][0]
-    let p1_other = markers['below']['pos'] + 1
-    let p2_other = search('|%%--%%|\(.*<'
-        \. join(markers['below']['ids'], '|') . '>\)\@!', 'nW') - 1
-    if p2_other == -1
-        let p2_other = line('$')
-    endif
+        let id_cur = markers['below']['ids'][0]
+        let p1_other = markers['below']['pos'] + 1
+        let p2_other = search('|%%--%%|\(.*<'
+            \. join(markers['below']['ids'], '|') . '>\)\@!', 'nW') - 1
+        if p2_other == -1
+            let p2_other = line('$')
+        endif
 
-    if !markers['above']['pos']
-        let p1 = 1
-    else
-        let p1 = markers['above']['pos'] + 1
-    endif
-    let p2 = markers['below']['pos'] - 1
+        if !markers['above']['pos']
+            let p1 = 1
+        else
+            let p1 = markers['above']['pos'] + 1
+        endif
+        let p2 = markers['below']['pos'] - 1
 
-    let cpos = getpos('.')
-    let ldelta = cpos[1] - markers['above']['pos']
-    call s:set_marker_above(-1, markers['below']['ids'][1])
-    call s:set_marker_below(markers['below']['ids'][1], id_cur)
-    silent exe p1 . ',' . p2 . 'move ' . markers['below']['pos'] . ' | ' 
-        \. p1_other . ',' . p2_other . 'move ' . markers['above']['pos']
-    call cursor(markers['above']['pos'] + p2_other - p1_other + ldelta + 2, cpos[2])
-    call s:set_marker_below(id_cur, -1)
+        let cpos = getpos('.')
+        let ldelta = cpos[1] - markers['above']['pos']
+        call s:set_marker_above(-1, markers['below']['ids'][1])
+        call s:set_marker_below(markers['below']['ids'][1], id_cur)
+        silent exe p1 . ',' . p2 . 'move ' . markers['below']['pos'] . ' | ' 
+            \. p1_other . ',' . p2_other . 'move ' . markers['above']['pos']
+        call cursor(markers['above']['pos'] + p2_other - p1_other + ldelta + 2, cpos[2])
+        call s:set_marker_below(id_cur, -1)
 
-    if g:jukit_highlight_markers
-        call jukit#highlight_markers(1)
-    endif
-    if g:jukit_enable_textcell_bg_hl
-        call jukit#place_markdown_cell_signs(1)
-    endif
+        if g:jukit_highlight_markers
+            call jukit#highlight_markers(1)
+        endif
+        if g:jukit_enable_textcell_bg_hl
+            call jukit#place_markdown_cell_signs(1)
+        endif
+    endfor
 endfun

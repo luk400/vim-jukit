@@ -113,8 +113,9 @@ fun! jukit#send#line() abort
         return
     endif
 
-    call s:send_to_split('%jukit_run', getline('.'), 0)
-    call cursor(line('.')+1, 1)
+    let code = join(getline(line('.'), line('.')+v:count1-1), "\n")
+    call s:send_to_split('%jukit_run', code, 0)
+    call cursor(line('.')+v:count1, 1)
 endfun
 
 fun! jukit#send#selection() abort
@@ -140,7 +141,16 @@ fun! jukit#send#section(move_next) abort
     if !s:output_exists()
         return
     endif
+   
+    let count = v:count1
+    if count == 1
+        call s:send_single_section(a:move_next)
+    else
+        call s:send_multiple_sections(count)
+    endif
+endfun
 
+fun! s:send_single_section(move_next) abort
     let pos1 = search('|%%--%%|', 'nbW') + 1
     let pos2 = search('|%%--%%|', 'nW')
 
@@ -171,6 +181,31 @@ fun! jukit#send#section(move_next) abort
             call cursor(line('$'), 1)
         endif
     endif
+endfun
+
+fun! s:send_multiple_sections(count) abort
+    let pos1 = search('|%%--%%|', 'nbW') + 1
+    for i in range(a:count)
+        let pos2 = search('|%%--%%|', 'nW')
+
+        if pos2 != 0
+            let pos2 -= 1
+        elseif pos2 == 0
+            let pos2 = line('$')
+            break
+        endif
+
+        let next_cell_pos = search('|%%--%%|', 'W')
+        if next_cell_pos != 0
+            call cursor(line('.')+1, 1)
+        else
+            call cursor(line('$'), 1)
+        endif
+    endfor
+
+    let code = join(getline(pos1, pos2), "\n")
+
+    call s:send_to_split('%jukit_run_split', code, 1)
 endfun
 
 fun! jukit#send#until_current_section() abort
