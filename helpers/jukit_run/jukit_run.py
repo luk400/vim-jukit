@@ -83,10 +83,12 @@ class JukitCaptureOutput(object):
         # makes the rich module work, but it seems like the rich Console has
         # to be imported before the stdout is redirected in jukit
         # -> find out what exactly causes this behaviour
-        with suppress(ModuleNotFoundError):
+        try:
             if "__jukit_init_rich_console" not in locals():
                 from rich import get_console as __jukit_init_rich_console
                 __jukit_init_rich_console()
+        except ModuleNotFoundError:
+                __jukit_init_rich_console = None
 
         self.sys_stdout = sys.stdout
         self.sys_stderr = sys.stderr
