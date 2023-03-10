@@ -11,7 +11,7 @@ if g:jukit_terminal == 'kitty'
             \ . join(g:jukit_required_kitty_version, '.') . ' - Current version: '
             \ . join(s:invalid_kitty_version, '.') . ") -> using " 
             \ . g:jukit_terminal . ' instead!'
-    else
+    elseif g:jukit_mpl_style == ""
         let g:jukit_mpl_style = jukit#util#plugin_path()
             \ . g:_jukit_ps . join(['helpers', 'matplotlib-backend-kitty', 'backend.mplstyle'], g:_jukit_ps)
     endif
