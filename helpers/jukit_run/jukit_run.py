@@ -10,6 +10,7 @@ import io, json, re, os, sys
 from matplotlib import pyplot as plt
 from multiprocessing import Process
 from typing import Optional, Any, TextIO
+from contextlib import suppress
 
 from ipynb_convert import add_to_output_history, HEADER
 from . import util
@@ -77,6 +78,16 @@ class JukitCaptureOutput(object):
         self.max_plots_size = max_plots_size
 
     def __enter__(self):
+        # TODO: workaround for rich module
+        # not sure why this in combination with the woraround in StringIOWrapper.__getattr__()
+        # makes the rich module work, but it seems like the rich Console has
+        # to be imported before the stdout is redirected in jukit
+        # -> find out what exactly causes this behaviour
+        with suppress(ModuleNotFoundError):
+            if "__jukit_init_rich_console" not in locals():
+                from rich import get_console as __jukit_init_rich_console
+                __jukit_init_rich_console()
+
         self.sys_stdout = sys.stdout
         self.sys_stderr = sys.stderr
 
@@ -117,6 +128,8 @@ class StringIOWrapper(object):
             return getattr(self._wrapped_stdout, attr)
         elif hasattr(self._sys_stdout, attr):
             return getattr(self._sys_stdout, attr)
+        elif attr == "rich_proxied_file": # TODO: workaround for rich module
+            return self
 
     def write(self, text):
         self._wrapped_stdout.write(text)
