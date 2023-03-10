@@ -15,6 +15,10 @@ from ipynb_convert import add_to_output_history, HEADER
 from . import util
 from .input_styles import display_functions, display_style_2
 
+MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(MODULE_PATH, "..", ".encodings"), "r") as f:
+    ENCODING = f.read().strip()
+
 
 def _fix_db(shell):
     hist_manager = shell.history_manager
@@ -143,7 +147,7 @@ class JukitRun(TerminalMagics):
     def _write_to_info_json(self, key: str, val: Any):
         info = util.catch_load_json(self.info_file)
 
-        with open(self.info_file, "w", encoding="utf-8") as f:
+        with open(self.info_file, "w", encoding=ENCODING) as f:
             info[key] = val
             json.dump(info, f)
 
@@ -188,7 +192,7 @@ class JukitRun(TerminalMagics):
 
         if not os.path.isdir(self.jukit_dir):
             os.mkdir(self.jukit_dir)
-            with open(self.info_file, "w", encoding="utf-8") as f:
+            with open(self.info_file, "w", encoding=ENCODING) as f:
                 json.dump({}, f)
 
         self._write_to_info_json("import_complete", 1)

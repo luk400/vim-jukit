@@ -2,6 +2,10 @@ import json, sys, os, random, string, re
 import shutil
 from typing import Union
 
+MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(MODULE_PATH, "..", ".encodings"), "r") as f:
+    ENCODING = f.read().strip()
+
 
 def get_nb_and_language(nb, lang_dict):
     assert nb["nbformat"] > 3, (
@@ -33,7 +37,7 @@ def get_nb_and_language(nb, lang_dict):
 
 def create_output_history(outhist_file, nb=None):
     if nb is None:
-        with open(outhist_file, "w+") as f:
+        with open(outhist_file, "w+", encoding=ENCODING) as f:
             json.dump({}, f)
 
         return
@@ -47,7 +51,7 @@ def create_output_history(outhist_file, nb=None):
         if cell["cell_type"] == "code" and cell["execution_count"] is not None:
             out_hist[cell_id] = cell["outputs"]
 
-    with open(outhist_file, "w+") as f:
+    with open(outhist_file, "w+", encoding=ENCODING) as f:
         json.dump(out_hist, f)
 
     return cell_ids
@@ -59,7 +63,7 @@ def delete_cell_output(outhist_file, cell_id=None):
     img_dir = os.path.join(jukit_path, f"{fname_noext}_img")
 
     if cell_id is None:
-        with open(outhist_file, "w+") as f:
+        with open(outhist_file, "w+", encoding=ENCODING) as f:
             json.dump({}, f)
 
         if os.path.isdir(img_dir):
@@ -73,7 +77,7 @@ def delete_cell_output(outhist_file, cell_id=None):
         return
 
     outhist.pop(cell_id)
-    with open(outhist_file, "w+") as f:
+    with open(outhist_file, "w+", encoding=ENCODING) as f:
         json.dump(outhist, f)
 
     img_file = os.path.join(img_dir, f"test_outhist_{cell_id}.png")
@@ -94,7 +98,7 @@ def copy_output(from_id: str, to_ids: Union[str, list], outhist_file: str):
     if not os.path.isdir(os.path.split(outhist_file)[0]):
         return
 
-    with open(outhist_file, "w+") as f:
+    with open(outhist_file, "w+", encoding=ENCODING) as f:
         json.dump(outhist, f)
 
 
@@ -110,7 +114,7 @@ def clear_obsolete_output(current_ids, outhist_file, clear_img = True):
     if not keys_deleted:
         return
 
-    with open(outhist_file, "w+") as f:
+    with open(outhist_file, "w+", encoding=ENCODING) as f:
         json.dump(outhist, f)
 
     if not clear_img:
@@ -151,7 +155,7 @@ def merge_outputs(outhist_file, cell_above, cell_below, new_id):
     out_combined = out_above + out_below
     out_hist[new_id] = out_combined
 
-    with open(outhist_file, "w") as f:
+    with open(outhist_file, "w", encoding=ENCODING) as f:
         out_hist = json.dump(out_hist, f)
 
 
@@ -197,12 +201,12 @@ def add_to_output_history(out_str, cell_id, outhist_file, exec_result):
         }
         out_jsons.append(exec_json)
 
-    with open(outhist_file, "r") as f:
+    with open(outhist_file, "r", encoding=ENCODING) as f:
         out_hist = json.load(f)
 
     out_hist[cell_id] = out_jsons
 
-    with open(outhist_file, "w") as f:
+    with open(outhist_file, "w", encoding=ENCODING) as f:
         out_hist = json.dump(out_hist, f)
 
 
@@ -223,7 +227,7 @@ def generate_cell_ids(num):
 
 def get_json(file):
     if os.path.isfile(file):
-        with open(file, "r") as f:
+        with open(file, "r", encoding=ENCODING) as f:
             content = json.load(f)
         return content
     else:

@@ -3,6 +3,9 @@ import argparse, json, os, re
 
 HEADER = "|%%--%%|"
 MD_MARK = "°°°"
+MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(MODULE_PATH, "..", ".encodings"), "r") as f:
+    ENCODING = f.read().strip()
 
 
 def nb_to_script(nb, cell_ids=None, language="python"):
@@ -130,19 +133,19 @@ def convert(in_file, language, jukit_copy, create=True):
         py_str = nb_to_script(nb, cell_ids, language)
 
         if create:
-            with open(out_file, "w+") as f:
+            with open(out_file, "w+", encoding=ENCODING) as f:
                 f.write(py_str)
 
         return out_file
     else:
         out_file = os.path.join(dir_, name + ".ipynb")
 
-        with open(in_file, "r") as f:
+        with open(in_file, "r", encoding=ENCODING) as f:
             py_str = f.read()
 
         outhist_file = os.path.join(jukit_dir, f"{name}_outhist.json")
         if os.path.isfile(outhist_file):
-            with open(outhist_file, "r") as f:
+            with open(outhist_file, "r", encoding=ENCODING) as f:
                 out_hist = json.load(f)
         else:
             out_hist = {}
@@ -150,7 +153,7 @@ def convert(in_file, language, jukit_copy, create=True):
         nb = script_to_nb(py_str, out_hist, language)
 
         if create:
-            with open(out_file, "w+") as f:
+            with open(out_file, "w+", encoding=ENCODING) as f:
                 json.dump(nb, f, indent=2)
 
         return out_file

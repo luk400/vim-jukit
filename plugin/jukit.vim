@@ -41,6 +41,7 @@ let g:_jukit_md_mark = '°°°'
 let g:jukit_version = 'v1.4.1'
 let g:jukit_convert_overwrite_default = get(g:, 'jukit_convert_overwrite_default', -1)
 let g:jukit_convert_open_default = get(g:, 'jukit_convert_open_default', -1)
+let g:jukit_file_encodings = get(g:, 'jukit_file_encodings', 'utf-8')
 
 " (i)python
 let g:jukit_in_style = get(g:, 'jukit_in_style', 2)
@@ -165,6 +166,9 @@ else
     let g:_jukit_ps = '/'
     let g:_jukit_is_windows = 0
 endif
+
+" set encodings for readings with python
+call writefile([g:jukit_file_encodings], jukit#util#plugin_path() . '/helpers/.encodings')
 
 """"""""""
 " autocmds 

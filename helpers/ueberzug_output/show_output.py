@@ -11,6 +11,9 @@ import subprocess
 import shutil
 
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(MODULE_PATH, "..", ".encodings"), "r") as f:
+    ENCODING = f.read().strip()
+
 HTMLPREP_SCRIPT = os.path.join(MODULE_PATH, "prepare_html.py")
 
 BORDER_COLOR = "blue"
@@ -93,7 +96,7 @@ def png_success_check(
         )
         if is_in_trunc:
             info_json = os.path.join(jukit_path, ".jukit_info.json")
-            with open(info_json, "w+") as f:
+            with open(info_json, "w+", encoding=ENCODING) as f:
                 json.dump(jukit_info_content, f, indent=2)
 
         return True
@@ -106,7 +109,7 @@ def png_success_check(
             )
             if is_in_trunc:
                 info_json = os.path.join(jukit_path, ".jukit_info.json")
-                with open(info_json, "w+") as f:
+                with open(info_json, "w+", encoding=ENCODING) as f:
                     json.dump(jukit_info_content, f, indent=2)
 
             return True
@@ -132,7 +135,7 @@ def png_success_check(
     for i, trunc_prop in enumerate(try_props):
         _update_template_png(png_path.replace('_temp', ''), f"truncated_img_{trunc_prop}")
 
-        with open(html_path, "r") as f:
+        with open(html_path, "r", encoding=ENCODING) as f:
             soup = bs(f.read(), "html.parser")
 
         num_descendants = len(list(soup.body.descendants))
@@ -171,7 +174,7 @@ def png_success_check(
         new_tag.string = f"{html_path}"
         soup.append(new_tag)
 
-        with open(html_trunc_path, "w+") as f:
+        with open(html_trunc_path, "w+", encoding=ENCODING) as f:
             f.write(str(soup))
 
         cmds = [
@@ -207,7 +210,7 @@ def png_success_check(
     )
     if not is_in_trunc:
         info_json = os.path.join(jukit_path, ".jukit_info.json")
-        with open(info_json, "w+") as f:
+        with open(info_json, "w+", encoding=ENCODING) as f:
             json.dump(jukit_info_content, f, indent=2)
 
     return False
@@ -215,7 +218,7 @@ def png_success_check(
 
 def _check_if_cell_truncated(cell_id, html_path, jukit_path, action=None):
     info_json = os.path.join(jukit_path, ".jukit_info.json")
-    with open(info_json, "r") as f:
+    with open(info_json, "r", encoding=ENCODING) as f:
         content = json.load(f)
 
     if "truncated_files" in content.keys():
@@ -236,7 +239,7 @@ def _check_if_cell_truncated(cell_id, html_path, jukit_path, action=None):
 
 def _get_html_viewer(jukit_path):
     info_json = os.path.join(jukit_path, ".jukit_info.json")
-    with open(info_json, "r") as f:
+    with open(info_json, "r", encoding=ENCODING) as f:
         content = json.load(f)
 
     return content["display_param"]["html_viewer"]
@@ -315,7 +318,7 @@ def create_png(
         if none_out:
             return None, dir_
 
-        with open(temp_nb, "w+") as f:
+        with open(temp_nb, "w+", encoding=ENCODING) as f:
             json.dump(tempjson, f, indent=2)
 
         cmd = "; ".join(
@@ -347,7 +350,7 @@ def create_png(
         _update_template_png(out_png, "no_output")
         return out_png
 
-    with open(temp_nb, "w+") as f:
+    with open(temp_nb, "w+", encoding=ENCODING) as f:
         json.dump(tempjson, f, indent=2)
 
     cmds = [
@@ -533,7 +536,7 @@ def _get_termcell_h_to_w():
 
 def _get_display_parameters(dir_):
     info_json = os.path.join(dir_, ".jukit_info.json")
-    with open(info_json, "r") as f:
+    with open(info_json, "r", encoding=ENCODING) as f:
         content = json.load(f)
 
     params = content["display_param"]
@@ -557,7 +560,7 @@ def _convert_output_to_ipynb(output_json, cell_id):
 
     none_out = True
     if os.path.isfile(output_json):
-        with open(output_json, "r") as f:
+        with open(output_json, "r", encoding=ENCODING) as f:
             all_outputs = json.load(f)
 
         outputs = all_outputs.get(cell_id, None)

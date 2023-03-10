@@ -10,6 +10,8 @@ PYTHON_CMD = "python3"
 JUPYTER_CMD = "jupyter"
 CUTYCAPT_CMD = "cutycapt"
 IMAGEMAGICK_CMD = "convert"
+with open(os.path.join(MODULE_PATH, "..", ".encodings"), "r") as f:
+    ENCODING = f.read().strip()
 
 ps = lambda str_: str_.replace(" ", r"\ ")
 
@@ -49,7 +51,7 @@ def main(args):
     soup.body.append(soup.new_tag("style", type="text/css"))
     soup.body.style.append("body {background-color:#181818;}")
 
-    with open(html_file, "w+") as file:
+    with open(html_file, "w+", encoding=ENCODING) as file:
         file.write(str(soup))
 
     cmds = [

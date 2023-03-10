@@ -1,9 +1,14 @@
+import os
 import sys
 from bs4 import BeautifulSoup as bs
 
+MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(MODULE_PATH, "..", ".encodings"), "r") as f:
+    ENCODING = f.read().strip()
+
 
 def format_html(html, none_out=False):
-    with open(html, 'r') as f:
+    with open(html, 'r', encoding = ENCODING) as f:
         soup = bs(f.read(), 'html.parser')
 
     input_str = soup.find("div", {'class':"jp-Cell-inputWrapper"}).find('pre').text.strip()
@@ -29,7 +34,7 @@ def format_html(html, none_out=False):
     new_tag.string = subtitle
     soup.insert(1, new_tag)
 
-    with open(html, "w") as file:
+    with open(html, "w", encoding = ENCODING) as file:
         file.write(str(soup))
 
 

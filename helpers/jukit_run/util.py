@@ -4,6 +4,10 @@ import matplotlib.image as mpimg
 from typing import List
 from IPython.core.interactiveshell import InteractiveShell
 
+MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(MODULE_PATH, "..", ".encodings"), "r") as f:
+    ENCODING = f.read().strip()
+
 
 KiB = 2 ** 10
 MiB = 2 ** 20
@@ -21,7 +25,7 @@ def catch_load_json(
     it is assumed that it is corrupted and replaced with empty json"""
 
     try:
-        with open(file, "r", encoding="utf-8") as f:
+        with open(file, "r", encoding=ENCODING) as f:
             info = json.load(f)
     except json.JSONDecodeError:
         jukit_info(f"JSONDecodeError, number of tries left: {ntries_left}")
@@ -31,7 +35,7 @@ def catch_load_json(
         else:
             jukit_info("JSON file not readable, replacing with empty json!")
             info = {}
-            with open(file, "w+", encoding="utf-8") as f:
+            with open(file, "w+", encoding=ENCODING) as f:
                 json.dump(info, f)
 
     return info
