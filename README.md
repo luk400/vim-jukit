@@ -411,6 +411,8 @@ nnoremap <leader>rpd :call jukit#convert#save_nb_to_file(1,1,'pdf')<cr>
 "   - same as above, but will (re-)run all cells when converting to pdf. NOTE: If the function doesn't work there may be issues with your nbconvert or latex version - to debug, try converting to pdf using `jupyter nbconvert --to pdf --allow-errors --log-level='ERROR' --HTMLExporter.theme=dark </abs/path/to/ipynb> && xdg-open </abs/path/to/pdf>` in your terminal and check the output for possible issues.
 ```
 
+*NOTE*: in case you're using the snap version of firefox to display ipynb notebooks, see [this issue](https://github.com/luk400/vim-jukit/issues/52).
+
 ###### Überzug
 ```vim
 nnoremap <leader>pos :call jukit#ueberzug#set_default_pos()<cr>
