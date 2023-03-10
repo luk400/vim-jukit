@@ -257,13 +257,16 @@ class JukitRun(TerminalMagics):
 
         if cmd_param:
             cmd, param = cmd_param
-            opts, name = self.parse_options(param, "pqs", "cell_id=", mode="string")
+            opts, name = self.parse_options(param, "pqs", "cell_id=", "md_cell_start=", mode="string")
         else:
             param, cmd = self._get_info_json_keys("cmd_opts", "cmd")
-            opts, name = self.parse_options(param, "pqs", "cell_id=", mode="string")
+            opts, name = self.parse_options(param, "pqs", "cell_id=", "md_cell_start=", mode="string")
 
         if "p" not in opts:
             util.hide_prompt(self.shell)
+
+        if "md_cell_start" in opts and cmd.strip().startswith(opts.md_cell_start):
+            return
 
         if "q" not in opts:
             self.display_input(cmd, self.shell)

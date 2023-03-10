@@ -85,7 +85,7 @@ endfun
 fun! s:send_to_split(magic_cmd, code, save, ...) abort
     if g:_jukit_python && g:jukit_ipython
         let param = g:jukit_ipy_opts
-        if !a:0 && g:jukit_save_output && a:save
+        if !a:0 && a:save
             let param = param . ' -s'
         elseif a:0
             let param = a:1
@@ -172,7 +172,7 @@ fun! s:send_single_section(move_next) abort
             call s:clean_outhist_autocmd()
         endif
     endif
-    call s:send_to_split('%jukit_run', code, 1, param)
+    call s:send_to_split('%jukit_run', code, g:jukit_save_output, param)
 
     if a:move_next
         let next_cell_pos = search('|%%--%%|', 'W')
@@ -206,7 +206,7 @@ fun! s:send_multiple_sections(count) abort
 
     let code = join(getline(pos1, pos2), "\n")
 
-    call s:send_to_split('%jukit_run_split', code, 1)
+    call s:send_to_split('%jukit_run_split', code, g:jukit_save_output)
 endfun
 
 fun! jukit#send#until_current_section() abort
@@ -234,7 +234,14 @@ fun! jukit#send#until_current_section() abort
     endif
 
     let code = join(getline(pos1, pos2), "\n")
-    call s:send_to_split('%jukit_run_split', code, 1)
+
+    if g:jukit_save_output
+        let md_start = escape(jukit#util#get_lang_info()[0], '"')
+        let param = g:jukit_ipy_opts . ' -s' . ' --md_cell_start=' . md_start
+        call s:send_to_split('%jukit_run_split', code, 1, param)
+    else
+        call s:send_to_split('%jukit_run_split', code, 0)
+    endif
 endfun
 
 fun! jukit#send#all() abort
@@ -251,5 +258,12 @@ fun! jukit#send#all() abort
     endif
 
     let code = join(getline(1, '$'), "\n")
-    call s:send_to_split('%jukit_run_split', code, 1)
+
+    if g:jukit_save_output
+        let md_start = escape(jukit#util#get_lang_info()[0], '"')
+        let param = g:jukit_ipy_opts . ' -s' . ' --md_cell_start=' . md_start
+        call s:send_to_split('%jukit_run_split', code, 1, param)
+    else
+        call s:send_to_split('%jukit_run_split', code, 0)
+    endif
 endfun
