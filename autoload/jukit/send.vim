@@ -113,9 +113,10 @@ fun! jukit#send#line() abort
         return
     endif
 
-    let code = join(getline(line('.'), line('.')+v:count1-1), "\n")
+    let cmd_count = v:count == 0 ? 1 : v:count
+    let code = join(getline(line('.'), line('.')+cmd_count-1), "\n")
     call s:send_to_split('%jukit_run', code, 0)
-    call cursor(line('.')+v:count1, 1)
+    call cursor(line('.')+cmd_count, 1)
 endfun
 
 fun! jukit#send#selection() abort
@@ -142,7 +143,8 @@ fun! jukit#send#section(move_next) abort
         return
     endif
    
-    if v:count1 == 1
+    let cmd_count = v:count == 0 ? 1 : v:count
+    if cmd_count == 1
         call s:send_single_section(a:move_next)
     else
         call s:send_multiple_sections(count)

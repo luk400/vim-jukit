@@ -104,7 +104,8 @@ fun! s:set_marker_below(id1, id2) abort
 endfun
 
 fun! jukit#cells#jump_to_next_cell() abort
-    for i in range(v:count1)
+    let cmd_count = v:count == 0 ? 1 : v:count
+    for i in range(cmd_count)
         let next_cell_pos = search('|%%--%%|', 'nW')
         if next_cell_pos == 0
             return
@@ -114,7 +115,8 @@ fun! jukit#cells#jump_to_next_cell() abort
 endfun
 
 fun! jukit#cells#jump_to_previous_cell() abort
-    for i in range(v:count1)
+    let cmd_count = v:count == 0 ? 1 : v:count
+    for i in range(cmd_count)
         let markers = jukit#util#get_adjacent_markers()
         if !markers['above']['pos']
             call cursor(1, 1)
@@ -186,7 +188,8 @@ fun! jukit#cells#merge_below() abort
     " assign new cell id to: current cell (i.e. merged cell)
     " effect on output: merge outputs and assign to merged cell
 
-    for i in range(v:count1)
+    let cmd_count = v:count == 0 ? 1 : v:count
+    for i in range(cmd_count)
         call jukit#util#md_buffer_vars()
         let markers = jukit#util#get_adjacent_markers()
         let save_view = winsaveview()
@@ -235,7 +238,8 @@ fun! jukit#cells#merge_above() abort
     " assign new cell id to: current cell (i.e. merged cell)
     " effect on output: merge outputs and assign to merged cell
 
-    for i in range(v:count1)
+    let cmd_count = v:count == 0 ? 1 : v:count
+    for i in range(cmd_count)
         call jukit#util#md_buffer_vars()
         let markers = jukit#util#get_adjacent_markers()
         let save_view = winsaveview()
@@ -285,7 +289,8 @@ fun! jukit#cells#create_below(markdown) abort
     " assign new cell id to: new cell
     " effect on output: -
 
-    for i in range(v:count1)
+    let cmd_count = v:count == 0 ? 1 : v:count
+    for i in range(cmd_count)
         let markers = jukit#util#get_adjacent_markers()
         let cell_id = jukit#util#get_unique_id()
 
@@ -327,7 +332,8 @@ fun! jukit#cells#create_above(markdown) abort
     " assign new cell id to: new cell
     " effect on output: -
 
-    for i in range(v:count1)
+    let cmd_count = v:count == 0 ? 1 : v:count
+    for i in range(cmd_count)
         let markers = jukit#util#get_adjacent_markers()
         let cell_id = jukit#util#get_unique_id()
 
@@ -369,7 +375,8 @@ fun! jukit#cells#delete() abort
     " assign new cell id to: -
     " effect on output: -
 
-    for i in range(v:count1)
+    let cmd_count = v:count == 0 ? 1 : v:count
+    for i in range(cmd_count)
         let markers = jukit#util#get_adjacent_markers()
 
         if markers['below']['pos'] == 0
@@ -398,7 +405,8 @@ fun! jukit#cells#move_up() abort
     " assign new cell id to: -
     " effect on output: -
     
-    for i in range(v:count1)
+    let cmd_count = v:count == 0 ? 1 : v:count
+    for i in range(cmd_count)
         let markers = jukit#util#get_adjacent_markers()
         if !markers['above']['pos']
             echom '[vim-jukit] No cell above!'
@@ -442,7 +450,8 @@ fun! jukit#cells#move_down() abort
     " assign new cell id to: -
     " effect on output: -
 
-    for i in range(v:count1)
+    let cmd_count = v:count == 0 ? 1 : v:count
+    for i in range(cmd_count)
         let markers = jukit#util#get_adjacent_markers()
         if !markers['below']['pos']
             echom '[vim-jukit] No cell below!'
