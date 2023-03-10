@@ -41,7 +41,7 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 
 ![seperate_os_window_new](https://user-images.githubusercontent.com/57172028/162546384-3e4ba886-a6ac-47a3-96e4-5033fd3f8308.gif)
 
-* **For kitty-terminal users (and for iTerm2+tmux users): in-terminal plotting via matplotlib**
+* **For kitty-terminal users (and for iTerm2+tmux users - experimental): in-terminal plotting via matplotlib**
 
 ![inline_plotting_new](https://user-images.githubusercontent.com/57172028/162511949-7c521780-a6fb-4a57-b889-7b1e47f5edff.gif)
 
@@ -78,12 +78,13 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 &emsp;brew install ./tmux.rb<br>
 &emsp;tmux -V # make sure it says tmux 3.2a<br>
 &emsp;brew pin tmux # prevent unintentional upgrade in the future<br>
-&emsp;```
+&emsp;```<br>
+&emsp;&#x2022;&nbsp; NOTE: I am not a macOS user myself. I've tried to implement inline plotting for iTerm2+tmux and got it working at one point. In case you have problems, feel free to open an issue but be prepared to rely on yourself or others to solve it, since debugging this as a non macOS-user can be time consuming and I have limited time for my open source projects these days.
 </p></details>
 
 <details><summary>windows users</summary><p>
 &emsp;&#x2022;&nbsp; make sure `python3` - and not just `python` - is a valid command in your terminal, if it's not then set `let g:_jukit_python_os_cmd = 'python'` in your vim config<br>
-&emsp;&#x2022;&nbsp; this plugin has not been extensively tested on windows and some features may not work
+&emsp;&#x2022;&nbsp; NOTE: I am not a Windows user myself. I've tried to implement a working version for Windows and got it working at one point. In case you have problems, feel free to open an issue but be prepared to rely on yourself or others to solve it, since debugging this as a non Windows-user can be time consuming and I have limited time for my open source projects these days.
 </p></details>
 
 <details><summary>überzug users</summary><p>
