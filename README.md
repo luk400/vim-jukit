@@ -92,10 +92,15 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 &emsp;&#x2022;&nbsp; required python packages:<br>
 &emsp;&emsp; pillow<br>
 &emsp;&emsp; beautifulsoup4<br>
-&emsp;&emsp; ueberzug<br>
 &emsp;&emsp; numpy<br>
 &emsp;&emsp; nbconvert >= 6.4.4<br>
-&emsp;&#x2022;&nbsp; CLI tools:<br>
+&emsp;&emsp; ueberzug - NOTE: this package is no longer maintained and available via pip, so it has to be installed manually as follows:<br>
+&emsp;&emsp;&emsp;&emsp;```<br>
+&emsp;&emsp;&emsp;&emsp;git clone --branch 18.1.9 https://github.com/seebye/ueberzug.git<br>
+&emsp;&emsp;&emsp;&emsp;cd ueberzug<br>
+&emsp;&emsp;&emsp;&emsp;python3 setup.py install<br>
+&emsp;&emsp;&emsp;&emsp;```<br>
+&emsp;&#x2022;&nbsp; required CLI tools:<br>
 &emsp;&emsp; imagemagick<br>
 &emsp;&emsp; cutycapt (alternatively you can also use wkhtmltoimage, if you decide to use wkhtmltoimage, `let g:jukit_ueberzug_cutycapt_cmd = '/path/to/wkhtmltoimage'` has to specified in your vim config)
 </p></details>
