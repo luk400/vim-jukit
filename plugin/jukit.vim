@@ -24,6 +24,7 @@ let g:jukit_use_tcomment = get(g:, 'jukit_use_tcomment', 0)
 let g:jukit_comment_mark = get(g:, 'jukit_comment_mark', '#')
 let g:jukit_auto_output_hist = get(g:, 'jukit_auto_output_hist', 0)
 let g:jukit_mappings = get(g:, 'jukit_mappings', 1)
+let g:jukit_notebook_viewer = get(g:, 'jukit_notebook_viewer', 'jupyter-notebook')
 let g:_jukit_python_os_cmd = get(g:, 'jukit_python_os_cmd', 'python3')
 let g:_jukit_win_escape_char = get(g:, 'jukit_win_escape_char', '\\')
 
@@ -305,8 +306,8 @@ fun! s:set_mappings() abort
     endif
 
     " ipynb conversion
-    if !hasmapto('jukit#convert#notebook_convert("jupyter-notebook")', 'n')
-        nnoremap <buffer> <leader>np <cmd>call jukit#convert#notebook_convert("jupyter-notebook")<cr>
+    if !hasmapto('jukit#convert#notebook_convert', 'n')
+        nnoremap <buffer> <leader>np <cmd>call jukit#convert#notebook_convert(g:jukit_notebook_viewer)<cr>
     endif
     if !hasmapto("jukit#convert#save_nb_to_file(0,1,'html')", 'n')
         nnoremap <buffer> <leader>ht <cmd>call jukit#convert#save_nb_to_file(0,1,'html')<cr>

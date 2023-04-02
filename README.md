@@ -148,7 +148,7 @@ If you want to convert your .jl file back to a .ipynb notebook, simply press `<l
 For all other functions and custimization options, please see the definitions and comments in the next sections.
 
 ### Options and global variables
-For variable explanations see the comments underneath each variable
+For explanations see the comments underneath each variable. Make sure you set these variables in your config somewhere *before* the plugin is loaded.
 ###### Basic jukit options
 ```vim
 let g:jukit_shell_cmd = 'ipython3'
@@ -165,6 +165,8 @@ let g:jukit_mappings = 1
 "   - If set to 0, none of the default function mappings (as specified further down) will be applied
 let g:jukit_mappings_ext_enabled = "*"
 "   - String or list of strings specifying extensions for which the mappings will be created. For example, `let g:jukit_mappings_ext_enabled=['py', 'ipynb']` will enable the mappings only in `.py` and `.ipynb` files. Use `let g:jukit_mappings_ext_enabled='*'` to enable them for all files.
+let g:jukit_notebook_viewer = 'jupyter-notebook'
+"   - Command to open .ipynb files, by default jupyter-notebook is used. To use e.g. vs code instead, you could set this to `let g:jukit_notebook_viewer = 'code'`
 let g:jukit_convert_overwrite_default = -1
 "   - Default setting when converting from .ipynb to .py or vice versa and a file of the same name already exists. Can be of [-1, 0, 1], where -1 means no default (i.e. you'll be prompted to specify what to do), 0 means never overwrite, 1 means always overwrite
 let g:jukit_convert_open_default = -1
