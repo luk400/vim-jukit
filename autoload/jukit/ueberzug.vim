@@ -110,8 +110,8 @@ fun! jukit#ueberzug#show_last_cell_output(force) abort
 
     call jukit#util#ipython_info_write(params)
     let cell_id = jukit#util#get_current_cell_id()
-    let dir = expand('%:p:h')
-    let fname = expand('%:t:r')
+    let dir = escape(expand('%:p:h'), ' \')
+    let fname = escape(expand('%:t:r'), ' \')
     let output_json = dir . '/.jukit/' . fname . '_outhist.json'
 
     let truncated_files = jukit#util#ipython_info_get('truncated_files', 1)
@@ -218,7 +218,7 @@ fun! s:show_template_img(scaler) abort
     let cmd = 'python3 ' . jukit#util#plugin_path() . '/helpers/ueberzug_output/show_output.py ' 
         \. s:get_ueberzug_options() . ' config "' . jukit#util#plugin_path()
         \. '/helpers/ueberzug_output/templates/pos_template.png" "'
-        \. expand('%:p:h') . '/.jukit" --scaler=' . a:scaler
+        \. escape(expand('%:p:h'), ' \') . '/.jukit" --scaler=' . a:scaler
 
     if has('nvim')
         noautocmd exec "term " . cmd

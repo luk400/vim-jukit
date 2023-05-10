@@ -18,8 +18,8 @@ fun! s:convert_to_ipynb(args) abort
     call s:replace_old_python_md_start()
     write
 
-    let file_current = expand("%:p")
-    let ipynb_file = expand("%:p:r") . '.ipynb'
+    let file_current = escape(expand("%:p"), ' \')
+    let ipynb_file = escape(expand("%:p:r"), ' \') . '.ipynb'
 
     if !empty(glob(ipynb_file)) && g:jukit_convert_overwrite_default == -1
         let answer = confirm('[vim-jukit] ' . ipynb_file . ' already '
@@ -62,7 +62,7 @@ fun! s:convert_to_ipynb(args) abort
 endfun
 
 fun! s:convert_to_script() abort
-    let file_current = expand("%:p")
+    let file_current = escape(expand("%:p"), ' \')
 
 python3 << EOF
 import vim, os, sys, json
@@ -129,8 +129,8 @@ fun! jukit#convert#save_nb_to_file(run, open, to) abort
         let viewer = 'xdg-open'
     endif
 
-    let file_current = expand("%:p")
-    let fname = expand("%:p:r")
+    let file_current = escape(expand("%:p"), ' \')
+    let fname = escape(expand("%:p:r"), ' \')
     let ipynb_file = fname . '.ipynb'
     let html_theme = get(g:, 'jukit_html_theme', 'dark')
     call system(g:_jukit_python_os_cmd . " " . jukit#util#plugin_path() . g:_jukit_ps
