@@ -76,8 +76,12 @@ fun! jukit#vimterm#splits#term() abort
     let g:_jukit_python = 0
 endfun
 
-fun! jukit#vimterm#splits#history() abort
+fun! jukit#vimterm#splits#history(...) abort
     let g:jukit_outhist_title = s:setup_term()
+
+    if a:0 > 0
+        call s:send_keys(g:jukit_outhist_title, a:1, 1)
+    endif
 
     call s:send_keys(g:jukit_outhist_title, jukit#splits#_build_shell_cmd("outhist"), 1)
     call jukit#util#ipython_info_write({'import_complete': 0})

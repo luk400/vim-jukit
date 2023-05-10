@@ -43,7 +43,7 @@ fun! jukit#tmux#splits#term(...) abort
     call s:wait_for_pane(g:jukit_output_title, 4, 250)
 endfun
 
-fun! jukit#tmux#splits#history() abort
+fun! jukit#tmux#splits#history(...) abort
     if g:jukit_auto_output_hist
         call jukit#splits#toggle_auto_hist(1)
     endif
@@ -55,6 +55,10 @@ fun! jukit#tmux#splits#history() abort
 
     if exists('g:jukit_output_title')
         call s:wait_for_pane(g:jukit_output_title, 4, 250)
+    endif
+
+    if a:0 > 0
+        call jukit#tmux#cmd#send_text(g:jukit_outhist_title, a:1)
     endif
 
     call jukit#tmux#cmd#send_text(g:jukit_outhist_title, jukit#splits#_build_shell_cmd('outhist'))

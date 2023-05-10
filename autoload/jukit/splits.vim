@@ -119,7 +119,7 @@ fun! jukit#splits#history() abort
 
     call s:create_autocmd_close_splits()
 
-    exe 'call jukit#' . g:jukit_terminal . '#splits#history()'
+    exe 'call jukit#' . g:jukit_terminal . '#splits#history(a:000)'
     call jukit#layouts#set_layout()
     call jukit#splits#show_last_cell_output(1)
 endfun
@@ -169,7 +169,7 @@ fun! jukit#splits#output_and_history(...) abort
     else
         call jukit#splits#output()
     endif
-    call jukit#splits#history()
+    call jukit#splits#history(a:1)
 endfun
 
 fun! jukit#splits#_build_shell_cmd(...) abort
