@@ -104,7 +104,7 @@ fun! jukit#splits#term() abort
     call jukit#layouts#set_layout()
 endfun
 
-fun! jukit#splits#history() abort
+fun! jukit#splits#history(...) abort
     if jukit#splits#split_exists('outhist')
         echom "[vim-jukit] Output-history split already exists. Close it "
             \. "before creating a new one!"
@@ -119,7 +119,7 @@ fun! jukit#splits#history() abort
 
     call s:create_autocmd_close_splits()
 
-    exe 'call jukit#' . g:jukit_terminal . '#splits#history()'
+    exe 'call call("jukit#' . g:jukit_terminal . '#splits#history", a:000)'
     call jukit#layouts#set_layout()
     call jukit#splits#show_last_cell_output(1)
 endfun
@@ -166,10 +166,15 @@ endfun
 fun! jukit#splits#output_and_history(...) abort
     if a:0 > 0
         call jukit#splits#output(a:1)
+        if g:jukit_venv_in_output_hist
+            call jukit#splits#history(a:1)
+        else
+            call jukit#splits#history()
+        endif
     else
         call jukit#splits#output()
+        call jukit#splits#history()
     endif
-    call jukit#splits#history()
 endfun
 
 fun! jukit#splits#_build_shell_cmd(...) abort

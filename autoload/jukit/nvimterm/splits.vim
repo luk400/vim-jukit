@@ -49,10 +49,14 @@ fun! jukit#nvimterm#splits#term() abort
     let g:_jukit_python = 0
 endfun
 
-fun! jukit#nvimterm#splits#history() abort
+fun! jukit#nvimterm#splits#history(...) abort
     let ids = s:setup_term()
     let g:jukit_outhist_title = ids[0]
     let g:jukit_outhist_buf = ids[1]
+
+    if a:0 > 0
+        call s:chan_send(g:jukit_outhist_title, a:1, 1)
+    endif
 
     call s:chan_send(g:jukit_outhist_title, jukit#splits#_build_shell_cmd("outhist"), 1)
     call jukit#util#ipython_info_write({'import_complete': 0})

@@ -25,6 +25,7 @@ let g:jukit_comment_mark = get(g:, 'jukit_comment_mark', '#')
 let g:jukit_auto_output_hist = get(g:, 'jukit_auto_output_hist', 0)
 let g:jukit_mappings = get(g:, 'jukit_mappings', 1)
 let g:jukit_notebook_viewer = get(g:, 'jukit_notebook_viewer', 'jupyter-notebook')
+let g:jukit_venv_in_output_hist = get(g:, 'jukit_venv_in_output_hist', 1)
 let g:_jukit_python_os_cmd = get(g:, 'jukit_python_os_cmd', 'python3')
 let g:_jukit_win_escape_char = get(g:, 'jukit_win_escape_char', '\\')
 

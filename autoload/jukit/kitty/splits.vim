@@ -40,7 +40,7 @@ fun! jukit#kitty#splits#term(...) abort
     call call('jukit#kitty#cmd#launch', launch_args)
 endfun
 
-fun! jukit#kitty#splits#history() abort
+fun! jukit#kitty#splits#history(...) abort
     if g:jukit_auto_output_hist
         call jukit#splits#toggle_auto_hist(1)
     endif
@@ -60,6 +60,10 @@ fun! jukit#kitty#splits#history() abort
 
     if type(response) == 7
         call jukit#kitty#cmd#launch(g:jukit_outhist_title, '--keep-focus', '--cwd=' . getcwd())
+    endif
+
+    if a:0 > 0
+        call jukit#kitty#cmd#send_text(g:jukit_outhist_title, a:1)
     endif
 
     call jukit#kitty#cmd#send_text(g:jukit_outhist_title, jukit#splits#_build_shell_cmd('outhist'))
