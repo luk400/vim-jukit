@@ -173,6 +173,8 @@ let g:jukit_convert_open_default = -1
 "   - Default setting for whether the notebook should be opened after converting from .py to .ipynb. Can be of [-1, 0, 1], where -1 means no default (i.e. you'll be prompted to specify what to do), 0 means never open, 1 means always open
 let g:jukit_file_encodings = 'utf-8'
 "   - Default encoding for reading and writing to files in the python helper functions
+let g:jukit_venv_in_output_hist = 1
+"   - Whether to also use the provided terminal command for the output history split when starting the splits using the JukitOUtHist command. If 0, the provided terminal command is only used in the output split, not in the output history split.
 ```
 
 ###### Cell highlighting/syntax
