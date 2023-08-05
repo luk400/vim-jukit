@@ -195,8 +195,42 @@ endif
 " commands
 """"""""""
 
-command! -nargs=1 JukitOut :call jukit#splits#output(<q-args>)
-command! -nargs=1 JukitOutHist :call jukit#splits#output_and_history(<q-args>)
+
+command! -nargs=1 JukitOut                             :call jukit#splits#output(<q-args>)
+command! -nargs=1 JukitOutHist                         :call jukit#splits#output_and_history(<q-args>)
+
+" command! -nargs=1 JukitSplitsOutput                    :call jukit#splits#output(<q-args>)
+command! -nargs=0 JukitSplitsTerm                      :call jukit#splits#term()
+command! -nargs=1 JukitSplitsHistory                   :call jukit#splits#history(<q-args>)
+command! -nargs=0 JukitSplitsCloseHistory              :call jukit#splits#close_history()
+" command! -nargs=1 JukitSplitsOutputAndHistory          :call jukit#splits#output_and_history(<q-args>)
+command! -nargs=0 JukitSplitsCloseOutputSplit          :call jukit#splits#close_output_split()
+command! -nargs=1 JukitSplitsCloseOutputAndHistory     :call jukit#splits#close_output_and_history(<q-args>)
+command! -nargs=1 JukitSplitsShowLastCellOutput        :call jukit#splits#show_last_cell_output(<q-args>)
+command! -nargs=1 JukitSplitsOutHistScroll             :call jukit#splits#out_hist_scroll(<q-args>)
+command! -nargs=1 JukitSplitsToggleAutoHist            :call jukit#splits#toggle_auto_hist(<q-args>)
+command! -nargs=1 JukitLayoutsSetLayout                :call jukit#layouts#set_layout(<q-args>)
+
+command! -nargs=1 JukitSendSection                     :call jukit#send#section(<q-args>)
+command! -nargs=0 JukitSendLine                        :call jukit#send#line()
+command! -nargs=? JukitSendSelection                   :call jukit#send#selection(<q-args>)
+command! -nargs=0 JukitSendUntilCurrentSection         :call jukit#send#until_current_section()
+command! -nargs=0 JukitSendAll                         :call jukit#send#all()
+
+command! -nargs=0 JukitCellsJumpToNextCell             :call jukit#cells#jump_to_next_cell()
+command! -nargs=0 JukitCellsJumpToPreviousCell         :call jukit#cells#jump_to_previous_cell()
+command! -nargs=1 JukitCellsCreateCodeBelow            :call jukit#cells#create_below(0)
+command! -nargs=1 JukitCellsCreateCodeAbove            :call jukit#cells#create_above(0)
+command! -nargs=1 JukitCellsCreateMarkdownBelow        :call jukit#cells#create_below(1)
+command! -nargs=1 JukitCellsCreateMarkdownAbove        :call jukit#cells#create_above(1)
+command! -nargs=0 JukitCellsSplit                      :call jukit#cells#split()
+command! -nargs=0 JukitCellsMergeAbove                 :call jukit#cells#merge_above()
+command! -nargs=0 JukitCellsMergeBelow                 :call jukit#cells#merge_below()
+command! -nargs=0 JukitCellsMoveUp                     :call jukit#cells#move_up()
+command! -nargs=0 JukitCellsMoveDown                   :call jukit#cells#move_down()
+command! -nargs=0 JukitCellsDelete                     :call jukit#cells#delete()
+command! -nargs=1 JukitCellsDeleteOutputs              :call jukit#cells#delete_outputs(0)
+command! -nargs=1 JukitCellsDeleteAllOutputs           :call jukit#cells#delete_outputs(1)
 
 
 """"""""""
