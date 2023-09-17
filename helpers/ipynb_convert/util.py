@@ -18,7 +18,7 @@ def get_nb_and_language(nb, lang_dict):
     if kernel_spec is None:
         language = "python"
     else:
-        language = kernel_spec.get("language")
+        language = kernel_spec.get("language").lower()
 
     if language is None:
         match_vals = [fuzzy_match(kernel_spec["name"], key) for key in lang_dict.keys()]
