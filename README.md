@@ -120,7 +120,7 @@ Plug 'luk400/vim-jukit'
 
 ### Issues
 
-If there are any problems, feel free to open an issue. Be sure to include the operating system you're using, your vim or neovim version, your terminal (kitty terminal or otherwise), and possibly relevant jukit-options you've configured. Be sure to try the plugin with an otherwise empty (neo)vim config and see if your problem persists, to narrow down possible conflicts with other settings/plugins that you're using. 
+If there are any problems, feel free to open an issue. Be sure to include the operating system you're using, your vim or neovim version, python version, your terminal (kitty terminal or otherwise), and possibly relevant jukit-options you've configured. Be sure to try the plugin with an otherwise empty (neo)vim config and see if your problem persists, to narrow down possible conflicts with other settings/plugins that you're using. 
 
 Be aware that I work on this project **for fun** in my free time, so expect that you might not receive any help in a timely manner.
 
