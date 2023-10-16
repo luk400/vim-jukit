@@ -195,7 +195,11 @@ fun! jukit#splits#_build_shell_cmd(...) abort
     else
         let use_py = 1
         let use_ipy = 1
-        let shell_cmd = 'ipython3'
+        if g:jukit_venv_in_output_hist
+            let shell_cmd = g:jukit_shell_cmd
+        else
+            let shell_cmd = 'ipython3'
+        endif
     endif
 
     if !use_py
