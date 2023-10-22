@@ -15,7 +15,7 @@ def get_nb_and_language(nb, lang_dict):
     )
 
     kernel_spec = nb["metadata"].get("kernelspec")
-    if kernel_spec is None:
+    if kernel_spec is None or kernel_spec.get("language") is None:
         language = "python"
     else:
         language = kernel_spec.get("language").lower()
