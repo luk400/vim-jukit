@@ -62,7 +62,7 @@ fun! s:convert_to_ipynb(args) abort
 endfun
 
 fun! s:convert_to_script() abort
-    let file_current = escape(expand("%:p"), ' \')
+    let file_current = escape(expand("%:p"), '\')
 
 python3 << EOF
 import vim, os, sys, json
@@ -129,7 +129,7 @@ fun! jukit#convert#save_nb_to_file(run, open, to) abort
         let viewer = 'xdg-open'
     endif
 
-    let file_current = escape(expand("%:p"), ' \')
+    let file_current = escape(expand("%:p"), '\')
     let fname = escape(expand("%:p:r"), ' \')
     let ipynb_file = fname . '.ipynb'
     let html_theme = get(g:, 'jukit_html_theme', 'dark')

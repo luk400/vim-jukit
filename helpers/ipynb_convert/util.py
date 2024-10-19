@@ -231,6 +231,7 @@ def get_json(file):
             content = json.load(f)
         return content
     else:
+        print('file not found')
         return {}
 
 
