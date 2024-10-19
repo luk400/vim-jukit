@@ -215,14 +215,14 @@ fun! jukit#splits#_build_shell_cmd(...) abort
                 \. 'matplotlib.use("module://matplotlib-backend-kitty");'
                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
         elseif g:jukit_terminal == 'tmux'
-            let current_pane = matchstr(system('tmux run "echo #{pane_id}"'), '%\d*')
+            let current_pane = $TMUX_PANE
             if is_outhist
                 let target_pane = g:jukit_outhist_title
             else
                 let target_pane = g:jukit_output_title
             endif
             let cmd = cmd
-                \. 'matplotlib.use("module://imgcat");'
+                \. 'matplotlib.use("module://imgcat_jukit");'
                 \. 'plt.show.__annotations__["tmux_panes"] = ["' 
                 \. current_pane . '", "' . target_pane . '"];'
                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"

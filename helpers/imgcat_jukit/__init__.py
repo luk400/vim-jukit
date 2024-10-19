@@ -1,7 +1,7 @@
 import codecs, io, sys
 from matplotlib._pylab_helpers import Gcf
 from matplotlib.figure import Figure
-from matplotlib.backend_bases import FigureManagerBase
+from matplotlib.backend_bases import FigureManagerBase, FigureCanvasBase
 import matplotlib.pyplot as plt
 
 from .imgcat import imgcat
@@ -39,6 +39,8 @@ class FigureManagerImgcat(FigureManagerBase):
         else:
             imgcat(self.canvas.figure)
 
+class FigureCanvas(FigureCanvasBase):
+    pass
 
 def show(block=None):
     for manager in Gcf.get_all_fig_managers():

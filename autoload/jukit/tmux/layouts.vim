@@ -1,6 +1,7 @@
 fun! s:get_pane_by_name(name, output_exists, outhist_exists) abort
     if a:name == 'file_content'
-        let current_pane = matchstr(system('tmux run "echo #{pane_id}"'), '%\d*')
+        " let current_pane = matchstr(system('tmux run "echo #{pane_id}"'), '%\d*')
+        let current_pane = $TMUX_PANE
         return current_pane
     elseif a:name == 'output' && a:output_exists
         return g:jukit_output_title
