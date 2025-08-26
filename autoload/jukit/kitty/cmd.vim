@@ -25,7 +25,7 @@ fun! jukit#kitty#cmd#invalid_version(vreq) abort
 endfun
 
 fun! s:check_response(cmd, response) abort
-    let invalid = a:response =~? 'unknown' || a:response =~? 'not.\{,5}valid' || a:response =~? 'traceback'
+    let invalid = a:response =~? 'error: unknown' " || a:response =~? 'not.\{,5}valid' || a:response =~? 'traceback'
     if invalid
         echom '[vim-jukit] The following kitty command (may have) failed'
         echom '    COMMAND: `' . a:cmd . '`'
