@@ -138,7 +138,7 @@ else
     endif
 endif
 
-let supported_term = ['vimterm', 'nvimterm', 'kitty', 'tmux']
+let supported_term = ['vimterm', 'nvimterm', 'kitty', 'tmux', 'zellij']
 if g:jukit_terminal is# ''
     let g:jukit_terminal = jukit#util#get_terminal()
 elseif index(supported_term, g:jukit_terminal) < 0

@@ -28,7 +28,7 @@ if g:jukit_ipython
     endif
 endif
 
-let s:supported_graphical_term = ['kitty', 'tmux']
+let s:supported_graphical_term = ['kitty', 'tmux', 'zellij']
 let s:inline_plot_psbl = index(s:supported_graphical_term, g:jukit_terminal) >= 0
 if !s:inline_plot_psbl && g:jukit_inline_plotting
     echom '[vim-jukit] inline plotting only supported for values: [' 
@@ -232,6 +232,8 @@ fun! jukit#splits#_build_shell_cmd(...) abort
         endif
     elseif g:jukit_custom_backend != -1
         let cmd = cmd
+            \. "import matplotlib;"
+            \. "import matplotlib.pyplot as plt;"
             \. 'matplotlib.use("module://' . g:jukit_custom_backend . '");'
             \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
 

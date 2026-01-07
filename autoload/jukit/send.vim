@@ -77,6 +77,8 @@ fun! s:send(bufnr, text) abort
         call feedkeys("G:wincmd p\<cr>", "nxt")
     elseif g:jukit_terminal == 'tmux'
         call jukit#tmux#cmd#send_text(g:jukit_output_title, a:text)
+    elseif g:jukit_terminal == 'zellij'
+        call jukit#zellij#cmd#send_text(g:jukit_output_title, a:text)
     else
         echom '[vim-jukit] Terminal `' . g:jukit_terminal . '` not supported'
     endif
