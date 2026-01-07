@@ -59,12 +59,12 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 </p></details>
 
 <details><summary>(I)Python users</summary><p>
-&emsp;&#x2022;&nbsp; ipython version >= 7.3.0<br>
-&emsp;&#x2022;&nbsp; matplotlib version >= 3.4.0
+&emsp;&#x2022;&nbsp; ipython version == 7.3.0<br>
+&emsp;&#x2022;&nbsp; matplotlib version == 3.4.0
 </p></details>
 
 <details><summary>kitty terminal users</summary><p>
-&emsp;&#x2022;&nbsp; kitty version >= 0.22<br>
+&emsp;&#x2022;&nbsp; kitty version == 0.22<br>
 &emsp;&#x2022;&nbsp; remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf), or alternatively you can also always start kitty using `kitty -o allow_remote_control=yes`<br>
 &emsp;&#x2022;&nbsp; ImageMagick for displaying plots in the terminal must be installed (install using e.g. `sudo apt-get install imagemagick`)<br>
 &emsp;&#x2022;&nbsp; If you're using neovim with kitty, you need to launch kitty with the `--listen-on` option and specify an address to listen on. Furthermore, if you want to have different kitty instances simultaneously using this plugin and sending code to split windows, different addresses will need to be specified. One possible way to do this on linux machines is by simply always starting kitty with e.g. `kitty --listen-on=unix:@"$(date +%s%N)"`, which will make sure different kitty instances are launched with different, abstract sockets to listen on. On MacOS it should work using e.g. `kitty --listen-on=/tmp/kitty_"$(date +%s%N)"`. If you want, you can then simply specify an alias (i.e. put `alias jukit_kitty="kitty --listen-on=unix:@"$(date +%s%N)" -o allow_remote_control=yes"` in your .bashrc/.zshrc) which you can use to always start kitty with the necessary arguments.
@@ -105,9 +105,10 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 &emsp;&emsp; cutycapt (alternatively you can also use wkhtmltoimage, if you decide to use wkhtmltoimage, `let g:jukit_ueberzug_cutycapt_cmd = '/path/to/wkhtmltoimage'` has to specified in your vim config)
 </p></details>
 
-
-
-
+<details><summary>Zellij with sixelcat</summary><p>
+&emsp;&#x2022;&nbsp; libsixel-bin (for `img2sixel`)<br>
+&emsp;&#x2022;&nbsp; for inline plotting, zellij currently requires a custom build, that fixes some issues with sixel support. You can find my own build script in helpers/sixelcat/install_and_patch_zellij.sh
+</p></details>
 
 
 ### Installation

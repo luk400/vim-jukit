@@ -226,15 +226,15 @@ fun! jukit#splits#_build_shell_cmd(...) abort
                 \. 'plt.show.__annotations__["tmux_panes"] = ["' 
                 \. current_pane . '", "' . target_pane . '"];'
                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+        elseif g:jukit_terminal == 'zellij'
+            let cmd = cmd
+                \. 'matplotlib.use("module://sixelcat");'
+                \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
         else
             echom "[vim-jukit] No inline plotting for `g:jukit_terminal = "
-                \. g:jukit_terminal . "` supported (in case you're using zellij and want "
-                \. "to enable inline plotting, simply specify g:jukit_custom_backend = 'sixelcat'"
-                \. "and make sure you're using a sixel compatible terminal (tested on 'foot')"
+                \. g:jukit_terminal . "` supported"
         endif
-    endif
-
-    if g:jukit_custom_backend != -1
+    elseif g:jukit_custom_backend != -1
         let cmd = cmd
             \. "import matplotlib;"
             \. "import matplotlib.pyplot as plt;"
