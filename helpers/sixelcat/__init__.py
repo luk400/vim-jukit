@@ -7,7 +7,8 @@ from matplotlib.backend_bases import FigureManagerBase
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import matplotlib.pyplot as plt
 
-from .sixelcat import sixelcat
+from .config import configure, _config
+from .cat import sixelcat
 
 
 __version__ = '0.1.0'
@@ -87,4 +88,3 @@ def new_figure_manager_given_figure(num, figure):
     canvas = FigureCanvas(figure)
     manager = FigureManagerSixel(canvas, num)
     return manager
-

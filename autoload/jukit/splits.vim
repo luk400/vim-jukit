@@ -228,6 +228,8 @@ fun! jukit#splits#_build_shell_cmd(...) abort
                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
         elseif g:jukit_terminal == 'zellij'
             let cmd = cmd
+                \. 'import sixelcat;'
+                \. 'sixelcat.configure(max_width_factor=' . g:jukit_sixelcat_width_factor . ');'
                 \. 'matplotlib.use("module://sixelcat");'
                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
         else

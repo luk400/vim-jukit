@@ -66,6 +66,7 @@ let g:jukit_mpl_style = get(g:, 'jukit_mpl_style', '') "this value is changed fo
 let g:jukit_savefig_dpi = get(g:, 'jukit_savefig_dpi', 150)
 let g:jukit_custom_backend = get(g:, 'jukit_custom_backend', -1)
 let g:jukit_mpl_block = get(g:, 'jukit_mpl_block', 1)
+let g:jukit_sixelcat_width_factor = get(g:, 'jukit_sixelcat_width_factor', 1.8)
 
 " cell highlighting/syntax
 if g:_jukit_is_windows

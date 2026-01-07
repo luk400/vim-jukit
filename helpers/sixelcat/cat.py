@@ -5,6 +5,8 @@ import subprocess
 import tempfile
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
+from .config import _config
+
 
 def get_terminal_pixels():
     """Get terminal size in pixels, or None."""
@@ -51,8 +53,10 @@ def sixelcat(fig, dpi=150, fp=None):
     scale_arg = []
     #display_h = img_h
 
-    MAX_WIDTH_FACTOR = 1.8 # decrease to make max image width smaller -> todo, make configurable via init.lua to control img size
-    
+    max_width_factor = _config['max_width_factor'] # decrease to make max image width smaller
+    with open("/home/lukas/temp.txt", "w+") as f:
+        f.write(str(max_width_factor))
+
     if term_size:
         term_w, term_h, pix_per_row = term_size
         w_ratio = term_w / img_w
@@ -61,7 +65,7 @@ def sixelcat(fig, dpi=150, fp=None):
         if w_ratio < 1.0 or h_ratio < 1.0:
             # Need to scale down - use the more restrictive dimension
             if w_ratio < h_ratio:
-                scale_arg = ['-w', str(int(term_w*MAX_WIDTH_FACTOR))]
+                scale_arg = ['-w', str(int(term_w*max_width_factor))]
                 #display_h = int(img_h * w_ratio)
             else:
                 scale_arg = ['-h', str(term_h)]
