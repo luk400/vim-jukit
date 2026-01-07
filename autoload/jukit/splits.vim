@@ -228,9 +228,13 @@ fun! jukit#splits#_build_shell_cmd(...) abort
                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
         else
             echom "[vim-jukit] No inline plotting for `g:jukit_terminal = "
-                \ . g:jukit_terminal . "` supported"
+                \. g:jukit_terminal . "` supported (in case you're using zellij and want "
+                \. "to enable inline plotting, simply specify g:jukit_custom_backend = 'sixelcat'"
+                \. "and make sure you're using a sixel compatible terminal (tested on 'foot')"
         endif
-    elseif g:jukit_custom_backend != -1
+    endif
+
+    if g:jukit_custom_backend != -1
         let cmd = cmd
             \. "import matplotlib;"
             \. "import matplotlib.pyplot as plt;"
