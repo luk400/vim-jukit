@@ -54,8 +54,6 @@ def sixelcat(fig, dpi=150, fp=None):
     #display_h = img_h
 
     max_width_factor = _config['max_width_factor'] # decrease to make max image width smaller
-    with open("/home/lukas/temp.txt", "w+") as f:
-        f.write(str(max_width_factor))
 
     if term_size:
         term_w, term_h, pix_per_row = term_size
