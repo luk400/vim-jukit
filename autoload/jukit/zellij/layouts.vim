@@ -1,213 +1,57 @@
-fun! s:parse_layout(layout, output_exists, outhist_exists) abort
-    let inner_pair = {}
-    let outer_pane = {'split': a:layout['split'], 'bias': a:layout['p1']}
-    
-    if type(a:layout["val"][0]) == 4
-        let d = a:layout["val"][0]
-        let outer_pane['pane'] = a:layout["val"][1]
-        let outer_pane['top_or_left'] = 0
-        let inner_pair['pane'] = [d["val"][0], d["val"][1]]
-    elseif type(a:layout["val"][1]) == 4
-        let d = a:layout["val"][1]
-        let outer_pane['pane'] = a:layout["val"][0]
-        let outer_pane['top_or_left'] = 1
-        let inner_pair['pane'] = [d["val"][0], d["val"][1]]
-    else
-        echom "[vim-jukit] Invalid layout dict!"
-        return v:null
-    endif
-    
-    let inner_pair['split'] = d["split"]
-    let inner_pair['bias'] = d["p1"]
-    
-    return [inner_pair, outer_pane]
-endfun
+" Zellij has no clean absolute-sizing API: the only resize primitive is
+" `zellij action resize increase|decrease <dir>`, which adjusts by an
+" implementation-defined step (~5%). That means we can't honor the
+" proportions in g:jukit_layout the way kitty/tmux/(n)vimterm can.
+"
+" Rather than pretend to support layouts, we accept zellij's defaults at
+" pane creation time and expose increase/decrease helpers below for users
+" who want to nudge the proportions interactively.
 
-fun! s:get_pane_direction(name) abort
-    if a:name ==# 'file_content'
-        return 'vim'
-    elseif a:name ==# 'output'
-        return g:jukit_zellij_output_direction
-    elseif a:name ==# 'output_history'
-        return g:jukit_zellij_outhist_direction
-    else
-        return v:null
-    endif
-endfun
-
-fun! s:resize_to_percentage(direction, percentage, split_type) abort
-    if a:split_type ==# 'horizontal'
-        if a:percentage > 0.5
-            let resize_dir = (a:direction ==# 'right') ? 'right' : 'left'
-        else
-            let resize_dir = (a:direction ==# 'right') ? 'left' : 'right'
-        endif
-    else
-        if a:percentage > 0.5
-            let resize_dir = (a:direction ==# 'down') ? 'down' : 'up'
-        else
-            let resize_dir = (a:direction ==# 'down') ? 'up' : 'down'
-        endif
-    endif
-    
-    let diff = abs(a:percentage - 0.5)
-    let steps = float2nr(diff * 20)  " ~20 steps for 50% change
-    
-    for i in range(steps)
-        call jukit#zellij#cmd#zellij_command('resize', 'increase', resize_dir)
-    endfor
-endfun
+let s:inverse_direction = {
+    \ 'right': 'left',
+    \ 'left':  'right',
+    \ 'up':    'down',
+    \ 'down':  'up',
+    \ }
 
 fun! jukit#zellij#layouts#set_layout(layout) abort
-    let output_exists = jukit#zellij#splits#exists('output')
-    let outhist_exists = jukit#zellij#splits#exists('outhist')
-    
-    if !output_exists && !outhist_exists
-        echom "[vim-jukit] No panes for layout present"
+    " Intentional no-op. See README "Zellij" section for the rationale and
+    " for jukit#zellij#layouts#resize_output / resize_outhist (the
+    " user-facing knobs that DO work).
+endfun
+
+" Resize the jukit output pane by `steps` (default 5) zellij resize-bumps,
+" growing or shrinking it along the axis it shares with the vim pane.
+" `action` is 'increase' or 'decrease'.
+fun! jukit#zellij#layouts#resize_output(action, ...) abort
+    let session = jukit#zellij#splits#_active_session()
+    if type(session) == type(v:null) || empty(session.output_pane_id)
+        echom '[vim-jukit] No output pane to resize'
         return
     endif
-    
-    let response = s:parse_layout(a:layout, output_exists, outhist_exists)
-    if type(response) == type(v:null)
-        return
-    endif
-    
-    let inner_pair = response[0]
-    let outer_pane = response[1]
-    
-    if output_exists
-        call jukit#zellij#cmd#focus_pane(g:jukit_zellij_output_direction)
-        sleep 50m
-        
-        call s:resize_to_percentage(
-            \ g:jukit_zellij_output_direction,
-            \ outer_pane['bias'],
-            \ outer_pane['split']
-            \ )
-        
-        call jukit#zellij#cmd#return_to_vim()
-    endif
-    
-    if output_exists && outhist_exists
-        call jukit#zellij#cmd#focus_pane(g:jukit_zellij_output_direction)
-        sleep 50m
-        call jukit#zellij#cmd#focus_pane(g:jukit_zellij_outhist_direction)
-        sleep 50m
-        
-        call s:resize_to_percentage(
-            \ g:jukit_zellij_outhist_direction,
-            \ inner_pair['bias'],
-            \ inner_pair['split']
-            \ )
-        
-        call jukit#zellij#cmd#return_to_vim()
-        sleep 50m
-        call jukit#zellij#cmd#return_to_vim()
-    endif
-endfun
-
-fun! jukit#zellij#layouts#set_simple_layout(type) abort
-    let output_exists = jukit#zellij#splits#exists('output')
-    let outhist_exists = jukit#zellij#splits#exists('outhist')
-    
-    if !output_exists
-        echom "[vim-jukit] Output pane required for layout"
-        return
-    endif
-    
-    if a:type ==# 'horizontal'
-        call jukit#zellij#cmd#focus_pane(g:jukit_zellij_output_direction)
-        sleep 50m
-        
-        for i in range(5)
-            call jukit#zellij#cmd#zellij_command('resize', 'increase', 'left')
-        endfor
-        
-        call jukit#zellij#cmd#return_to_vim()
-        
-    elseif a:type ==# 'vertical'
-        call jukit#zellij#cmd#focus_pane(g:jukit_zellij_output_direction)
-        sleep 50m
-        
-        for i in range(5)
-            call jukit#zellij#cmd#zellij_command('resize', 'increase', 'up')
-        endfor
-        
-        call jukit#zellij#cmd#return_to_vim()
-        
-    elseif a:type ==# 'stacked'
-        echom "[vim-jukit] Stacked layout: use Zellij's native stacking (Ctrl+p, s)"
-    endif
-endfun
-
-fun! jukit#zellij#layouts#toggle_fullscreen() abort
-    call jukit#zellij#cmd#zellij_command('toggle-fullscreen')
-endfun
-
-fun! jukit#zellij#layouts#swap_panes() abort
-    if !jukit#zellij#splits#exists('output') || !jukit#zellij#splits#exists('outhist')
-        echom "[vim-jukit] Need both output and history panes to swap"
-        return
-    endif
-    
-    let temp = g:jukit_zellij_output_direction
-    let g:jukit_zellij_output_direction = g:jukit_zellij_outhist_direction
-    let g:jukit_zellij_outhist_direction = temp
-    
-    echom "[vim-jukit] Pane directions swapped (logical swap only)"
-    echom "  Output direction: " . g:jukit_zellij_output_direction
-    echom "  History direction: " . g:jukit_zellij_outhist_direction
-endfun
-
-fun! jukit#zellij#layouts#reset_layout() abort
-    call jukit#zellij#cmd#focus_pane(g:jukit_zellij_output_direction)
-    sleep 50m
-    
-    call jukit#zellij#cmd#zellij_command('toggle-fullscreen')
-    sleep 100m
-    call jukit#zellij#cmd#zellij_command('toggle-fullscreen')
-    
-    call jukit#zellij#cmd#return_to_vim()
-endfun
-
-fun! jukit#zellij#layouts#increase_output_size(steps) abort
-    call jukit#zellij#cmd#focus_pane(g:jukit_zellij_output_direction)
-    sleep 50m
-    
-    if g:jukit_zellij_output_direction ==# 'down'
-        let resize_dir = 'up'
-    elseif g:jukit_zellij_output_direction ==# 'up'
-        let resize_dir = 'down'
-    elseif g:jukit_zellij_output_direction ==# 'right'
-        let resize_dir = 'left'
-    else
-        let resize_dir = 'right'
-    endif
-    
-    for i in range(a:steps)
-        call jukit#zellij#cmd#zellij_command('resize', 'increase', resize_dir)
+    let steps = a:0 > 0 ? a:1 : 5
+    " The "interesting" edge of the output pane is the one facing vim,
+    " which is the inverse of the direction we created the pane in.
+    let resize_dir = get(s:inverse_direction, g:jukit_zellij_output_direction, 'left')
+    for i in range(steps)
+        call jukit#zellij#cmd#zellij_command(
+            \ 'resize', '--pane-id', session.output_pane_id, a:action, resize_dir)
     endfor
-    
-    call jukit#zellij#cmd#return_to_vim()
 endfun
 
-fun! jukit#zellij#layouts#decrease_output_size(steps) abort
-    call jukit#zellij#cmd#focus_pane(g:jukit_zellij_output_direction)
-    sleep 50m
-    
-    if g:jukit_zellij_output_direction ==# 'down'
-        let resize_dir = 'down'
-    elseif g:jukit_zellij_output_direction ==# 'up'
-        let resize_dir = 'up'
-    elseif g:jukit_zellij_output_direction ==# 'right'
-        let resize_dir = 'right'
-    else
-        let resize_dir = 'left'
+" Same as resize_output, but for the output-history pane. The relevant edge
+" is the one facing the output pane (since the outhist direction is
+" interpreted relative to output, not vim).
+fun! jukit#zellij#layouts#resize_outhist(action, ...) abort
+    let session = jukit#zellij#splits#_active_session()
+    if type(session) == type(v:null) || empty(session.outhist_pane_id)
+        echom '[vim-jukit] No output-history pane to resize'
+        return
     endif
-    
-    for i in range(a:steps)
-        call jukit#zellij#cmd#zellij_command('resize', 'decrease', resize_dir)
+    let steps = a:0 > 0 ? a:1 : 5
+    let resize_dir = get(s:inverse_direction, g:jukit_zellij_outhist_direction, 'up')
+    for i in range(steps)
+        call jukit#zellij#cmd#zellij_command(
+            \ 'resize', '--pane-id', session.outhist_pane_id, a:action, resize_dir)
     endfor
-    
-    call jukit#zellij#cmd#return_to_vim()
 endfun

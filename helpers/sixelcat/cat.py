@@ -3,7 +3,6 @@ import os
 import io
 import subprocess
 import tempfile
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 from .config import _config
 
@@ -40,8 +39,14 @@ def figure_to_png(fig, dpi=150):
         return buf.getvalue()
 
 
-def sixelcat(fig, dpi=150, fp=None):
-    """Display matplotlib figure using sixel graphics at specified DPI."""
+def sixelcat(fig, dpi=150, fp=None, **_kwargs):
+    """Display matplotlib figure using sixel graphics at specified DPI.
+
+    **_kwargs is accepted for forward-compatibility: __init__.py forwards
+    annotations like ``sixel_width``/``sixel_height``/``use_passthrough`` from
+    ``plt.show.__annotations__`` and we drop them silently for now. When we
+    actually wire any of those features up, add them to the explicit signature.
+    """
     if fp is None:
         fp = sys.stdout.buffer
 
@@ -93,6 +98,8 @@ def sixelcat(fig, dpi=150, fp=None):
         #fp.write(CSI + b'?25h\n')
         #fp.flush()
     except Exception as e:
-        print(e)
+        # Errors must go to stderr so they don't clobber the ipython output
+        # stream that the user is watching in the output pane.
+        print(f"[vim-jukit] sixelcat error: {e}", file=sys.stderr)
     finally:
         os.unlink(tmp_path)

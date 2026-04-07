@@ -1,5 +1,3 @@
-call jukit#util#ipython_info_write({'terminal': 'tmux'})
-
 fun! s:wait_for_pane(pane, num_tries, delay)
     let num_tries = a:num_tries
     while !jukit#tmux#cmd#pane_exists(a:pane) && num_tries > 0
@@ -28,7 +26,7 @@ fun! jukit#tmux#splits#output(...) abort
     endif
 
     call jukit#tmux#cmd#send_text(g:jukit_output_title, jukit#splits#_build_shell_cmd())
-    call jukit#util#ipython_info_write({'import_complete': 0})
+    call jukit#util#ipython_info_write({'terminal': 'tmux', 'import_complete': 0})
 endfun
 
 fun! jukit#tmux#splits#term(...) abort
@@ -62,7 +60,7 @@ fun! jukit#tmux#splits#history(...) abort
     endif
 
     call jukit#tmux#cmd#send_text(g:jukit_outhist_title, jukit#splits#_build_shell_cmd('outhist'))
-    call jukit#util#ipython_info_write({'import_complete': 0})
+    call jukit#util#ipython_info_write({'terminal': 'tmux', 'import_complete': 0})
 
     " TODO: the following shouldn't be necessary. But otherwise if output
     " split and history split are started together for some reason proportions

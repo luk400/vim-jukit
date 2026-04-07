@@ -121,13 +121,32 @@ fun! jukit#util#plugin_path() abort
     endif
 endfun
 
+let s:last_src_dir = ''
+
+fun! s:resolve_jukit_dir() abort
+    " Use the current buffer's directory only when it is a normal file buffer
+    " backed by a real path. Otherwise fall back to the most recent valid one
+    " seen during this session. Returns '' when no valid dir is known.
+    if &buftype ==# '' && !empty(expand('%:p'))
+        let s:last_src_dir = expand('%:p:h')
+    endif
+    if empty(s:last_src_dir)
+        return ''
+    endif
+    return s:last_src_dir . g:_jukit_ps . '.jukit' . g:_jukit_ps
+endfun
+
 fun! jukit#util#ipython_info_write(dict) abort
     " TODO: is this check necessary?
     if !g:jukit_ipython
         return
     endif
 
-    let dir = expand('%:p:h') . g:_jukit_ps . '.jukit' . g:_jukit_ps
+    let dir = s:resolve_jukit_dir()
+    if empty(dir)
+        return
+    endif
+
     let file = dir . '.jukit_info.json'
     if !isdirectory(dir)
         call mkdir(dir)
@@ -159,7 +178,10 @@ fun! jukit#util#ipython_info_get(keys, ...) abort
         let quiet = 0
     endif
 
-    let dir = expand('%:p:h') . g:_jukit_ps . '.jukit' . g:_jukit_ps
+    let dir = s:resolve_jukit_dir()
+    if empty(dir)
+        return v:null
+    endif
     let file = dir . '.jukit_info.json'
     if (empty(glob(file)) || !isdirectory(dir)) && !quiet
         echom '[vim-jukit] File ' . file . ' not found!'
@@ -212,6 +234,11 @@ fun! jukit#util#replace_old_markers() abort
 endfun
 
 fun! jukit#util#get_terminal() abort
+    " Zellij is checked first because a user might run kitty inside zellij,
+    " and zellij is the more relevant container for our purposes.
+    if !empty($ZELLIJ)
+        return 'zellij'
+    endif
     let kitty_detected = system('perl -lpe "s/\0/ /g" /proc/$(xdotool '
         \. 'getwindowpid $(xdotool getactivewindow))/cmdline') =~? 'kitty'
         \ || system('echo $TERM') =~? 'kitty'
@@ -289,4 +316,40 @@ fun! jukit#util#is_md_cell(cell_id) abort
     let md_cur = search(b:jukit_md_start, 'nbW') > search('|%%--%%| <.*|' . a:cell_id, 'nbW')
     call winrestview(save_view)
     return md_cur
+endfun
+
+" Prompt the user for a session name. Returns the entered name, or '' if
+" the user cancelled (ctrl-c'd or entered empty input).
+"
+" MVP implementation: built-in input(). Can be replaced later with a
+" popup-based version (vim's popup_create + prompt buffer / nvim's
+" nvim_open_win + prompt buftype) without touching call sites.
+fun! jukit#util#prompt_session_name(default) abort
+    call inputsave()
+    let name = input('[vim-jukit] Session name: ', a:default)
+    call inputrestore()
+    return name
+endfun
+
+" Show a selection list to the user. `items` is a list of strings.
+" Returns the 0-based index of the selected item, or -1 if cancelled.
+"
+" MVP implementation: built-in inputlist(). Can be replaced later with
+" popup_menu() (vim) or vim.ui.select() (nvim) without touching call
+" sites.
+fun! jukit#util#select_session(items) abort
+    if empty(a:items)
+        return -1
+    endif
+    let prompt = ['[vim-jukit] Select session:']
+    let i = 0
+    while i < len(a:items)
+        call add(prompt, printf('%d. %s', i + 1, a:items[i]))
+        let i += 1
+    endwhile
+    let choice = inputlist(prompt)
+    if choice < 1 || choice > len(a:items)
+        return -1
+    endif
+    return choice - 1
 endfun

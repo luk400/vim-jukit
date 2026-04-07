@@ -638,6 +638,61 @@ fun! s:save_nb_to_file() abort
 endfun
 
 
+" Smoke test for the zellij backend. Skipped (auto-passed) when not running
+" inside a zellij session, since it can't be exercised without an actual
+" zellij server. Run manually with:
+"   zellij action new-pane -- bash -c "g:jukit_terminal=zellij vim file.py
+"      -c 'call jukit#tests#run_test(\"zellij_smoke\", 0)'"
+fun! s:zellij_smoke() abort
+    if empty($ZELLIJ)
+        return [1, 'skipped: not in a zellij session']
+    endif
+    if g:jukit_terminal !=# 'zellij'
+        return [1, 'skipped: g:jukit_terminal=' . g:jukit_terminal]
+    endif
+
+    let failures = []
+
+    " Open output split.
+    call jukit#splits#output()
+    sleep 500m
+    if !jukit#zellij#splits#exists('output')
+        call add(failures, 'output pane did not appear in dump-layout')
+    endif
+
+    " Open history split.
+    call jukit#splits#history()
+    sleep 500m
+    if !jukit#zellij#splits#exists('outhist')
+        call add(failures, 'outhist pane did not appear in dump-layout')
+    endif
+    if !jukit#zellij#splits#exists()
+        call add(failures, 'splits#exists() (both) returned false after history()')
+    endif
+
+    " Close history.
+    call jukit#splits#close_history()
+    sleep 250m
+    if jukit#zellij#splits#exists('outhist')
+        call add(failures, 'outhist pane still present after close_history()')
+    endif
+    if !jukit#zellij#splits#exists('output')
+        call add(failures, 'output pane disappeared when closing history')
+    endif
+
+    " Close output.
+    call jukit#splits#close_output_split()
+    sleep 250m
+    if jukit#zellij#splits#exists('output')
+        call add(failures, 'output pane still present after close_output_split()')
+    endif
+
+    let test_passed = empty(failures)
+    let fail_info = test_passed ? '' : join(failures, '; ')
+    return [test_passed, fail_info]
+endfun
+
+
 let s:all_tests = {
     \ 'create_above': function('s:create_above'),
     \ 'create_below': function('s:create_below'),
@@ -670,4 +725,5 @@ let s:all_tests = {
     \ 'delete_all_saved_outputs': function('s:delete_all_saved_outputs'),
     \ 'notebook_convert': function('s:notebook_convert'),
     \ 'save_nb_to_file': function('s:save_nb_to_file'),
+    \ 'zellij_smoke': function('s:zellij_smoke'),
 \ }

@@ -49,6 +49,12 @@ class FigureManagerSixel(FigureManagerBase):
                 self.canvas.figure.savefig(save_buf, format="png", dpi=dpi)
                 _store_img_for_ipynb(save_buf.getbuffer().hex())
 
+        # Forward optional plt.show.__annotations__ keys to sixelcat() as
+        # kwargs. cat.py:sixelcat() currently accepts these via **_kwargs and
+        # ignores them; nothing in the vim side actually sets them yet.
+        # Wired up here so that the day we DO want to expose width/height/
+        # passthrough/pane-switching from vim, the plumbing is already in
+        # place and only cat.py needs to learn the semantics.
         kwargs = {}
 
         if "sixel_width" in plt.show.__annotations__:
@@ -73,7 +79,10 @@ def show(block=None):
     """Display all open figures using sixel graphics."""
     for manager in Gcf.get_all_fig_managers():
         manager.show()
-        Gcf.destroy(manager)
+        # Pass the manager number, matching the helpers/imgcat sibling.
+        # Gcf.destroy() accepts both num and manager in modern matplotlib
+        # but the num form is the documented API.
+        Gcf.destroy(manager.num)
 
 
 def new_figure_manager(num, *args, **kwargs):

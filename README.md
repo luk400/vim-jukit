@@ -59,12 +59,12 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 </p></details>
 
 <details><summary>(I)Python users</summary><p>
-&emsp;&#x2022;&nbsp; ipython version == 7.3.0<br>
-&emsp;&#x2022;&nbsp; matplotlib version == 3.4.0
+&emsp;&#x2022;&nbsp; ipython version >= 7.3.0<br>
+&emsp;&#x2022;&nbsp; matplotlib version >= 3.4.0
 </p></details>
 
 <details><summary>kitty terminal users</summary><p>
-&emsp;&#x2022;&nbsp; kitty version == 0.22<br>
+&emsp;&#x2022;&nbsp; kitty version >= 0.22<br>
 &emsp;&#x2022;&nbsp; remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf), or alternatively you can also always start kitty using `kitty -o allow_remote_control=yes`<br>
 &emsp;&#x2022;&nbsp; ImageMagick for displaying plots in the terminal must be installed (install using e.g. `sudo apt-get install imagemagick`)<br>
 &emsp;&#x2022;&nbsp; If you're using neovim with kitty, you need to launch kitty with the `--listen-on` option and specify an address to listen on. Furthermore, if you want to have different kitty instances simultaneously using this plugin and sending code to split windows, different addresses will need to be specified. One possible way to do this on linux machines is by simply always starting kitty with e.g. `kitty --listen-on=unix:@"$(date +%s%N)"`, which will make sure different kitty instances are launched with different, abstract sockets to listen on. On MacOS it should work using e.g. `kitty --listen-on=/tmp/kitty_"$(date +%s%N)"`. If you want, you can then simply specify an alias (i.e. put `alias jukit_kitty="kitty --listen-on=unix:@"$(date +%s%N)" -o allow_remote_control=yes"` in your .bashrc/.zshrc) which you can use to always start kitty with the necessary arguments.
@@ -107,7 +107,7 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 
 <details><summary>Zellij with sixelcat</summary><p>
 &emsp;&#x2022;&nbsp; libsixel-bin (for `img2sixel`)<br>
-&emsp;&#x2022;&nbsp; for inline plotting, zellij currently requires a custom build, that fixes some issues with sixel support. You can find my own build script in helpers/sixelcat/install_and_patch_zellij.sh
+&emsp;&#x2022;&nbsp; for inline plotting, zellij currently requires a custom build that fixes some issues with sixel support. You can find my own build script in scripts/install_and_patch_zellij.sh (note: personal build helper, Linux/Debian only, may be stale — see the script header)
 </p></details>
 
 
@@ -161,7 +161,7 @@ For explanations see the comments underneath each variable. Make sure you set th
 let g:jukit_shell_cmd = 'ipython3'
 "    - Specifies the command used to start a shell in the output split. Can also be an absolute path. Can also be any other shell command, e.g. `R`, `julia`, etc. (note that output saving is only possible for ipython)
 let g:jukit_terminal = ''
-"   - Terminal to use. Can be one of '', 'kitty', 'vimterm', 'nvimterm' or 'tmux'. If '' is given then will try to detect terminal (though this might fail, in which case it simply defaults to 'vimterm' or 'nvimterm' - depending on the output of `has("nvim")`)
+"   - Terminal to use. Can be one of '', 'kitty', 'vimterm', 'nvimterm', 'tmux' or 'zellij'. If '' is given then will try to detect terminal: zellij is detected via `$ZELLIJ`, kitty via window class; otherwise defaults to 'vimterm' or 'nvimterm' (depending on `has("nvim")`).
 let g:jukit_auto_output_hist = 0
 "   - If set to 1, will create an autocmd with event `CursorHold` to show saved ipython output of current cell in output-history split. Might slow down (n)vim significantly, you can use `set updatetime=<number of milliseconds>` to control the time to wait until CursorHold events are triggered, which might improve performance if set to a higher number (e.g. `set updatetime=1000`).
 let g:jukit_use_tcomment = 0
@@ -214,6 +214,65 @@ let g:jukit_outhist_new_os_window = 0
 "    - Same as `g:jukit_output_new_os_window`, only for output-history-split
 ```
 
+###### Zellij
+```vim
+let g:jukit_zellij_output_direction = 'right'
+"    - Direction in which a new output pane is created relative to the vim pane. One of 'left', 'right', 'up', 'down'. Used as the `--direction` argument to `zellij action new-pane`. Ignored when `g:jukit_output_float = 1`.
+let g:jukit_zellij_outhist_direction = 'down'
+"    - Direction in which a new output-history pane is created relative to the output pane. One of 'left', 'right', 'up', 'down'. Ignored when `g:jukit_outhist_float = 1`.
+let g:jukit_output_float = 0
+"    - When 1, the output pane is created as a floating zellij pane (`zellij action new-pane --floating`) instead of a tiled one. Floating mode plays well with the hide/show toggle described below. Setting this to 1 on a non-zellij backend prints a warning at startup and resets it to 0.
+let g:jukit_outhist_float = 0
+"    - Same as `g:jukit_output_float` but for the output-history pane.
+let g:jukit_sixelcat_width_factor = 1.8
+"    - Multiplier for the maximum width of inline sixel plots, expressed as a fraction of the terminal width. Increase to allow larger plots; decrease to constrain them. Applies both to live plots in the output pane (via the sixelcat matplotlib backend) and to saved-plot rendering in the output-history pane (via the outhist viewer). Only relevant when `g:jukit_terminal = 'zellij'`.
+let g:jukit_session_switch_keybind = '<leader>ss'
+"    - Buffer-local mapping that opens the multi-session picker. See "Multi-session" below. Only mapped when `g:jukit_terminal = 'zellij'`. Set to '' to skip the default mapping entirely.
+```
+
+*Notes on the zellij backend:*
+ * `g:jukit_layout` proportions are **not** honored on zellij — zellij has no absolute-sizing API. Pane creation respects `g:jukit_zellij_output_direction` / `g:jukit_zellij_outhist_direction`, but the resulting proportions are whatever zellij chooses by default. Use a zellij KDL layout file if you want fully custom geometry, or the resize functions below to nudge after creation.
+ * Inline plotting on zellij requires both a sixel-capable terminal (e.g. foot, xterm with sixel, WezTerm) **and** `libsixel-bin` (for `img2sixel`). Until upstream zellij ships native sixel support, you may also need a patched zellij build — see `scripts/install_and_patch_zellij.sh` for the author's personal build helper. If `img2sixel` is not on `$PATH`, vim-jukit will print a warning and disable inline plotting automatically.
+ * If you don't explicitly set `g:jukit_terminal`, vim-jukit will detect zellij via the `$ZELLIJ` environment variable.
+
+*Resizing panes (optional keybinds):*
+Two functions let you nudge the jukit pane sizes after creation. They're not bound by default — add your own mappings if you want them. Each takes an action (`'increase'` or `'decrease'`) and an optional step count (default 5). Each step is one zellij resize bump (~5% of the parent split).
+```vim
+" Optional zellij resize keybinds — add to your config if desired.
+nnoremap <leader>o> :call jukit#zellij#layouts#resize_output('increase', 5)<cr>
+nnoremap <leader>o< :call jukit#zellij#layouts#resize_output('decrease', 5)<cr>
+nnoremap <leader>h> :call jukit#zellij#layouts#resize_outhist('increase', 5)<cr>
+nnoremap <leader>h< :call jukit#zellij#layouts#resize_outhist('decrease', 5)<cr>
+```
+You can also always use zellij's native resize-mode (`Ctrl+p` then `r`) as an alternative.
+
+*Outhist viewer:*
+Unlike the kitty/tmux/(n)vimterm backends — which spawn a full `ipython3` REPL in the output-history pane and drive it by sending `%jukit_out_hist` magic commands — the zellij backend uses a thin standalone Python script (`helpers/jukit_outhist_view.py`) as the outhist process. The viewer reads commands (`cell <id>`, `file <path>`, `quit`, …) from its own stdin and renders saved cell outputs directly: text outputs go to stdout, image outputs are decoded from base64 and piped through `img2sixel`. There's no matplotlib import, no IPython, no `.jukit_info.json` round-trip — the cold-start cost drops from ~1–2 s to ~150 ms and resident memory drops from ~80 MB to ~12 MB. Image scaling honors `g:jukit_sixelcat_width_factor` exactly the same way the live-plot path does.
+
+Two TODOs in the current viewer:
+ * **Markdown cells** are rendered as a `[markdown cell]` placeholder, not as their actual markdown source. The legacy ipython-based outhist also showed only a placeholder; richer markdown rendering is a future improvement.
+ * **`text/html` outputs** only have their embedded base64 images extracted (matching legacy behavior). HTML tables, formatted text, and other HTML content are dropped. Future improvement: render those as text.
+
+*Multi-session and floating panes (zellij only):*
+On the zellij backend, each buffer carries its own list of named "sessions". A session is just a labeled pair of panes — the output (or term) pane and the output-history pane — that you can hide, show, switch between, and have multiple of in parallel within the same source file. The mappings are now toggle-aware:
+
+| Mapping | Behavior on zellij |
+|---|---|
+| `<leader>os` | If no session exists yet for this buffer, prompts you for a session name and creates a new session with an output pane. If the active session's output pane is currently visible, hides it. If it's hidden, shows it. (Same shape for `<leader>ts` for term mode.) |
+| `<leader>hs` | Same tri-state shape, but for the output-history pane within the active session. |
+| `<leader>ss` | Opens the session picker. Lists all sessions in this buffer (sorted by most-recently-used) plus a `Create new...` entry at the bottom. Picking an existing session swaps which session is active and reproduces the previous visibility shape (if `output` was visible before, the new session's `output` becomes visible too, creating it on the fly if it didn't exist yet). Picking `Create new...` prompts for a name and allocates an empty session — use `<leader>os` / `<leader>hs` to populate it. Default `<leader>ss` is configurable via `g:jukit_session_switch_keybind`. |
+
+The hide/show mechanic uses zellij's native primitives:
+ * **Floating mode** (`g:jukit_output_float = 1` or `g:jukit_outhist_float = 1`): hide is `zellij action toggle-floating-panes`, show is the reverse. **Caveat**: `toggle-floating-panes` is global to the current tab — if you have unrelated floating panes from other workflows, they get toggled too. There's no per-pane visibility primitive in current zellij.
+ * **Tiled mode** (default): zellij has no native "hide a tiled pane without closing it" action, so vim-jukit uses a `toggle-pane-embed-or-floating` round-trip. The hide flow converts the tiled pane to floating, then toggles the float layer off. The show flow reverses both steps. The pane's process keeps running with its full state intact across the round-trip — only its visibility changes. Caveats: during the brief float-toggling, other floating panes flicker; and if the pane is **closed** (instead of hidden) its state is lost.
+
+The session list lives in buffer-local memory only — restarting vim resets it. Old jukit panes from a previous vim instance become orphans you can clean up via zellij's UI.
+
+*Troubleshooting:*
+ * **`<enter>` does nothing / code seems to vanish:** the most likely cause is that the output pane was closed from outside vim and `g:jukit_output_title` is stale. Run `:echo jukit#zellij#splits#exists('output')` — if it returns `0`, just `<leader>os` again to recreate the pane.
+ * **No plot visible in the output-history pane:** if you see a red `[vim-jukit] img2sixel not found …` message in the outhist pane, install `libsixel-bin` (the package that provides `img2sixel`). If you see no message at all but also no image, your terminal probably doesn't speak sixel — switch to a sixel-capable terminal (foot, WezTerm, xterm with `--enable-sixel-graphics`) or run on a patched zellij build (see `scripts/install_and_patch_zellij.sh`). For live plots in the output pane, the same applies via the sixelcat matplotlib backend.
+ * **Sends go to the wrong pane:** this would be a regression — the identity-based targeting in vim-jukit ≥ this commit should make it impossible. Please open an issue with the output of `:echo $ZELLIJ_PANE_ID`, `:echo g:jukit_output_title`, and `:!zellij action dump-layout | grep jukit`.
+
 ###### IPython
 ```vim
 let g:jukit_in_style = 2
@@ -250,9 +309,9 @@ let g:jukit_mpl_style = jukit#util#plugin_path() . '/helpers/matplotlib-backend-
 let g:jukit_mpl_style = ''
 "    - File specifying matplotlib plot options. This is the default value if kitty terminal is NOT used. If '' is specified, no custom mpl-style is applied.
 
-" IF KITTY OR TMUX IS USED:
+" IF KITTY, TMUX OR ZELLIJ IS USED:
 let g:jukit_inline_plotting = 1
-"    - Enable in-terminal-plotting. Only supported for kitty or tmux+iTerm2 -> BE SURE TO SPECIFY THE TERMINAL VIA `g:jukit_terminal`! (see variables in section 'Basic jukit options')
+"    - Enable in-terminal-plotting. Only supported for kitty, tmux+iTerm2, or zellij (the latter requires a sixel-capable terminal AND a zellij build with sixel patches — see the Zellij section below). BE SURE TO SPECIFY THE TERMINAL VIA `g:jukit_terminal`! (see variables in section 'Basic jukit options')
 " ELSE:
 let g:jukit_inline_plotting = 0
 "    - Disable in-terminal-plotting

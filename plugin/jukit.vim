@@ -68,6 +68,13 @@ let g:jukit_custom_backend = get(g:, 'jukit_custom_backend', -1)
 let g:jukit_mpl_block = get(g:, 'jukit_mpl_block', 1)
 let g:jukit_sixelcat_width_factor = get(g:, 'jukit_sixelcat_width_factor', 1.8)
 
+" zellij
+let g:jukit_zellij_output_direction = get(g:, 'jukit_zellij_output_direction', 'right')
+let g:jukit_zellij_outhist_direction = get(g:, 'jukit_zellij_outhist_direction', 'down')
+let g:jukit_output_float = get(g:, 'jukit_output_float', 0)
+let g:jukit_outhist_float = get(g:, 'jukit_outhist_float', 0)
+let g:jukit_session_switch_keybind = get(g:, 'jukit_session_switch_keybind', '<leader>ss')
+
 " cell highlighting/syntax
 if g:_jukit_is_windows
     let g:jukit_text_syntax_file = get(g:, 'jukit_text_syntax_file', $VIMRUNTIME . '\syntax\' . 'markdown.vim')
@@ -161,6 +168,26 @@ if !exists('g:jukit_inline_plotting')
     endif
 endif
 
+" Zellij + inline plotting requires img2sixel (libsixel-bin) on $PATH AND a
+" sixel-capable terminal. If img2sixel is missing, disable inline plotting
+" rather than letting ipython crash on the first plt.show() call.
+if g:jukit_terminal ==# 'zellij' && g:jukit_inline_plotting && !executable('img2sixel')
+    echom '[vim-jukit] img2sixel not found on $PATH; disabling inline plotting for zellij. '
+        \ . 'Install libsixel-bin or set let g:jukit_inline_plotting=0 explicitly to silence this message.'
+    let g:jukit_inline_plotting = 0
+endif
+
+" g:jukit_output_float / g:jukit_outhist_float are zellij-only because they
+" rely on `zellij action new-pane --floating`. If a user enables them on a
+" different backend, fall back to tiled with a clear warning.
+if (g:jukit_output_float || g:jukit_outhist_float) && g:jukit_terminal !=# 'zellij'
+    echom '[vim-jukit] g:jukit_output_float / g:jukit_outhist_float are only '
+        \ . 'supported on zellij; got g:jukit_terminal=' . g:jukit_terminal
+        \ . '. Disabling float mode.'
+    let g:jukit_output_float = 0
+    let g:jukit_outhist_float = 0
+endif
+
 if g:_jukit_is_windows
     let g:_jukit_ps = '\\'
     let g:_jukit_send_delay = "100m"
@@ -189,6 +216,18 @@ call jukit#highlighting_setup(s:jukit_ext_aupat)
 
 if g:jukit_save_output
     exe 'autocmd TextChanged,InsertLeave *.py call jukit#check_ids()'
+endif
+
+" Per-buffer named-session support: when entering a buffer with a defined
+" b:jukit_sessions list, mirror the active session's pane titles to the
+" legacy g:jukit_output_title / g:jukit_outhist_title globals so the
+" cross-backend dispatcher in autoload/jukit/send.vim talks to the right
+" pane after a buffer switch. zellij-only.
+if g:jukit_terminal ==# 'zellij'
+    augroup jukit_zellij_session_sync
+        autocmd!
+        autocmd BufEnter * call jukit#zellij#splits#_sync_globals_from_buffer()
+    augroup END
 endif
 
 
@@ -244,6 +283,10 @@ fun! s:set_mappings() abort
     endif
     if !hasmapto('jukit#layouts#set_layout', 'n')
         nnoremap <buffer> <leader>sl <cmd>call jukit#layouts#set_layout()<cr>
+    endif
+    if g:jukit_terminal ==# 'zellij' && !hasmapto('jukit#zellij#splits#switch_session', 'n')
+        exe 'nnoremap <buffer> ' . g:jukit_session_switch_keybind
+            \ . ' <cmd>call jukit#zellij#splits#switch_session()<cr>'
     endif
 
     " sending code

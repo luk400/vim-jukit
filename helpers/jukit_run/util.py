@@ -115,7 +115,10 @@ def display_outputs(outputs: List[dict], term: str, shell: InteractiveShell):
                     )
                     continue
 
-                if term not in ["kitty", "tmux"]:
+                # zellij is in this list because the sixelcat backend
+                # renders plots inline; the [PLOT] placeholder would be
+                # redundant on top of the actual rendered image.
+                if term not in ["kitty", "tmux", "zellij"]:
                     jukit_info("PLOT", color="\u001b[33m")
 
                 im = base64.b64decode(data)

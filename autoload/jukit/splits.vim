@@ -81,7 +81,12 @@ fun! jukit#splits#close_output_split() abort
 endfun
 
 fun! jukit#splits#output(...) abort
-    if jukit#splits#split_exists('output')
+    " On zellij, splits#output is tri-state (no session → create, visible
+    " → hide, hidden → show), so the "already exists, refusing" guard
+    " here would block the toggle path. The zellij backend handles its
+    " own existence check internally. All other backends keep the legacy
+    " refusal behavior because they don't have a session model.
+    if g:jukit_terminal !=# 'zellij' && jukit#splits#split_exists('output')
         echom "[vim-jukit] Output split already exists. Close it before "
             \. "creating a new one!"
         return
@@ -93,7 +98,7 @@ fun! jukit#splits#output(...) abort
 endfun
 
 fun! jukit#splits#term() abort
-    if jukit#splits#split_exists('output')
+    if g:jukit_terminal !=# 'zellij' && jukit#splits#split_exists('output')
         echom "[vim-jukit] Output split already exists. Close it before "
             \. "creating a new one!"
         return
@@ -105,7 +110,7 @@ fun! jukit#splits#term() abort
 endfun
 
 fun! jukit#splits#history(...) abort
-    if jukit#splits#split_exists('outhist')
+    if g:jukit_terminal !=# 'zellij' && jukit#splits#split_exists('outhist')
         echom "[vim-jukit] Output-history split already exists. Close it "
             \. "before creating a new one!"
         return
@@ -205,7 +210,15 @@ fun! jukit#splits#_build_shell_cmd(...) abort
     let cmd = "import sys;"
         \. 'sys.path.append("' . jukit#util#plugin_path() . g:_jukit_ps . 'helpers")' . ";"
 
-    if g:jukit_inline_plotting
+    if g:jukit_custom_backend != -1
+        " User-supplied custom backend wins over inline-plotting hardcoded
+        " choices, so the user can e.g. force imgcat under zellij.
+        let cmd = cmd
+            \. "import matplotlib;"
+            \. "import matplotlib.pyplot as plt;"
+            \. 'matplotlib.use("module://' . g:jukit_custom_backend . '");'
+            \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+    elseif g:jukit_inline_plotting
         let cmd = cmd
                 \. "import matplotlib;"
                 \. "import matplotlib.pyplot as plt;"
@@ -223,7 +236,7 @@ fun! jukit#splits#_build_shell_cmd(...) abort
             endif
             let cmd = cmd
                 \. 'matplotlib.use("module://imgcat");'
-                \. 'plt.show.__annotations__["tmux_panes"] = ["' 
+                \. 'plt.show.__annotations__["tmux_panes"] = ["'
                 \. current_pane . '", "' . target_pane . '"];'
                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
         elseif g:jukit_terminal == 'zellij'
@@ -236,13 +249,6 @@ fun! jukit#splits#_build_shell_cmd(...) abort
             echom "[vim-jukit] No inline plotting for `g:jukit_terminal = "
                 \. g:jukit_terminal . "` supported"
         endif
-    elseif g:jukit_custom_backend != -1
-        let cmd = cmd
-            \. "import matplotlib;"
-            \. "import matplotlib.pyplot as plt;"
-            \. 'matplotlib.use("module://' . g:jukit_custom_backend . '");'
-            \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
-
     elseif !is_outhist
         let cmd = cmd
             \. "import matplotlib.pyplot as plt;"

@@ -1,5 +1,3 @@
-call jukit#util#ipython_info_write({'terminal': 'vimterm'})
-
 fun! s:send_keys(buffer, keys, add_enter) abort
     if g:_jukit_is_windows
         call term_sendkeys(a:buffer, a:keys)
@@ -68,7 +66,7 @@ fun! jukit#vimterm#splits#output(...) abort
     endif
 
     call s:send_keys(g:jukit_output_title, jukit#splits#_build_shell_cmd(), 1)
-    call jukit#util#ipython_info_write({'import_complete': 0})
+    call jukit#util#ipython_info_write({'terminal': 'vimterm', 'import_complete': 0})
 endfun
 
 fun! jukit#vimterm#splits#term() abort
@@ -84,7 +82,7 @@ fun! jukit#vimterm#splits#history(...) abort
     endif
 
     call s:send_keys(g:jukit_outhist_title, jukit#splits#_build_shell_cmd("outhist"), 1)
-    call jukit#util#ipython_info_write({'import_complete': 0})
+    call jukit#util#ipython_info_write({'terminal': 'vimterm', 'import_complete': 0})
 
     if g:jukit_auto_output_hist
         call jukit#splits#toggle_auto_hist(1)

@@ -1,5 +1,3 @@
-call jukit#util#ipython_info_write({'terminal': 'nvimterm'})
-
 fun! s:outhist_normal_mode(stay) abort
     exe bufwinnr(g:jukit_outhist_buf) . 'wincmd w'
     call feedkeys("\<c-\>\<c-N>", "nxt")
@@ -38,7 +36,7 @@ fun! jukit#nvimterm#splits#output(...) abort
     endif
 
     call s:chan_send(g:jukit_output_title, jukit#splits#_build_shell_cmd(), 1)
-    call jukit#util#ipython_info_write({'import_complete': 0})
+    call jukit#util#ipython_info_write({'terminal': 'nvimterm', 'import_complete': 0})
 endfun
 
 fun! jukit#nvimterm#splits#term() abort
@@ -59,7 +57,7 @@ fun! jukit#nvimterm#splits#history(...) abort
     endif
 
     call s:chan_send(g:jukit_outhist_title, jukit#splits#_build_shell_cmd("outhist"), 1)
-    call jukit#util#ipython_info_write({'import_complete': 0})
+    call jukit#util#ipython_info_write({'terminal': 'nvimterm', 'import_complete': 0})
 
     if g:jukit_auto_output_hist
         call jukit#splits#toggle_auto_hist(1)

@@ -1,5 +1,3 @@
-call jukit#util#ipython_info_write({'terminal': 'kitty'})
-
 fun! jukit#kitty#splits#output(...) abort
     let g:jukit_output_title=jukit#util#get_unique_id()
 
@@ -25,7 +23,7 @@ fun! jukit#kitty#splits#output(...) abort
     endif
 
     call jukit#kitty#cmd#send_text(g:jukit_output_title, jukit#splits#_build_shell_cmd())
-    call jukit#util#ipython_info_write({'import_complete': 0})
+    call jukit#util#ipython_info_write({'terminal': 'kitty', 'import_complete': 0})
 endfun
 
 fun! jukit#kitty#splits#term(...) abort
@@ -67,7 +65,7 @@ fun! jukit#kitty#splits#history(...) abort
     endif
 
     call jukit#kitty#cmd#send_text(g:jukit_outhist_title, jukit#splits#_build_shell_cmd('outhist'))
-    call jukit#util#ipython_info_write({'import_complete': 0})
+    call jukit#util#ipython_info_write({'terminal': 'kitty', 'import_complete': 0})
 endfun
 
 fun! jukit#kitty#splits#out_hist_scroll(down) abort
