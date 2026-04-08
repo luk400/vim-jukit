@@ -1,104 +1,55 @@
 " TODO: ITS EXPECTED THAT FILE_CONTENT-BUFFER IS ACTIVE WHEN SETTING LAYOUT!
 
-fun! s:get_buf_by_name(name, output_exists, outhist_exists) abort
+fun! s:get_buf_by_name(name, output_exists) abort
     if a:name == 'file_content'
         return bufnr('%')
     elseif a:name == 'output' && a:output_exists
         return g:jukit_output_title
-    elseif a:name == 'output_history' && a:outhist_exists
-        return g:jukit_outhist_title
     else
         return -1
     endif
 endfun
 
-fun! s:parse_layout(layout, op, oh) abort
-    let inner_pair = {}
-    let outer_buf = {'split': a:layout['split'], 'bias': a:layout['p1']}
-
-    if type(a:layout["val"][0]) == 4
-        let d = a:layout["val"][0]
-        let outer_buf['buf'] = s:get_buf_by_name(a:layout["val"][1], a:op, a:oh)
-        let outer_buf['top_or_left'] = 0
-    elseif type(a:layout["val"][1]) == 4
-        let d = a:layout["val"][1]
-        let outer_buf['buf'] = s:get_buf_by_name(a:layout["val"][0], a:op, a:oh)
-        let outer_buf['top_or_left'] = 1
-    else
-        echom "[vim-jukit] Invalid layout dict!"
-        return v:null
-    endif
-
-    let inner_pair['split'] = d["split"]
-    let inner_pair['bias'] = d["p1"]
-    let inner_pair['buf'] = [s:get_buf_by_name(d["val"][0], a:op, a:oh),
-        \ s:get_buf_by_name(d["val"][1], a:op, a:oh)]
-
-    return [inner_pair, outer_buf]
-endfun
-
+" Set up a two-pane vimterm layout: file_content + output. Layout dict
+" shape: {'split': 'horizontal'|'vertical', 'p1': 0.0..1.0, 'val':
+" [pane1, pane2]} where each entry is the literal string 'file_content'
+" or 'output'.
 fun! jukit#vimterm#layouts#set_layout(layout) abort
     let output_exists = jukit#vimterm#splits#exists('output')
-    let outhist_exists = jukit#vimterm#splits#exists('outhist')
-    if !output_exists && !outhist_exists
-        echom "[vim-jukit] No windows for layout present"
+    if !output_exists
+        echom "[vim-jukit] No output buffer present for layout"
         return
-    elseif !output_exists || !outhist_exists
-        let only_one = 1
-    else
-        let only_one = 0
+    endif
+
+    if type(a:layout['val'][0]) != 1 || type(a:layout['val'][1]) != 1
+        echom "[vim-jukit] Invalid layout dict: expected two named panes"
+        return
     endif
 
     let save_view = winsaveview()
-    let response = s:parse_layout(a:layout, output_exists, outhist_exists)
 
-    if type(response) == 7
-        return
+    let file_buf = s:get_buf_by_name('file_content', output_exists)
+    let output_buf = s:get_buf_by_name('output', output_exists)
+
+    " Pane 0 is on the left/top, pane 1 is on the right/bottom.
+    " p1 is the fractional size of pane 0.
+    if a:layout['val'][0] == 'file_content'
+        let left_buf = file_buf
+        let right_buf = output_buf
+    else
+        let left_buf = output_buf
+        let right_buf = file_buf
     endif
 
-    let inner_pair = response[0]
-    let outer_buf = response[1]
-
-    let bufs_filtered = filter(reverse(copy(inner_pair['buf'])), {k,v -> v != -1})
-    for b in bufs_filtered
-        exe bufwinnr(b) . 'wincmd w'
-        if inner_pair['split'] == "horizontal"
-            wincmd H
-        else
-            wincmd K
-        endif
-    endfor
-
-    if outer_buf['buf'] != -1
-        exe bufwinnr(outer_buf['buf']) . 'wincmd w'
-        if outer_buf['split'] == "horizontal"
-            if outer_buf['top_or_left']
-                wincmd H
-            else
-                wincmd L
-            endif
-            let win = bufwinnr(outer_buf['buf'])
-            exe 'vert ' . win . 'resize ' . float2nr(outer_buf['bias'] * &columns)
-        else
-            if outer_buf['top_or_left']
-                wincmd K
-            else
-                wincmd J
-            endif
-            let win = bufwinnr(outer_buf['buf'])
-            exe win . 'resize ' . float2nr(outer_buf['bias'] * &lines)
-        endif
-    endif
-
-    if inner_pair['buf'][0] != -1 && inner_pair['buf'][1] != -1
-        exe bufwinnr(inner_pair['buf'][0]) . 'wincmd w'
-        let win = bufwinnr(inner_pair['buf'][0])
-        let scale = 1 - outer_buf['bias'] * (inner_pair['split'] == outer_buf['split'])
-        if inner_pair['split'] == "horizontal"
-            exe 'vert ' . win . 'resize ' . float2nr(scale * inner_pair['bias'] * &columns)
-        else
-            exe win . 'resize ' . float2nr(scale * inner_pair['bias'] * &lines)
-        endif
+    exe bufwinnr(right_buf) . 'wincmd w'
+    if a:layout['split'] == 'horizontal'
+        wincmd L
+        let win = bufwinnr(left_buf)
+        exe 'vert ' . win . 'resize ' . float2nr(a:layout['p1'] * &columns)
+    else
+        wincmd J
+        let win = bufwinnr(left_buf)
+        exe win . 'resize ' . float2nr(a:layout['p1'] * &lines)
     endif
 
     exe bufwinnr(g:_jukit_main_buf) . 'wincmd w'

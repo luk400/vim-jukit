@@ -84,6 +84,14 @@ fun! s:send(bufnr, text) abort
     endif
 endfun
 
+" Public wrapper around s:send so other files (e.g. splits.vim) can
+" send raw text to the active output pane without re-implementing the
+" backend dispatch. Used by show_last_cell_output to send the
+" %jukit_out_hist magic to the IPython process.
+fun! jukit#send#text(text) abort
+    call s:send(g:jukit_output_title, a:text)
+endfun
+
 fun! s:send_to_split(magic_cmd, code, save, ...) abort
     if g:_jukit_python && g:jukit_ipython
         let param = g:jukit_ipy_opts

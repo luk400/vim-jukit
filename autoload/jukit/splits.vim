@@ -43,7 +43,16 @@ fun! s:create_autocmd_close_splits() abort
 
     augroup jukit_auto_close
         autocmd!
-        autocmd QuitPre,BufDelete <buffer> call jukit#splits#close_output_and_history(0)
+        " Zellij is multi-session: a single buffer may have several
+        " output panes across different sessions, and the single-active
+        " close path only kills the currently-active one. Use the
+        " cleanup-all entry point so quitting vim doesn't leak ipython
+        " panes from non-active sessions.
+        if g:jukit_terminal ==# 'zellij'
+            autocmd QuitPre,BufDelete <buffer> call jukit#zellij#splits#cleanup_all_sessions()
+        else
+            autocmd QuitPre,BufDelete <buffer> call jukit#splits#close_output_split()
+        endif
     augroup END
 endfun
 
@@ -52,28 +61,36 @@ fun! jukit#splits#split_exists(...) abort
 endfun
 
 fun! jukit#splits#out_hist_scroll(down) abort
-    if !g:jukit_hist_use_ueberzug
-        exe 'call jukit#' . g:jukit_terminal . '#splits#out_hist_scroll(a:down)'
-    else
-        call jukit#ueberzug#scroll(a:down)
-    endif
+    exe 'call jukit#' . g:jukit_terminal . '#splits#out_hist_scroll(a:down)'
 endfun
 
 fun! jukit#splits#show_last_cell_output(force) abort
-    if !jukit#splits#split_exists('outhist') && !g:jukit_hist_use_ueberzug
-        echom '[vim-jukit] Output-history split not found. Please create if first.'
+    " Backend-agnostic: resolves the current cell id in vim and sends
+    " %jukit_out_hist <id> to the output pane via the existing send
+    " dispatcher. The IPython magic clears the visible screen, prints
+    " the cell-id header, and renders the saved outputs inline. Works
+    " on every backend with no per-backend code.
+    if !jukit#splits#split_exists('output')
+        echom '[vim-jukit] No output split found. Open one with <leader>os first.'
         return
     endif
 
-    if !g:jukit_hist_use_ueberzug
-        exe 'call jukit#' . g:jukit_terminal . '#splits#show_last_cell_output(a:force)'
-    else
-        exe 'call jukit#ueberzug#show_last_cell_output(a:force)'
+    let cell_id = jukit#util#get_current_cell_id()
+    if cell_id ==# 'NONE'
+        return
     endif
-endfun
 
-fun! jukit#splits#close_history() abort
-    exe 'call jukit#' . g:jukit_terminal . '#splits#close_history()'
+    " Avoid redundant re-renders unless the caller forces it. The only
+    " forced caller is <leader>so itself; other callers (e.g. cells.vim
+    " after delete_outputs) pass force=0 and benefit from the guard.
+    if exists('g:jukit_outhist_last_cell')
+        \ && g:jukit_outhist_last_cell ==# cell_id
+        \ && !a:force
+        return
+    endif
+    let g:jukit_outhist_last_cell = cell_id
+
+    call jukit#send#text('%jukit_out_hist ' . cell_id)
 endfun
 
 fun! jukit#splits#close_output_split() abort
@@ -109,99 +126,19 @@ fun! jukit#splits#term() abort
     call jukit#layouts#set_layout()
 endfun
 
-fun! jukit#splits#history(...) abort
-    if g:jukit_terminal !=# 'zellij' && jukit#splits#split_exists('outhist')
-        echom "[vim-jukit] Output-history split already exists. Close it "
-            \. "before creating a new one!"
-        return
-    endif
-
-    if g:jukit_hist_use_ueberzug
-        echom "[vim-jukit] No output-history split possible when using"
-            \. "`g:jukit_hist_use_ueberzug = 1`"
-        return
-    endif
-
-    call s:create_autocmd_close_splits()
-
-    exe 'call call("jukit#' . g:jukit_terminal . '#splits#history", a:000)'
-    call jukit#layouts#set_layout()
-    call jukit#splits#show_last_cell_output(1)
-endfun
-
-fun! jukit#splits#close_output_and_history(confirm) abort
-    exe 'let outhist_exists = jukit#' . g:jukit_terminal . '#splits#exists("outhist")'
-    exe 'let output_exists = jukit#' . g:jukit_terminal . '#splits#exists("output")'
-
-    if a:confirm && (outhist_exists || output_exists)
-        let answer = confirm("[vim-jukit] Do you want to close split windows?", "&Yes\n&No", 1)
-        if answer == 0 || answer == 2
-            return
-        endif
-    endif
-
-    if outhist_exists
-        exe 'call jukit#' . g:jukit_terminal . '#splits#close_history()'
-    endif
-
-    if output_exists
-        exe 'call jukit#' . g:jukit_terminal . '#splits#close_output_split()'
-    endif
-    redraw!
-endfun
-
-fun! jukit#splits#toggle_auto_hist(...) abort
-    let au_exists = exists('#jukit_auto_output#CursorHold')
-    let enable_au = a:0 > 0 ? a:1 : !au_exists
-
-    if !au_exists && enable_au
-	echom "[vim-jukit] Enabled auto output history! (CursorHold updatetime: " . &updatetime . ")"
-        augroup jukit_auto_output
-            autocmd!
-            autocmd CursorHold <buffer> call jukit#splits#show_last_cell_output(0)
-        augroup END
-    elseif au_exists && !enable_au
-	echom "[vim-jukit] Disabled auto output history!"
-        augroup jukit_auto_output
-            autocmd!
-        augroup END
-    endif
-endfun
-
-fun! jukit#splits#output_and_history(...) abort
-    if a:0 > 0
-        call jukit#splits#output(a:1)
-        if g:jukit_venv_in_output_hist
-            call jukit#splits#history(a:1)
-        else
-            call jukit#splits#history()
-        endif
-    else
-        call jukit#splits#output()
-        call jukit#splits#history()
-    endif
-endfun
-
-fun! jukit#splits#_build_shell_cmd(...) abort
+fun! jukit#splits#_build_shell_cmd() abort
     let mpl_style = jukit#splits#_get_mpl_style_file()
-    let is_outhist = a:0 > 0 && a:1 == 'outhist'
 
-    if !is_outhist
-        if g:_jukit_is_windows
-            let g:_jukit_python = stridx(split(g:jukit_shell_cmd, '/')[-1], 'python') >= 0
-            let g:jukit_ipython = stridx(split(g:jukit_shell_cmd, '/')[-1], 'ipython') >= 0
-        else
-            let g:_jukit_python = stridx(split(g:jukit_shell_cmd, '\')[-1], 'python') >= 0
-            let g:jukit_ipython = stridx(split(g:jukit_shell_cmd, '\')[-1], 'ipython') >= 0
-        endif
-        let use_py = g:_jukit_python
-        let use_ipy = g:jukit_ipython
-        let shell_cmd = g:jukit_shell_cmd
+    if g:_jukit_is_windows
+        let g:_jukit_python = stridx(split(g:jukit_shell_cmd, '/')[-1], 'python') >= 0
+        let g:jukit_ipython = stridx(split(g:jukit_shell_cmd, '/')[-1], 'ipython') >= 0
     else
-        let use_py = 1
-        let use_ipy = 1
-        let shell_cmd = 'ipython3'
+        let g:_jukit_python = stridx(split(g:jukit_shell_cmd, '\')[-1], 'python') >= 0
+        let g:jukit_ipython = stridx(split(g:jukit_shell_cmd, '\')[-1], 'ipython') >= 0
     endif
+    let use_py = g:_jukit_python
+    let use_ipy = g:jukit_ipython
+    let shell_cmd = g:jukit_shell_cmd
 
     if !use_py
         return g:jukit_shell_cmd
@@ -229,15 +166,10 @@ fun! jukit#splits#_build_shell_cmd(...) abort
                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
         elseif g:jukit_terminal == 'tmux'
             let current_pane = matchstr(system('tmux run "echo #{pane_id}"'), '%\d*')
-            if is_outhist
-                let target_pane = g:jukit_outhist_title
-            else
-                let target_pane = g:jukit_output_title
-            endif
             let cmd = cmd
                 \. 'matplotlib.use("module://imgcat");'
                 \. 'plt.show.__annotations__["tmux_panes"] = ["'
-                \. current_pane . '", "' . target_pane . '"];'
+                \. current_pane . '", "' . g:jukit_output_title . '"];'
                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
         elseif g:jukit_terminal == 'zellij'
             let cmd = cmd
@@ -249,7 +181,7 @@ fun! jukit#splits#_build_shell_cmd(...) abort
             echom "[vim-jukit] No inline plotting for `g:jukit_terminal = "
                 \. g:jukit_terminal . "` supported"
         endif
-    elseif !is_outhist
+    else
         let cmd = cmd
             \. "import matplotlib.pyplot as plt;"
             \. "from matplotlib_show_wrapper import show_wrapper;"
@@ -263,27 +195,14 @@ fun! jukit#splits#_build_shell_cmd(...) abort
             \. 'plt.style.use("' . mpl_style . '")' . ";"
     endif
 
-    let ueberzug_opt = ""
-    if g:jukit_hist_use_ueberzug
-        let ueberzug_opt = " --ueberzug_opt="
-            \. g:jukit_ueberzug_border_color . ","
-            \. g:jukit_ueberzug_theme . ","
-            \. g:jukit_ueberzug_python_cmd . ","
-            \. g:jukit_ueberzug_jupyter_cmd . ","
-            \. g:jukit_ueberzug_cutycapt_cmd . ","
-            \. g:jukit_ueberzug_imagemagick_cmd
-    endif
-
     if use_ipy
         let pyfile_ws_sub = substitute(escape(expand('%:p'), '\'), ' ', '<JUKIT_WS_PH>', 'g')
-        let store_png = g:jukit_hist_use_ueberzug ? ' --store_png' : ''
         let cmd = cmd
             \. "from IPython import get_ipython;"
             \. "__shell = get_ipython();"
             \. '__shell.run_line_magic("load_ext", "jukit_run");'
             \. '__shell.run_line_magic("jukit_init", "' . pyfile_ws_sub . ' '
-            \. g:jukit_in_style . ' --max_size=' . g:jukit_max_size . store_png
-            \. ueberzug_opt . '");'
+            \. g:jukit_in_style . ' --max_size=' . g:jukit_max_size . '");'
         if !g:jukit_debug && !g:_jukit_is_windows
             let cmd = cmd . '__shell.run_line_magic("clear", "");'
         endif

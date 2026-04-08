@@ -19,15 +19,10 @@
 " [X] jukit#cells#jump_to_previous_cell()
 " [X] jukit#splits#output()
 " [X] jukit#splits#term()
-" [X] jukit#splits#history()
-" [X] jukit#splits#output_and_history()
-" [X] jukit#splits#close_history()
 " [X] jukit#splits#close_output_split()
-" [X] jukit#splits#close_output_and_history(1)
 " [X] jukit#splits#out_hist_scroll(1)
 " [X] jukit#splits#out_hist_scroll(0)
 " [X] jukit#splits#show_last_cell_output(1)
-" [X] jukit#splits#toggle_auto_hist()
 " [X] jukit#cells#delete_outputs(0)
 " [X] jukit#cells#delete_outputs(1)
 " [X] jukit#convert#notebook_convert("jupyter-notebook")
@@ -35,7 +30,6 @@
 " [-] jukit#convert#save_nb_to_file(0,1,'pdf')
 " [-] jukit#convert#save_nb_to_file(1,1,'html')
 " [-] jukit#convert#save_nb_to_file(1,1,'pdf')
-" [-] jukit#ueberzug#set_default_pos()
 
 
 let s:test_dir = jukit#util#plugin_path() . '/tests'
@@ -390,7 +384,7 @@ endfun
 fun! s:set_layout() abort
     " unsure how to test this, but at least it should not throw an error
 
-    call jukit#splits#output_and_history()
+    call jukit#splits#output()
     call jukit#layouts#set_layout()
 
     let test_passed = 1
@@ -432,49 +426,6 @@ fun! s:term_split() abort
 endfun
 
 
-fun! s:history_split() abort
-    " unsure how to test this, but at least it should not throw an error
-
-    call jukit#splits#history()
-
-    let test_passed = 1
-    let fail_info = ""
-
-    return [test_passed, fail_info]
-endfun
-
-
-fun! s:output_and_history_split() abort
-    call s:delete_if_exists(s:test_dir . '/output_success')
-
-    call jukit#splits#output_and_history()
-
-    sleep 5
-    call jukit#send#send_to_split("import os; os.close(os.open('" . s:test_dir . "/output_success', os.O_CREAT))")
-    sleep 1
-
-    let test_passed = filereadable(s:test_dir . '/output_success')
-
-    let test_passed = 1
-    let fail_info = system("ls -lahtr " . s:test_dir)
-
-    return [test_passed, fail_info]
-endfun
-
-
-fun! s:close_history_split() abort
-    call jukit#splits#history()
-    sleep 250m
-    call jukit#splits#close_history()
-    sleep 250m
-
-    let test_passed = !jukit#splits#split_exists('outhist')
-    let fail_info = ""
-
-    return [test_passed, fail_info]
-endfun
-
-
 fun! s:close_output_split() abort
     call jukit#splits#output()
     sleep 250m
@@ -488,26 +439,12 @@ fun! s:close_output_split() abort
 endfun
 
 
-fun! s:close_output_and_history_split() abort
-    call jukit#splits#output_and_history()
-    sleep 250m
-    call jukit#splits#close_output_and_history(0)
-    sleep 250m
-
-    let output_closed = !jukit#splits#split_exists('output')
-    let history_closed = !jukit#splits#split_exists('outhist')
-
-    let test_passed = output_closed && history_closed
-    let fail_info = "output_closed: " . output_closed . ", history_closed: " . history_closed
-
-    return [test_passed, fail_info]
-endfun
-
-
-fun! s:outhist_scroll() abort
+fun! s:out_hist_scroll() abort
     " unsure how to test this, but at least it should not throw an error
+    " (now scrolls the output pane, not the deleted outhist pane)
 
-    call jukit#splits#history()
+    call jukit#splits#output()
+    sleep 250m
     call jukit#splits#out_hist_scroll(0)
     call jukit#splits#out_hist_scroll(1)
 
@@ -521,20 +458,9 @@ endfun
 fun! s:show_last_cell_output() abort
     " unsure how to test this, but at least it should not throw an error
 
-    call jukit#splits#history()
+    call jukit#splits#output()
+    sleep 250m
     call jukit#splits#show_last_cell_output(1)
-
-    let test_passed = 1
-    let fail_info = ""
-
-    return [test_passed, fail_info]
-endfun
-
-
-fun! s:toggle_auto_hist() abort
-    " unsure how to test this, but at least it should not throw an error
-
-    call jukit#splits#toggle_auto_hist()
 
     let test_passed = 1
     let fail_info = ""
@@ -660,26 +586,6 @@ fun! s:zellij_smoke() abort
         call add(failures, 'output pane did not appear in dump-layout')
     endif
 
-    " Open history split.
-    call jukit#splits#history()
-    sleep 500m
-    if !jukit#zellij#splits#exists('outhist')
-        call add(failures, 'outhist pane did not appear in dump-layout')
-    endif
-    if !jukit#zellij#splits#exists()
-        call add(failures, 'splits#exists() (both) returned false after history()')
-    endif
-
-    " Close history.
-    call jukit#splits#close_history()
-    sleep 250m
-    if jukit#zellij#splits#exists('outhist')
-        call add(failures, 'outhist pane still present after close_history()')
-    endif
-    if !jukit#zellij#splits#exists('output')
-        call add(failures, 'output pane disappeared when closing history')
-    endif
-
     " Close output.
     call jukit#splits#close_output_split()
     sleep 250m
@@ -712,14 +618,9 @@ let s:all_tests = {
     \ 'set_layout': function('s:set_layout'),
     \ 'output_split': function('s:output_split'),
     \ 'term_split': function('s:term_split'),
-    \ 'history_split': function('s:history_split'),
-    \ 'output_and_history_split': function('s:output_and_history_split'),
-    \ 'close_history_split': function('s:close_history_split'),
     \ 'close_output_split': function('s:close_output_split'),
-    \ 'close_output_and_history_split': function('s:close_output_and_history_split'),
-    \ 'outhist_scroll': function('s:outhist_scroll'),
+    \ 'out_hist_scroll': function('s:out_hist_scroll'),
     \ 'show_last_cell_output': function('s:show_last_cell_output'),
-    \ 'toggle_auto_hist': function('s:toggle_auto_hist'),
     \ 'save_output': function('s:save_output'),
     \ 'delete_saved_output': function('s:delete_saved_output'),
     \ 'delete_all_saved_outputs': function('s:delete_all_saved_outputs'),

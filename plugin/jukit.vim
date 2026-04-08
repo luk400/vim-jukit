@@ -4,15 +4,8 @@
 
 let s:default_layout = {
     \'split': 'horizontal',
-    \'p1': 0.6, 
-    \'val': [
-        \'file_content',
-        \{
-            \'split': 'vertical',
-            \'p1': 0.6,
-            \'val': ['output', 'output_history']
-        \}
-    \]
+    \'p1': 0.6,
+    \'val': ['file_content', 'output']
 \}
 
 " jukit 
@@ -22,10 +15,8 @@ let g:jukit_layout = get(g:, 'jukit_layout', s:default_layout)
 let g:jukit_terminal = get(g:, 'jukit_terminal', '')
 let g:jukit_use_tcomment = get(g:, 'jukit_use_tcomment', 0)
 let g:jukit_comment_mark = get(g:, 'jukit_comment_mark', '#')
-let g:jukit_auto_output_hist = get(g:, 'jukit_auto_output_hist', 0)
 let g:jukit_mappings = get(g:, 'jukit_mappings', 1)
 let g:jukit_notebook_viewer = get(g:, 'jukit_notebook_viewer', 'jupyter-notebook')
-let g:jukit_venv_in_output_hist = get(g:, 'jukit_venv_in_output_hist', 1)
 let g:_jukit_python_os_cmd = get(g:, 'jukit_python_os_cmd', 'python3')
 let g:_jukit_win_escape_char = get(g:, 'jukit_win_escape_char', '\\')
 
@@ -56,10 +47,7 @@ let g:jukit_clean_outhist_freq = get(g:, 'jukit_clean_outhist_freq', 60 * 10)
 " kitty
 let g:jukit_output_bg_color = get(g:, 'jukit_output_bg_color', '')
 let g:jukit_output_fg_color = get(g:, 'jukit_output_fg_color', '')
-let g:jukit_outhist_bg_color = get(g:, 'jukit_outhist_bg_color', '#090b1a')
-let g:jukit_outhist_fg_color = get(g:, 'jukit_outhist_fg_color', 'gray')
 let g:jukit_output_new_os_window = get(g:, 'jukit_output_new_os_window', 0)
-let g:jukit_outhist_new_os_window = get(g:, 'jukit_outhist_new_os_window', 0)
 
 " matplotlib
 let g:jukit_mpl_style = get(g:, 'jukit_mpl_style', '') "this value is changed for kitty after version checking below
@@ -70,9 +58,7 @@ let g:jukit_sixelcat_width_factor = get(g:, 'jukit_sixelcat_width_factor', 1.8)
 
 " zellij
 let g:jukit_zellij_output_direction = get(g:, 'jukit_zellij_output_direction', 'right')
-let g:jukit_zellij_outhist_direction = get(g:, 'jukit_zellij_outhist_direction', 'down')
 let g:jukit_output_float = get(g:, 'jukit_output_float', 0)
-let g:jukit_outhist_float = get(g:, 'jukit_outhist_float', 0)
 let g:jukit_session_switch_keybind = get(g:, 'jukit_session_switch_keybind', '<leader>ss')
 
 " cell highlighting/syntax
@@ -86,22 +72,6 @@ let g:jukit_highlight_markers = get(g:, 'jukit_highlight_markers', 1)
 let g:jukit_enable_textcell_bg_hl = get(g:, 'jukit_enable_textcell_bg_hl', 1)
 let g:jukit_enable_textcell_syntax = get(g:, 'jukit_enable_textcell_syntax', 1)
 
-" ueberzug
-let g:jukit_hist_use_ueberzug = get(g:, 'jukit_hist_use_ueberzug', 0)
-let g:jukit_ueberzug_use_cached = get(g:, 'jukit_ueberzug_use_cached', 1)
-let g:jukit_ueberzug_use_cached_md = get(g:, 'jukit_ueberzug_use_cached_md', 1)
-let g:jukit_ueberzug_pos = get(g:, 'jukit_ueberzug_pos', [0.25, 0.25, 0.4, 0.6])
-let g:jukit_ueberzug_pos_noout = get(g:, 'jukit_ueberzug_pos_noout', [0.25, 0.25, 0.4, 0.6])
-let g:jukit_ueberzug_term_hw_ratio = get(g:, 'jukit_ueberzug_term_hw_ratio', -1)
-let g:_jukit_mdnb_timer = get(g:, '_jukit_mdnb_timer', 0.5)
-
-let g:jukit_kill_ueberzug_on_focus_lost = get(g:, 'jukit_kill_ueberzug_on_focus_lost', 1)
-let g:jukit_ueberzug_border_color = get(g:, 'jukit_ueberzug_border_color', 'blue')
-let g:jukit_ueberzug_theme = get(g:, 'jukit_ueberzug_theme', 'dark')
-let g:jukit_ueberzug_python_cmd = get(g:, 'jukit_ueberzug_python_cmd', 'python3')
-let g:jukit_ueberzug_jupyter_cmd = get(g:, 'jukit_ueberzug_jupyter_cmd', 'jupyter')
-let g:jukit_ueberzug_cutycapt_cmd = get(g:, 'jukit_ueberzug_cutycapt_cmd', 'cutycapt')
-let g:jukit_ueberzug_imagemagick_cmd = get(g:, 'jukit_ueberzug_imagemagick_cmd', 'convert')
 
 " requirements
 let g:jukit_required_kitty_version = [0,22,0]
@@ -177,15 +147,14 @@ if g:jukit_terminal ==# 'zellij' && g:jukit_inline_plotting && !executable('img2
     let g:jukit_inline_plotting = 0
 endif
 
-" g:jukit_output_float / g:jukit_outhist_float are zellij-only because they
-" rely on `zellij action new-pane --floating`. If a user enables them on a
+" g:jukit_output_float is zellij-only because it relies on
+" `zellij action new-pane --floating`. If a user enables it on a
 " different backend, fall back to tiled with a clear warning.
-if (g:jukit_output_float || g:jukit_outhist_float) && g:jukit_terminal !=# 'zellij'
-    echom '[vim-jukit] g:jukit_output_float / g:jukit_outhist_float are only '
-        \ . 'supported on zellij; got g:jukit_terminal=' . g:jukit_terminal
+if g:jukit_output_float && g:jukit_terminal !=# 'zellij'
+    echom '[vim-jukit] g:jukit_output_float is only supported on zellij; '
+        \ . 'got g:jukit_terminal=' . g:jukit_terminal
         \ . '. Disabling float mode.'
     let g:jukit_output_float = 0
-    let g:jukit_outhist_float = 0
 endif
 
 if g:_jukit_is_windows
@@ -219,10 +188,10 @@ if g:jukit_save_output
 endif
 
 " Per-buffer named-session support: when entering a buffer with a defined
-" b:jukit_sessions list, mirror the active session's pane titles to the
-" legacy g:jukit_output_title / g:jukit_outhist_title globals so the
-" cross-backend dispatcher in autoload/jukit/send.vim talks to the right
-" pane after a buffer switch. zellij-only.
+" b:jukit_sessions list, mirror the active session's output pane title to
+" the legacy g:jukit_output_title global so the cross-backend dispatcher
+" in autoload/jukit/send.vim talks to the right pane after a buffer
+" switch. zellij-only.
 if g:jukit_terminal ==# 'zellij'
     augroup jukit_zellij_session_sync
         autocmd!
@@ -236,7 +205,6 @@ endif
 """"""""""
 
 command! -nargs=1 JukitOut :call jukit#splits#output(<q-args>)
-command! -nargs=1 JukitOutHist :call jukit#splits#output_and_history(<q-args>)
 
 
 """"""""""
@@ -251,21 +219,12 @@ fun! s:set_mappings() abort
     if !hasmapto('jukit#splits#term', 'n')
         nnoremap <buffer> <leader>ts <cmd>call jukit#splits#term()<cr>
     endif
-    if !hasmapto('jukit#splits#history', 'n')
-        nnoremap <buffer> <leader>hs <cmd>call jukit#splits#history()<cr>
-    endif
-    if !hasmapto('jukit#splits#output_and_history', 'n')
-        nnoremap <buffer> <leader>ohs <cmd>call jukit#splits#output_and_history()<cr>
-    endif
-    if !hasmapto('jukit#splits#close_history', 'n')
-        nnoremap <buffer> <leader>hd <cmd>call jukit#splits#close_history()<cr>
-    endif
     if !hasmapto('jukit#splits#close_output_split', 'n')
         nnoremap <buffer> <leader>od <cmd>call jukit#splits#close_output_split()<cr>
     endif
-    if !hasmapto('jukit#splits#close_output_and_history', 'n')
-        nnoremap <buffer> <leader>ohd <cmd>call jukit#splits#close_output_and_history(1)<cr>
-    endif
+    " <leader>j / <leader>k page-scroll the output pane up/down. The
+    " underlying out_hist_scroll function name is a historical holdover
+    " from when it scrolled the deleted outhist pane.
     if !hasmapto('jukit#splits#out_hist_scroll(1)', 'n')
         nnoremap <buffer> <leader>j <cmd>call jukit#splits#out_hist_scroll(1)<cr>
     endif
@@ -274,12 +233,6 @@ fun! s:set_mappings() abort
     endif
     if !hasmapto('jukit#splits#show_last_cell_output', 'n')
         nnoremap <buffer> <leader>so <cmd>call jukit#splits#show_last_cell_output(1)<cr>
-    endif
-    if !hasmapto('jukit#ueberzug#set_default_pos', 'n')
-        nnoremap <buffer> <leader>pos <cmd>call jukit#ueberzug#set_default_pos()<cr>
-    endif
-    if !hasmapto('jukit#splits#toggle_auto_hist', 'n')
-        nnoremap <buffer> <leader>ah <cmd>call jukit#splits#toggle_auto_hist()<cr>
     endif
     if !hasmapto('jukit#layouts#set_layout', 'n')
         nnoremap <buffer> <leader>sl <cmd>call jukit#layouts#set_layout()<cr>

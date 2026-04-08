@@ -5,9 +5,6 @@ fun! jukit#kitty#layouts#set_layout(layout) abort
     if jukit#kitty#splits#exists('output')
         call add(args, json_encode({'output': g:jukit_output_title}))
     endif
-    if jukit#kitty#splits#exists('outhist')
-        call add(args, json_encode({'output_history': g:jukit_outhist_title}))
-    endif
     let response = call('jukit#kitty#cmd#kitty_command', args)
     if type(response) == 7
         echom "[vim-jukit] Note: If RESPONSE contains a file-not-found error, "

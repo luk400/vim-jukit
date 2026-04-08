@@ -139,7 +139,7 @@ fun! jukit#cells#delete_outputs(all) abort
     else
         call s:delete_output(jukit#util#get_current_cell_id())
     endif
-    if jukit#splits#split_exists('outhist')
+    if jukit#splits#split_exists('output')
         call jukit#splits#show_last_cell_output(1)
     endif
 endfun

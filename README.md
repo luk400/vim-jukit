@@ -138,7 +138,7 @@ Now you can start sending code to the shell. Simply press `<enter>` to send the 
 
 Create a new cell below by pressing `<leader>co`, or `<leader>cO` to create one above. If you want to create a text/markdown cell below, use `<leader>ct`, or `<leader>cT` to create one above. You can also move cells up or down, split cells, or merge cells (see the mappings and explanations below).
 
-Now say you've been coding for a while and want to know what the output of a specific cell was. Instead of searching for it by scrolling up in your shell or completely re-running it (which is often inconvenient for long-running code), you can press `<leader>hs` which will create a new split window where saved outputs will be displayed. Press `<leader>so` to display saved output of the current cell. To scroll up or down in the output-history-split, simply press `<leader>j` or `<leader>k`. If you don't need the output-history split anymore, simply press `<leader>hd` to close it again. 
+Now say you've been coding for a while and want to know what the output of a specific cell was. Instead of searching for it by scrolling up in your shell or completely re-running it (which is often inconvenient for long-running code), you can press `<leader>so` to render the saved output of the current cell inline in the existing output pane. Under the hood this sends `%jukit_out_hist <cell_id>` to the IPython process, which clears the visible screen and re-renders the saved cell output (text + images via the same sixel pipeline that handles live plots). Use `<leader>j` / `<leader>k` to page-scroll the output pane up/down. 
 
 If you want to convert your .py file back to a .ipynb notebook, simply press `<leader>np` again. It'll convert it back and open it using `jupyter-notebook`. 
 For all other functions and custimization options, please see the definitions and comments in the next sections.
@@ -162,8 +162,6 @@ let g:jukit_shell_cmd = 'ipython3'
 "    - Specifies the command used to start a shell in the output split. Can also be an absolute path. Can also be any other shell command, e.g. `R`, `julia`, etc. (note that output saving is only possible for ipython)
 let g:jukit_terminal = ''
 "   - Terminal to use. Can be one of '', 'kitty', 'vimterm', 'nvimterm', 'tmux' or 'zellij'. If '' is given then will try to detect terminal: zellij is detected via `$ZELLIJ`, kitty via window class; otherwise defaults to 'vimterm' or 'nvimterm' (depending on `has("nvim")`).
-let g:jukit_auto_output_hist = 0
-"   - If set to 1, will create an autocmd with event `CursorHold` to show saved ipython output of current cell in output-history split. Might slow down (n)vim significantly, you can use `set updatetime=<number of milliseconds>` to control the time to wait until CursorHold events are triggered, which might improve performance if set to a higher number (e.g. `set updatetime=1000`).
 let g:jukit_use_tcomment = 0
 "   - Whether to use tcomment plugin (https://github.com/tomtom/tcomment_vim) to comment out cell markers. If not, then cell markers will simply be prepended with `g:jukit_comment_mark`
 let g:jukit_comment_mark = '#'
@@ -180,8 +178,6 @@ let g:jukit_convert_open_default = -1
 "   - Default setting for whether the notebook should be opened after converting from .py to .ipynb. Can be of [-1, 0, 1], where -1 means no default (i.e. you'll be prompted to specify what to do), 0 means never open, 1 means always open
 let g:jukit_file_encodings = 'utf-8'
 "   - Default encoding for reading and writing to files in the python helper functions
-let g:jukit_venv_in_output_hist = 1
-"   - Whether to also use the provided terminal command for the output history split when starting the splits using the JukitOUtHist command. If 0, the provided terminal command is only used in the output split, not in the output history split.
 ```
 
 ###### Cell highlighting/syntax
@@ -204,74 +200,67 @@ let g:jukit_output_bg_color = get(g:, 'jukit_output_bg_color', '')
 "    - Optional custom background color of output split window (i.e. target window of sent code)
 let g:jukit_output_fg_color = get(g:, 'jukit_output_fg_color', '')
 "    - Optional custom foreground color of output split window (i.e. target window of sent code)
-let g:jukit_outhist_bg_color = get(g:, 'jukit_outhist_bg_color', '#090b1a')
-"    - Optional custom background color of output-history window
-let g:jukit_outhist_fg_color = get(g:, 'jukit_outhist_fg_color', 'gray')
-"    - Optional custom foreground color of output-history window
 let g:jukit_output_new_os_window = 0
 "    - If set to 1, opens output split in new os-window. Can be used to e.g. write code in one kitty-os-window on your primary monitor while sending code to the shell which is in a seperate kitty-os-window on another monitor.
-let g:jukit_outhist_new_os_window = 0
-"    - Same as `g:jukit_output_new_os_window`, only for output-history-split
 ```
 
 ###### Zellij
 ```vim
 let g:jukit_zellij_output_direction = 'right'
 "    - Direction in which a new output pane is created relative to the vim pane. One of 'left', 'right', 'up', 'down'. Used as the `--direction` argument to `zellij action new-pane`. Ignored when `g:jukit_output_float = 1`.
-let g:jukit_zellij_outhist_direction = 'down'
-"    - Direction in which a new output-history pane is created relative to the output pane. One of 'left', 'right', 'up', 'down'. Ignored when `g:jukit_outhist_float = 1`.
 let g:jukit_output_float = 0
 "    - When 1, the output pane is created as a floating zellij pane (`zellij action new-pane --floating`) instead of a tiled one. Floating mode plays well with the hide/show toggle described below. Setting this to 1 on a non-zellij backend prints a warning at startup and resets it to 0.
-let g:jukit_outhist_float = 0
-"    - Same as `g:jukit_output_float` but for the output-history pane.
 let g:jukit_sixelcat_width_factor = 1.8
-"    - Multiplier for the maximum width of inline sixel plots, expressed as a fraction of the terminal width. Increase to allow larger plots; decrease to constrain them. Applies both to live plots in the output pane (via the sixelcat matplotlib backend) and to saved-plot rendering in the output-history pane (via the outhist viewer). Only relevant when `g:jukit_terminal = 'zellij'`.
+"    - Multiplier for the maximum width of inline sixel plots, expressed as a fraction of the terminal width. Increase to allow larger plots; decrease to constrain them. Applies both to live plots in the output pane (via the sixelcat matplotlib backend) and to inline saved-plot rendering via the `%jukit_out_hist` magic. Only relevant when `g:jukit_terminal = 'zellij'`.
 let g:jukit_session_switch_keybind = '<leader>ss'
 "    - Buffer-local mapping that opens the multi-session picker. See "Multi-session" below. Only mapped when `g:jukit_terminal = 'zellij'`. Set to '' to skip the default mapping entirely.
 ```
 
 *Notes on the zellij backend:*
- * `g:jukit_layout` proportions are **not** honored on zellij — zellij has no absolute-sizing API. Pane creation respects `g:jukit_zellij_output_direction` / `g:jukit_zellij_outhist_direction`, but the resulting proportions are whatever zellij chooses by default. Use a zellij KDL layout file if you want fully custom geometry, or the resize functions below to nudge after creation.
+ * `g:jukit_layout` proportions are **not** honored on zellij — zellij has no absolute-sizing API. Pane creation respects `g:jukit_zellij_output_direction`, but the resulting proportions are whatever zellij chooses by default. Use a zellij KDL layout file if you want fully custom geometry, or the resize function below to nudge after creation.
  * Inline plotting on zellij requires both a sixel-capable terminal (e.g. foot, xterm with sixel, WezTerm) **and** `libsixel-bin` (for `img2sixel`). Until upstream zellij ships native sixel support, you may also need a patched zellij build — see `scripts/install_and_patch_zellij.sh` for the author's personal build helper. If `img2sixel` is not on `$PATH`, vim-jukit will print a warning and disable inline plotting automatically.
  * If you don't explicitly set `g:jukit_terminal`, vim-jukit will detect zellij via the `$ZELLIJ` environment variable.
 
-*Resizing panes (optional keybinds):*
-Two functions let you nudge the jukit pane sizes after creation. They're not bound by default — add your own mappings if you want them. Each takes an action (`'increase'` or `'decrease'`) and an optional step count (default 5). Each step is one zellij resize bump (~5% of the parent split).
+*Resizing the output pane (optional keybinds):*
+A helper lets you nudge the output pane size after creation. Not bound by default — add your own mapping if you want it. Takes an action (`'increase'` or `'decrease'`) and an optional step count (default 5). Each step is one zellij resize bump (~5% of the parent split).
 ```vim
 " Optional zellij resize keybinds — add to your config if desired.
 nnoremap <leader>o> :call jukit#zellij#layouts#resize_output('increase', 5)<cr>
 nnoremap <leader>o< :call jukit#zellij#layouts#resize_output('decrease', 5)<cr>
-nnoremap <leader>h> :call jukit#zellij#layouts#resize_outhist('increase', 5)<cr>
-nnoremap <leader>h< :call jukit#zellij#layouts#resize_outhist('decrease', 5)<cr>
 ```
 You can also always use zellij's native resize-mode (`Ctrl+p` then `r`) as an alternative.
 
-*Outhist viewer:*
-Unlike the kitty/tmux/(n)vimterm backends — which spawn a full `ipython3` REPL in the output-history pane and drive it by sending `%jukit_out_hist` magic commands — the zellij backend uses a thin standalone Python script (`helpers/jukit_outhist_view.py`) as the outhist process. The viewer reads commands (`cell <id>`, `file <path>`, `quit`, …) from its own stdin and renders saved cell outputs directly: text outputs go to stdout, image outputs are decoded from base64 and piped through `img2sixel`. There's no matplotlib import, no IPython, no `.jukit_info.json` round-trip — the cold-start cost drops from ~1–2 s to ~150 ms and resident memory drops from ~80 MB to ~12 MB. Image scaling honors `g:jukit_sixelcat_width_factor` exactly the same way the live-plot path does.
+*Inline cell-output rendering:*
+The `<leader>so` keybinding sends the IPython magic `%jukit_out_hist <cell_id>` (defined in `helpers/jukit_run/jukit_run.py`) to the output pane. The magic clears the visible screen (scrollback is preserved — scroll up to find your previous live output), prints a cell-id header, and renders the saved outputs for that cell from `.jukit/<file>_outhist.json`. Text outputs go through IPython's normal stdout; image outputs go through the existing matplotlib + sixel pipeline that's already active for live plots. Image scaling honors `g:jukit_sixelcat_width_factor` the same way the live-plot path does. **Markdown cells** currently fall through to "no saved output" — see `markdown_next_steps.md` at the repo root for the deferred markdown-rendering design.
 
-Two TODOs in the current viewer:
- * **Markdown cells** are rendered as a `[markdown cell]` placeholder, not as their actual markdown source. The legacy ipython-based outhist also showed only a placeholder; richer markdown rendering is a future improvement.
- * **`text/html` outputs** only have their embedded base64 images extracted (matching legacy behavior). HTML tables, formatted text, and other HTML content are dropped. Future improvement: render those as text.
-
-*Multi-session and floating panes (zellij only):*
-On the zellij backend, each buffer carries its own list of named "sessions". A session is just a labeled pair of panes — the output (or term) pane and the output-history pane — that you can hide, show, switch between, and have multiple of in parallel within the same source file. The mappings are now toggle-aware:
+*Multi-session (zellij only):*
+On the zellij backend, each buffer carries its own list of named "sessions". A session is a labeled output (or term) pane that you can hide, show, switch between, and have multiple of in parallel within the same source file:
 
 | Mapping | Behavior on zellij |
 |---|---|
 | `<leader>os` | If no session exists yet for this buffer, prompts you for a session name and creates a new session with an output pane. If the active session's output pane is currently visible, hides it. If it's hidden, shows it. (Same shape for `<leader>ts` for term mode.) |
-| `<leader>hs` | Same tri-state shape, but for the output-history pane within the active session. |
-| `<leader>ss` | Opens the session picker. Lists all sessions in this buffer (sorted by most-recently-used) plus a `Create new...` entry at the bottom. Picking an existing session swaps which session is active and reproduces the previous visibility shape (if `output` was visible before, the new session's `output` becomes visible too, creating it on the fly if it didn't exist yet). Picking `Create new...` prompts for a name and allocates an empty session — use `<leader>os` / `<leader>hs` to populate it. Default `<leader>ss` is configurable via `g:jukit_session_switch_keybind`. |
+| `<leader>ss` | Opens the session picker (a centered floating window). Lists all sessions in this buffer (sorted by most-recently-used) plus a `Create new...` entry at the bottom. Use `j`/`k`/arrows to navigate, `<CR>` to confirm, `<Esc>`/`q` to cancel. Picking an existing session swaps which session is active and reproduces the previous visibility shape. Picking `Create new...` prompts for a name (also a floating dialog) and immediately auto-spawns an output pane if the previous session had one visible. Default `<leader>ss` is configurable via `g:jukit_session_switch_keybind`. |
 
 The hide/show mechanic uses zellij's native primitives:
- * **Floating mode** (`g:jukit_output_float = 1` or `g:jukit_outhist_float = 1`): hide is `zellij action toggle-floating-panes`, show is the reverse. **Caveat**: `toggle-floating-panes` is global to the current tab — if you have unrelated floating panes from other workflows, they get toggled too. There's no per-pane visibility primitive in current zellij.
- * **Tiled mode** (default): zellij has no native "hide a tiled pane without closing it" action, so vim-jukit uses a `toggle-pane-embed-or-floating` round-trip. The hide flow converts the tiled pane to floating, then toggles the float layer off. The show flow reverses both steps. The pane's process keeps running with its full state intact across the round-trip — only its visibility changes. Caveats: during the brief float-toggling, other floating panes flicker; and if the pane is **closed** (instead of hidden) its state is lost.
+ * **Floating mode** (`g:jukit_output_float = 1`): the output pane is created as a **pinned** floating pane (`new-pane --floating --pinned true`) positioned in the half-screen quadrant matching your `g:jukit_zellij_output_direction` (e.g. `right` lands in the right half). Pinning is what lets the float survive clicking back into vim. Hide / show toggles use `hide-floating-panes` / `show-floating-panes`. **Caveat**: those two commands are global to the current tab — if you have unrelated floating panes from other workflows, they get toggled too.
+ * **Tiled mode** (default): zellij has no native "hide a tiled pane without closing it" action, so vim-jukit uses a `toggle-pane-embed-or-floating` round-trip. The hide flow converts the tiled pane to floating, then toggles the float layer off. The show flow reverses both steps. The pane's process keeps running with its full state intact.
 
-The session list lives in buffer-local memory only — restarting vim resets it. Old jukit panes from a previous vim instance become orphans you can clean up via zellij's UI.
+The session list lives in buffer-local memory only — restarting vim resets it.
 
 *Troubleshooting:*
  * **`<enter>` does nothing / code seems to vanish:** the most likely cause is that the output pane was closed from outside vim and `g:jukit_output_title` is stale. Run `:echo jukit#zellij#splits#exists('output')` — if it returns `0`, just `<leader>os` again to recreate the pane.
- * **No plot visible in the output-history pane:** if you see a red `[vim-jukit] img2sixel not found …` message in the outhist pane, install `libsixel-bin` (the package that provides `img2sixel`). If you see no message at all but also no image, your terminal probably doesn't speak sixel — switch to a sixel-capable terminal (foot, WezTerm, xterm with `--enable-sixel-graphics`) or run on a patched zellij build (see `scripts/install_and_patch_zellij.sh`). For live plots in the output pane, the same applies via the sixelcat matplotlib backend.
+ * **No plot visible after `<leader>so`:** check that `img2sixel` is installed (`libsixel-bin`) and that your terminal speaks sixel. The same requirements apply to live plots in the output pane.
  * **Sends go to the wrong pane:** this would be a regression — the identity-based targeting in vim-jukit ≥ this commit should make it impossible. Please open an issue with the output of `:echo $ZELLIJ_PANE_ID`, `:echo g:jukit_output_title`, and `:!zellij action dump-layout | grep jukit`.
+ * **Leftover jukit panes after vim quit / vim crash:** the `QuitPre`/`BufDelete` autocmd closes every pane in every session for the buffer being torn down, so a clean `:qa` should leave nothing behind. But if vim was killed externally, or you're cleaning up panes accumulated from older builds that didn't have multi-session cleanup, you can sweep them with the snippet below.
+
+```sh
+zellij action list-panes --json | python3 -c "
+import json, sys
+for p in json.load(sys.stdin):
+    if 'jukit_' in p.get('title', ''):
+        print(p['id'])
+" | xargs -I {} zellij action close-pane --pane-id terminal_{}
+```
 
 ###### IPython
 ```vim
@@ -290,7 +279,7 @@ let g:jukit_save_output = 0
 "    - Whether to save ipython output or not. This is the default value if ipython is not used.
 
 let g:jukit_clean_outhist_freq = 60 * 10
-"    - Frequency in seconds with which to delete saved ipython output (including cached überzug images) of cells which are not present anymore. (After executing a cell of a buffer for the first time in a session, a CursorHold autocmd is created for this buffer which checks whether the last time obsolete output got deleted was more than `g:jukit_clean_outhist_freq` seconds ago, and if so, deletes all saved output of cells which are not present in the buffer anymore from the output-history-json)
+"    - Frequency in seconds with which to delete obsolete entries from the on-disk `.jukit/<file>_outhist.json` data store. After executing a cell of a buffer for the first time in a session, a CursorHold autocmd is created for this buffer which checks whether the last time obsolete output got deleted was more than `g:jukit_clean_outhist_freq` seconds ago, and if so, deletes all saved output of cells which are not present in the buffer anymore.
 ```
 
 ###### Matplotlib
@@ -322,15 +311,8 @@ let g:jukit_inline_plotting = 0
 " You can define a custom split layout as a dictionary, the default is:
 let g:jukit_layout = {
     \'split': 'horizontal',
-    \'p1': 0.6, 
-    \'val': [
-        \'file_content',
-        \{
-            \'split': 'vertical',
-            \'p1': 0.6,
-            \'val': ['output', 'output_history']
-        \}
-    \]
+    \'p1': 0.6,
+    \'val': ['file_content', 'output']
 \}
 
 " this results in the following split layout:
@@ -339,65 +321,25 @@ let g:jukit_layout = {
 " |                      |               |
 " |                      |               |
 " |                      |               |
-" |                      |     output    |
 " |                      |               |
 " |                      |               |
-" |    file_content      |               |
-" |                      |_______________|
+" |                      |               |
+" |    file_content      |     output    |
 " |                      |               |
 " |                      |               |
-" |                      | output_history|
+" |                      |               |
 " |                      |               |
 " |                      |               |
 " |______________________|_______________|
 "
-" The positions of all 3 split windows must be defined in the dictionary, even if 
-" you don't plan on using the output_history split.
-"
 " dictionary keys:
 " 'split':  Split direction of the two splits specified in 'val'. Either 'horizontal' or 'vertical'
 " 'p1':     Proportion of the first split specified in 'val'. Value must be a float with 0 < p1 < 1
-" 'val':    A list of length 2 which specifies the two splits for which to apply the above two options.
-"           One of the two items in the list must be a string and one must be a dictionary in case of
-"           the 'outer' dictionary, while the two items in the list must both be strings in case of
-"           the 'inner' dictionary.
-"           The 3 strings must be different and can be one of: 'file_content', 'output', 'output_history'
+" 'val':    A list of length 2 specifying the two named panes. Each entry must
+"           be one of: 'file_content', 'output'.
 "
 " To not use any layout, specify `let g:jukit_layout=-1`
 ```
-
-###### Überzug
-```vim
-let g:jukit_hist_use_ueberzug = 0
-"   - Set to 1 to use Überzug to display saved outputs instead of an ipython split window
-let g:jukit_ueberzug_use_cached = 1
-"   - Whether to cache created images of saved outputs. If set to 0, will convert saved outputs to png from scratch each time. Note that this will make displaying saved outputs significantly slower. 
-let g:jukit_ueberzug_pos = [0.25, 0.25, 0.4, 0.6]
-"   - position and dimension of Überzug window WITH output split present - [x, y, width, height]. Use `:call jukit#ueberzug#set_default_pos()` to modify/visualize.
-let g:jukit_ueberzug_pos_noout = [0.25, 0.25, 0.4, 0.6]
-"   - position and dimension of Überzug window WITHOUT output split present - [x, y, width, height]. Use `:call jukit#ueberzug#set_default_pos()` to modify/visualize.
-let g:jukit_kill_ueberzug_on_focus_lost = 1
-"   - whether to kill ueberzug when the focus to neovim is lost (detecting focus might only work on neovim). if set to 0, the ueberzug image keeps being displayed even when neovim loses focus (e.g. when switching tabs in terminal).
-
-let g:jukit_ueberzug_border_color = get(g:, 'jukit_ueberzug_border_color', 'blue')
-"   - border color of Überzug images
-let g:jukit_ueberzug_theme = 'dark'
-"   - choose dark or light theme for markdown cells
-let g:jukit_ueberzug_term_hw_ratio = -1
-"   - this is relevant in case the shown ueberzug image is cut off horizontally. In that case, the determined width/height ratio of your terminal cells is determined incorrectly. A value of -1 means the ratio should be determined automatically. A ratio of 2.2 is used by default if the ratio can't be determined automatically. If you get a cut off image, try setting this parameter and vary the values around 2.0 (e.g. `let g:jukit_ueberzug_term_hw_ratio = 2.3` or `let g:jukit_ueberzug_term_hw_ratio = 1.9`) until the image is displayed correctly to determine your needed ratio.
-let g:jukit_ueberzug_python_cmd = 'python3'
-"   - path to python3 executable for which the überzug requirements (beautifulsoup4, pillow, ueberzug) are installed. By default it just uses the python3 command found in your environment. If you started an output split in a virtual environment, make sure that you either have all the requirements in the virtual requirements or set the absolute path to the python3 command.
-let g:jukit_ueberzug_jupyter_cmd = 'jupyter'
-"   - path to jupyter executable. By default it just uses the jupyter command found in your environment. If you started an output split in a virtual environment, make sure that you either have jupyter installed in that environment or set the absolute path to the python3 command.
-let g:jukit_ueberzug_cutycapt_cmd = 'cutycapt'
-"   - path to cutycapt executable
-let g:jukit_ueberzug_imagemagick_cmd = 'convert'
-"   - path to imagemagick (`convert` command) executable
-```
-
-*Notes:*
- * *If you're using ueberzug with virtual environments, be sure that all required packages and commands are available in that environment **OR** specify absolute paths in ueberzug variables above*
- * *If ueberzug is used and the python process is killed while the saved output is converted to an image (which is done automatically each time a cell is executed), it's possible that a template image (i.e. update images which are shown during the process of converting) is cached as the final image and so ueberzug will be stuck displaying this image. If this ever happens, you can simply use `:let g:jukit_ueberzug_use_cached = 0 | call jukit#splits#show_last_cell_output(1) | let g:jukit_ueberzug_use_cached = 1` to recreate the image (or you can just re-execute the cell, which will also recreate the image)*
 
 ### Functions and Default Mappings
 For function explanations see the comments below each mapping
@@ -407,24 +349,14 @@ nnoremap <leader>os :call jukit#splits#output()<cr>
 "   - Opens a new output window and executes the command specified in `g:jukit_shell_cmd`
 nnoremap <leader>ts :call jukit#splits#term()<cr>
 "   - Opens a new output window without executing any command
-nnoremap <leader>hs :call jukit#splits#history()<cr>
-"   - Opens a new output-history window, where saved ipython outputs are displayed
-nnoremap <leader>ohs :call jukit#splits#output_and_history()<cr>
-"   - Shortcut for opening output terminal and output-history
-nnoremap <leader>hd :call jukit#splits#close_history()<cr>
-"   - Close output-history window
 nnoremap <leader>od :call jukit#splits#close_output_split()<cr>
 "   - Close output window
-nnoremap <leader>ohd :call jukit#splits#close_output_and_history(1)<cr>
-"   - Close both windows. Argument: Whether or not to ask you to confirm before closing.
 nnoremap <leader>so :call jukit#splits#show_last_cell_output(1)<cr>
-"   - Show output of current cell (determined by current cursor position) in output-history window. Argument: Whether or not to reload outputs if cell id of outputs to display is the same as the last cell id for which outputs were displayed
+"   - Render the saved output of the current cell inline in the output pane via the `%jukit_out_hist <cell_id>` IPython magic. Sends the magic to the existing output pane, which clears the visible screen (scrollback preserved) and re-renders the cell's saved text and image outputs. Argument: 1 to force a re-render even if the cursor is on the same cell as the last invocation.
 nnoremap <leader>j :call jukit#splits#out_hist_scroll(1)<cr>
-"   - Scroll down in output-history window. Argument: whether to scroll down (1) or up (0)
+"   - Page-scroll the output pane down. Argument: 1 = down, 0 = up.
 nnoremap <leader>k :call jukit#splits#out_hist_scroll(0)<cr>
-"   - Scroll up in output-history window. Argument: whether to scroll down (1) or up (0)
-nnoremap <leader>ah :call jukit#splits#toggle_auto_hist()<cr>
-"   - Create/delete autocmd for displaying saved output on CursorHold. Also, see explanation for `g:jukit_auto_output_hist`
+"   - Page-scroll the output pane up. Argument: 1 = down, 0 = up.
 nnoremap <leader>sl :call jukit#layouts#set_layout()<cr>
 "   - Apply layout (see `g:jukit_layout`) to current splits - NOTE: it is expected that this function is called from the main file buffer/split
 ```
@@ -488,26 +420,19 @@ nnoremap <leader>rpd :call jukit#convert#save_nb_to_file(1,1,'pdf')<cr>
 
 *NOTE*: in case you're using the snap version of firefox to display ipynb notebooks, see [this issue](https://github.com/luk400/vim-jukit/issues/52).
 
-###### Überzug
-```vim
-nnoremap <leader>pos :call jukit#ueberzug#set_default_pos()<cr>
-"   - set position and dimension of überzug window
-```
-
 ### Commands
 
 ```
 :JukitOut some command to be run before opening shell
-:JukitOutHist some command to be run before opening shell
 ```
 
-When working in a virtual environment, you can activate it before running the shell command using the `JukitOut` or `JukitOutHist` command, for example:
+When working in a virtual environment, you can activate it before running the shell command using the `JukitOut` command, for example:
 
 ```vim
 :JukitOut conda activate MyCondaEnv
 ```
 
-This will open a new output split, activate the virtual conda-environment, and then start the output shell as usual. `JukitOutHist` does the same thing but will additionally open an output-history window.
+This will open a new output split, activate the virtual conda-environment, and then start the output shell as usual.
 
 ### Creating your own convenience functions
 

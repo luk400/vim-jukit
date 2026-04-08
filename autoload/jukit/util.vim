@@ -318,38 +318,216 @@ fun! jukit#util#is_md_cell(cell_id) abort
     return md_cur
 endfun
 
-" Prompt the user for a session name. Returns the entered name, or '' if
-" the user cancelled (ctrl-c'd or entered empty input).
+" =====================================================================
+" Floating-window dialog helpers (nvim only).
 "
-" MVP implementation: built-in input(). Can be replaced later with a
-" popup-based version (vim's popup_create + prompt buffer / nvim's
-" nvim_open_win + prompt buftype) without touching call sites.
-fun! jukit#util#prompt_session_name(default) abort
-    call inputsave()
-    let name = input('[vim-jukit] Session name: ', a:default)
-    call inputrestore()
-    return name
+" Two callback-based primitives modeled after vibi.nvim's
+" prompt_session_name (lua/vibe/session.lua:564) and the create_centered_float
+" pattern (lua/vibe/util.lua:6):
+"
+"   floating_input(opts, Callback)  - single-line text input
+"   floating_select(opts, Callback) - vertical menu of items
+"
+" Both are nvim-only; classic vim falls back to input()/inputlist() so
+" call sites stay portable. Both invoke Callback exactly once with the
+" result ('' / -1 on cancel) on submit, cancel, or BufLeave.
+" =====================================================================
+
+" Single-line floating input. Submits on <CR>, cancels on <Esc>/<C-c>/q
+" or when focus leaves the buffer. Calls Callback(name) where name is
+" the trimmed input ('' on cancel).
+fun! jukit#util#floating_input(opts, Callback) abort
+    if !has('nvim')
+        call inputsave()
+        let name = input(get(a:opts, 'prompt', '[vim-jukit] Input: '),
+            \             get(a:opts, 'default', ''))
+        call inputrestore()
+        call a:Callback(name)
+        return
+    endif
+
+    let default = get(a:opts, 'default', '')
+    let title = ' ' . get(a:opts, 'title', 'Input') . ' '
+
+    let bufnr = nvim_create_buf(v:false, v:true)
+    call nvim_buf_set_lines(bufnr, 0, -1, v:false, [default])
+    call nvim_set_option_value('bufhidden', 'wipe', {'buf': bufnr})
+    call nvim_set_option_value('buflisted', v:false, {'buf': bufnr})
+
+    let width = max([40, strdisplaywidth(default) + 10])
+    let width = min([width, &columns - 4])
+    let height = 1
+    let row = max([0, (&lines - height) / 2])
+    let col = max([0, (&columns - width) / 2])
+
+    let winid = nvim_open_win(bufnr, v:true, {
+        \ 'relative': 'editor',
+        \ 'row': row,
+        \ 'col': col,
+        \ 'width': width,
+        \ 'height': height,
+        \ 'style': 'minimal',
+        \ 'border': 'rounded',
+        \ 'title': title,
+        \ 'title_pos': 'center',
+        \ 'zindex': 60,
+        \ })
+
+    " Stash callback + winid on the buffer so the script-local key handlers
+    " can find them after we leave this function.
+    let b:_jukit_input_callback = a:Callback
+    let b:_jukit_input_winid = winid
+    let b:_jukit_input_done = 0
+
+    inoremap <buffer><silent> <CR>  <Esc>:call <SID>floating_input_submit()<CR>
+    nnoremap <buffer><silent> <CR>       :call <SID>floating_input_submit()<CR>
+    nnoremap <buffer><silent> <Esc>      :call <SID>floating_input_cancel()<CR>
+    nnoremap <buffer><silent> q          :call <SID>floating_input_cancel()<CR>
+    inoremap <buffer><silent> <C-c> <Esc>:call <SID>floating_input_cancel()<CR>
+
+    autocmd BufLeave <buffer> ++once call <SID>floating_input_cancel()
+
+    " startinsert! enters insert mode at end of line on next event tick.
+    startinsert!
 endfun
 
-" Show a selection list to the user. `items` is a list of strings.
-" Returns the 0-based index of the selected item, or -1 if cancelled.
-"
-" MVP implementation: built-in inputlist(). Can be replaced later with
-" popup_menu() (vim) or vim.ui.select() (nvim) without touching call
-" sites.
-fun! jukit#util#select_session(items) abort
-    if empty(a:items)
-        return -1
+fun! s:floating_input_finish(name) abort
+    if get(b:, '_jukit_input_done', 0)
+        return
     endif
-    let prompt = ['[vim-jukit] Select session:']
-    let i = 0
-    while i < len(a:items)
-        call add(prompt, printf('%d. %s', i + 1, a:items[i]))
-        let i += 1
-    endwhile
-    let choice = inputlist(prompt)
-    if choice < 1 || choice > len(a:items)
-        return -1
+    let b:_jukit_input_done = 1
+    let Callback = b:_jukit_input_callback
+    let winid = b:_jukit_input_winid
+    if winid > 0 && nvim_win_is_valid(winid)
+        call nvim_win_close(winid, v:true)
     endif
-    return choice - 1
+    if mode() ==# 'i'
+        stopinsert
+    endif
+    call call(Callback, [a:name])
+endfun
+
+fun! s:floating_input_submit() abort
+    let lines = nvim_buf_get_lines(0, 0, 1, v:false)
+    let raw = get(lines, 0, '')
+    let name = substitute(raw, '^\s*\(.\{-}\)\s*$', '\1', '')
+    call s:floating_input_finish(name)
+endfun
+
+fun! s:floating_input_cancel() abort
+    call s:floating_input_finish('')
+endfun
+
+" Vertical floating menu. Items is a list of display strings. j/k navigate
+" the cursorline; <CR> picks the current line; <Esc>/q cancel. Calls
+" Callback(idx) with the 0-based pick or -1 on cancel.
+fun! jukit#util#floating_select(opts, Callback) abort
+    let items = get(a:opts, 'items', [])
+    if empty(items)
+        call a:Callback(-1)
+        return
+    endif
+
+    if !has('nvim')
+        let prompt = ['[vim-jukit] ' . get(a:opts, 'title', 'Select:')]
+        let i = 0
+        while i < len(items)
+            call add(prompt, printf('%d. %s', i + 1, items[i]))
+            let i += 1
+        endwhile
+        let choice = inputlist(prompt)
+        call a:Callback(choice >= 1 && choice <= len(items) ? choice - 1 : -1)
+        return
+    endif
+
+    let title = ' ' . get(a:opts, 'title', 'Select') . ' '
+    let bufnr = nvim_create_buf(v:false, v:true)
+    let lines = []
+    for it in items
+        call add(lines, '  ' . it)
+    endfor
+    call nvim_buf_set_lines(bufnr, 0, -1, v:false, lines)
+    call nvim_set_option_value('bufhidden', 'wipe', {'buf': bufnr})
+    call nvim_set_option_value('buflisted', v:false, {'buf': bufnr})
+    call nvim_set_option_value('modifiable', v:false, {'buf': bufnr})
+
+    let width = 40
+    for line in lines
+        if strdisplaywidth(line) + 4 > width
+            let width = strdisplaywidth(line) + 4
+        endif
+    endfor
+    let width = min([width, &columns - 4])
+    let height = min([len(lines), &lines - 4])
+    let row = max([0, (&lines - height) / 2])
+    let col = max([0, (&columns - width) / 2])
+
+    let winid = nvim_open_win(bufnr, v:true, {
+        \ 'relative': 'editor',
+        \ 'row': row,
+        \ 'col': col,
+        \ 'width': width,
+        \ 'height': height,
+        \ 'style': 'minimal',
+        \ 'border': 'rounded',
+        \ 'title': title,
+        \ 'title_pos': 'center',
+        \ 'zindex': 60,
+        \ })
+    call nvim_set_option_value('cursorline', v:true, {'win': winid})
+
+    let b:_jukit_select_callback = a:Callback
+    let b:_jukit_select_winid = winid
+    let b:_jukit_select_count = len(items)
+    let b:_jukit_select_done = 0
+
+    nnoremap <buffer><silent> <CR>  :call <SID>floating_select_submit()<CR>
+    nnoremap <buffer><silent> <Esc> :call <SID>floating_select_cancel()<CR>
+    nnoremap <buffer><silent> q     :call <SID>floating_select_cancel()<CR>
+    " j/k/<Up>/<Down> navigate via the default normal-mode bindings.
+
+    autocmd BufLeave <buffer> ++once call <SID>floating_select_cancel()
+endfun
+
+fun! s:floating_select_finish(idx) abort
+    if get(b:, '_jukit_select_done', 0)
+        return
+    endif
+    let b:_jukit_select_done = 1
+    let Callback = b:_jukit_select_callback
+    let winid = b:_jukit_select_winid
+    if winid > 0 && nvim_win_is_valid(winid)
+        call nvim_win_close(winid, v:true)
+    endif
+    call call(Callback, [a:idx])
+endfun
+
+fun! s:floating_select_submit() abort
+    let idx = line('.') - 1
+    if idx < 0 || idx >= b:_jukit_select_count
+        let idx = -1
+    endif
+    call s:floating_select_finish(idx)
+endfun
+
+fun! s:floating_select_cancel() abort
+    call s:floating_select_finish(-1)
+endfun
+
+" Prompt the user for a session name. Calls Callback(name) where name is
+" the trimmed input or '' on cancel.
+fun! jukit#util#prompt_session_name(default, Callback) abort
+    call jukit#util#floating_input(
+        \ {'prompt': '[vim-jukit] Session name: ',
+        \  'default': a:default,
+        \  'title': 'Session Name'},
+        \ a:Callback)
+endfun
+
+" Show a selection list to the user. Calls Callback(idx) with the 0-based
+" pick or -1 on cancel.
+fun! jukit#util#select_session(items, Callback) abort
+    call jukit#util#floating_select(
+        \ {'items': a:items, 'title': 'Select Session'},
+        \ a:Callback)
 endfun

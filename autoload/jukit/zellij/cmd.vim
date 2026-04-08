@@ -56,6 +56,25 @@ fun! s:in_zellij() abort
     return !empty($ZELLIJ)
 endfun
 
+" Translate a tiled-style direction ('right'/'left'/'down'/'up') into
+" --x/--y/--width/--height args for new-pane --floating, so a floating
+" pane lands in the same screen quadrant the user expected when they
+" set their direction config. Returns an empty list for unrecognized
+" directions, which lets zellij fall back to its default centered
+" placement.
+fun! s:floating_position_args(direction) abort
+    if a:direction ==# 'right'
+        return ['--x', '50%', '--y', '0%',  '--width', '50%',  '--height', '100%']
+    elseif a:direction ==# 'left'
+        return ['--x', '0%',  '--y', '0%',  '--width', '50%',  '--height', '100%']
+    elseif a:direction ==# 'down'
+        return ['--x', '0%',  '--y', '50%', '--width', '100%', '--height', '50%']
+    elseif a:direction ==# 'up'
+        return ['--x', '0%',  '--y', '0%',  '--width', '100%', '--height', '50%']
+    endif
+    return []
+endfun
+
 fun! s:check_response(cmd, response, quiet) abort
     if !s:in_zellij()
         if !a:quiet
@@ -139,7 +158,9 @@ endfun
 " =====================================================================
 
 " Hide a pane by id.
-"   was_floating = 1: pane is floating; hide the float layer.
+"   was_floating = 1: pane is a pinned float; unpin first, then hide
+"                    the float layer (hide-floating-panes is a no-op
+"                    on pinned panes, so we have to unpin first).
 "   was_floating = 0: pane is tiled; convert to floating, then hide layer.
 fun! jukit#zellij#cmd#hide_pane_by_id(pane_id, was_floating) abort
     if empty(a:pane_id)
@@ -151,25 +172,65 @@ fun! jukit#zellij#cmd#hide_pane_by_id(pane_id, was_floating) abort
         " the (now invisible) float layer with all its state intact.
         call jukit#zellij#cmd#zellij_command(
             \ 'toggle-pane-embed-or-floating', '--pane-id', a:pane_id)
+        call jukit#zellij#cmd#zellij_command('hide-floating-panes')
+    else
+        " Float: the pane was created with --pinned true (Y05), and
+        " hide-floating-panes does NOT affect pinned panes -- pinning
+        " is the "always on top regardless of state" mechanism. So we
+        " unpin first, then the global hide can reach our pane. After
+        " hiding, the pane is in an unpinned-hidden state; the show
+        " path below re-pins it on the way back.
+        call jukit#zellij#cmd#zellij_command(
+            \ 'toggle-pane-pinned', '--pane-id', a:pane_id)
+        call jukit#zellij#cmd#zellij_command('hide-floating-panes')
     endif
-    call jukit#zellij#cmd#zellij_command('hide-floating-panes')
     return 1
 endfun
 
 " Show a previously-hidden pane by id.
-"   want_floating = 1: pane stays floating; just bring float layer back.
-"   want_floating = 0: pane was tiled originally; bring float layer back,
-"     then convert it back to tiled.
+"   want_floating = 1: pane was pinned-float originally; bring the
+"                     float layer back, then re-pin (so the next
+"                     focus_vim doesn't auto-hide it).
+"   want_floating = 0: pane was tiled originally; toggle it directly
+"                     from hidden-floating back to embedded-tiled.
+"
+" Why we don't use show-floating-panes for the tiled case: that action
+" is *tab-global* and would un-park EVERY hidden floating pane in the
+" current tab, including parked panes belonging to other jukit
+" sessions. The previously-active session's hidden output pane would
+" then come back as a stray visible float on top of vim. Toggling
+" embed-or-floating directly on the target pane id changes only that
+" pane's container (hidden float -> tiled), without touching the
+" float-layer visibility, so other parked panes stay where we left
+" them.
 fun! jukit#zellij#cmd#show_pane_by_id(pane_id, want_floating) abort
     if empty(a:pane_id)
         return v:null
     endif
-    " Bring the float layer back so the pane is reachable.
-    call jukit#zellij#cmd#zellij_command('show-floating-panes')
-    if !a:want_floating
-        " Tiled mode: convert back from floating to embedded.
+    if a:want_floating
+        " Float-mode pane: bring the float layer back. This still
+        " unhides every unpinned float in the layer (including
+        " unrelated ones), which is the documented caveat float-mode
+        " users opted into. After the layer is back, re-pin our pane
+        " so the next focus_vim() doesn't auto-hide it again. Then
+        " focus vim explicitly because show-floating-panes auto-focuses
+        " the topmost float, and the user's cursor should land in vim
+        " after a <leader>os "show" toggle, not in the revealed pane.
+        call jukit#zellij#cmd#zellij_command('show-floating-panes')
+        call jukit#zellij#cmd#zellij_command(
+            \ 'toggle-pane-pinned', '--pane-id', a:pane_id)
+        call jukit#zellij#cmd#focus_vim()
+    else
+        " Tiled-mode pane that was parked via the float-layer trick:
+        " toggle directly back to embedded. See block comment above.
+        " After re-embedding, zellij leaves focus on the just-revealed
+        " pane, which means the user's keystrokes would silently get
+        " routed into the output pane instead of vim. Bounce focus
+        " back to vim so the show is purely visual -- mirrors the
+        " float branch above and cmd#launch's tail-call.
         call jukit#zellij#cmd#zellij_command(
             \ 'toggle-pane-embed-or-floating', '--pane-id', a:pane_id)
+        call jukit#zellij#cmd#focus_vim()
     endif
     return 1
 endfun
@@ -178,9 +239,9 @@ endfun
 " No focus changes -- write-chars and write target the pane directly.
 "
 " The `pane_type` argument is one of:
-"   - 'output' / 'outhist': resolve to the active session's matching
-"     pane id (mirrors how the cross-backend dispatcher in send.vim
-"     calls us with these literal aliases).
+"   - 'output': resolve to the active session's output pane id
+"     (mirrors how the cross-backend dispatcher in send.vim calls us
+"     with this literal alias).
 "   - any other string: treated as a pane id directly.
 fun! jukit#zellij#cmd#send_text(pane_type, text) abort
     if !s:in_zellij()
@@ -201,8 +262,8 @@ fun! jukit#zellij#cmd#send_text(pane_type, text) abort
     return 1
 endfun
 
-" Resolve a pane_type alias to a concrete pane id. 'output' / 'outhist'
-" look at the active session; anything else is taken as an id directly.
+" Resolve a pane_type alias to a concrete pane id. 'output' looks at
+" the active session; anything else is taken as a literal id.
 fun! s:resolve_pane_id(pane_type) abort
     if a:pane_type ==# 'output'
         let session = jukit#zellij#splits#_active_session()
@@ -210,12 +271,6 @@ fun! s:resolve_pane_id(pane_type) abort
             return ''
         endif
         return session.output_pane_id
-    elseif a:pane_type ==# 'outhist'
-        let session = jukit#zellij#splits#_active_session()
-        if type(session) == type(v:null) || empty(get(session, 'outhist_pane_id', ''))
-            return ''
-        endif
-        return session.outhist_pane_id
     else
         " Treat as a literal pane id (e.g. "terminal_2") OR, for back
         " compat with code that still passes a title, fall through to
@@ -224,8 +279,6 @@ fun! s:resolve_pane_id(pane_type) abort
         if type(session) != type(v:null)
             if a:pane_type ==# get(session, 'output_title', '')
                 return get(session, 'output_pane_id', '')
-            elseif a:pane_type ==# get(session, 'outhist_title', '')
-                return get(session, 'outhist_pane_id', '')
             endif
         endif
         return a:pane_type
@@ -237,13 +290,17 @@ endfun
 " `plugin_<n>`) and returns it. Returns v:null on failure.
 "
 " Optional a:1 = cmd_args (list of strings) appended after `--` so the
-" pane runs the given argv instead of the default shell. Used by the
-" outhist viewer to spawn a python script directly in the pane. Pass an
+" pane runs the given argv instead of the default shell. Pass an
 " empty list (or omit) to get a default-shell pane.
 "
 " Optional a:2 = floating (0/1). When 1, the pane is created with
 " `--floating` and the `direction` argument is ignored. When 0 (default),
 " the pane is tiled and `--direction` is honored.
+"
+" Optional a:3 = position_override (list of position args, e.g.
+" ['--x','50%','--y','50%','--width','50%','--height','50%']). Only
+" honored when floating==1. Replaces the default direction-derived
+" position.
 fun! jukit#zellij#cmd#launch(direction, name, ...) abort
     if !s:in_zellij()
         echom '[vim-jukit] Not in a Zellij session!'
@@ -252,13 +309,30 @@ fun! jukit#zellij#cmd#launch(direction, name, ...) abort
 
     let cmd_args = a:0 > 0 ? a:1 : []
     let floating = a:0 > 1 ? a:2 : 0
+    let pos_override = a:0 > 2 ? a:3 : v:null
 
     let cmd = ['zellij', 'action', 'new-pane',
         \ '--name', a:name,
         \ '--cwd', getcwd()]
 
     if floating
-        let cmd += ['--floating']
+        " --pinned true keeps the pane visible in the float layer
+        " regardless of focus. Without it, the focus_vim() call below
+        " would auto-hide the pane the moment we hand focus back to
+        " vim, since zellij's default behavior is "floating panes
+        " disappear when a tiled pane gains focus".
+        "
+        " The position args translate the user's direction config (e.g.
+        " 'right') into a half-screen quadrant, otherwise zellij would
+        " always center the float ignoring the configured direction.
+        " The caller can pass an explicit pos_override to bypass the
+        " direction-derived default.
+        let cmd += ['--floating', '--pinned', 'true']
+        if type(pos_override) == type([]) && !empty(pos_override)
+            let cmd += pos_override
+        else
+            let cmd += s:floating_position_args(a:direction)
+        endif
     else
         let cmd += ['--direction', a:direction]
     endif

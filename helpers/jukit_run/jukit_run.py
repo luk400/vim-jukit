@@ -170,13 +170,6 @@ class JukitRun(TerminalMagics):
     @argument("py_file", type=str, help="Absolute path to current .py file")
     @argument("in_style", type=int, help="Input-display style to use")
     @argument("--max_size", type=int, help="Max size of .ipynb file in MiB", default=20)
-    @argument("--store_png", action="store_true", help="Store images for ueberzug")
-    @argument(
-        "--ueberzug_opt",
-        default=None,
-        type=str,
-        help="options for ueberzug script",
-    )
     @line_magic
     def jukit_init(self, param: str):
         args = parse_argstring(self.jukit_init, param)
@@ -184,14 +177,6 @@ class JukitRun(TerminalMagics):
         dir_, fname = os.path.split(py_file)
         fname_outhist = os.path.splitext(fname)[0] + "_outhist.json"
 
-        self.ueberzug_options = args.ueberzug_opt
-        self.create_png = None
-        if self.ueberzug_options is not None:
-            self.ueberzug_options = self.ueberzug_options.split(',')
-            from ueberzug_output.show_output import create_png
-            self.create_png = create_png
-
-        self.store_png = args.store_png
         self.py_file = py_file
 
         self.jukit_dir = os.path.join(dir_, ".jukit")
@@ -214,7 +199,6 @@ class JukitRun(TerminalMagics):
 
     @magic_arguments()
     @argument("--cell_id", type=str)
-    @argument("--create_png", action="store_true")
     @cell_magic
     def jukit_capture(self, param: str, cell: str):
         args = parse_argstring(self.jukit_capture, param)
@@ -252,17 +236,6 @@ class JukitRun(TerminalMagics):
                 add_to_output_history(
                     captured_out, args.cell_id, self.outhist_file, exec_result
                 )
-                if args.create_png and self.create_png is not None:
-                    p = Process(
-                        target=self.create_png,
-                        args=(
-                            args.cell_id,
-                            self.outhist_file,
-                            False,
-                            self.ueberzug_options,
-                        ),
-                    )
-                    p.start()
 
     @line_magic
     def jukit_run(self, cmd_param: Optional[str] = None):
@@ -288,9 +261,7 @@ class JukitRun(TerminalMagics):
         else:
             sys.stdout.write("\r")
 
-        if "s" in opts and self.store_png and cmd not in ["", "\n"]:
-            cmd = f"%%jukit_capture --cell_id={opts.cell_id} --create_png\n" + cmd
-        elif "s" in opts and cmd not in ["", "\n"]:
+        if "s" in opts and cmd not in ["", "\n"]:
             cmd = f"%%jukit_capture --cell_id={opts.cell_id}\n" + cmd
 
         with monitor_execution_count(self.shell):
@@ -314,16 +285,28 @@ class JukitRun(TerminalMagics):
             if i > 0:
                 self.shell.execution_count += 1
 
+    @magic_arguments()
+    @argument("cell_id", type=str, help="Cell ID to render saved output for")
     @monitor_excount_dec
     @line_magic
-    def jukit_out_hist(self, _):
+    def jukit_out_hist(self, line):
+        """Render the saved output of <cell_id> inline in the output pane.
+        Called by vim's <leader>so via the send dispatcher; replaces the
+        old standalone outhist viewer pane workflow."""
         assert hasattr(
             self, "jukit_dir"
         ), "Must first run `%jukit_init <path/to/file.py>`"
-        cell_id, out_title, is_md, term = self._get_info_json_keys(
-            "outhist_cell", "outhist_title", "is_md", "terminal"
-        )
+        args = parse_argstring(self.jukit_out_hist, line)
+        cell_id = args.cell_id
+        # terminal name still lives in .jukit_info.json from %jukit_init --
+        # display_outputs uses it to skip the [PLOT] placeholder on
+        # graphical terminals.
+        (term,) = self._get_info_json_keys("terminal")
 
+        # Clear the visible screen so the cell render isn't interleaved
+        # with earlier live execution output. %clear only clears the
+        # visible screen, not scrollback -- the user can still scroll up
+        # to find their previous live output.
         self.shell.prompts = MyPrompt(self.shell)
         if os.name != "nt":
             self.shell.run_line_magic("clear", "")
@@ -340,11 +323,8 @@ class JukitRun(TerminalMagics):
 
         outputs = out_hist.get(cell_id)
 
-        if outputs is None and not is_md:
-            util.jukit_info("No saved output found", color="\u001b[35m")
-            return
-        elif is_md:
-            util.jukit_info("Markdown Cell", color="\u001b[33m")
+        if outputs is None:
+            util.jukit_info("No saved output for this cell", color="\u001b[35m")
             return
 
         self._write_to_info_json("output_complete", 0)
