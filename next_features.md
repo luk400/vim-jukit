@@ -300,17 +300,14 @@ error: [pdflatex render failed: ! Package amsmath Error: Erroneous nesting of eq
 
 - [ ] make it so default session names are not some random uid, but just empty -> the user has to name them explicitely (either when running <leader>os for the first time, or when running <leader>ss and selecting new session), then we just check whether there's already a session with that name activate and display a message for the user to choose a different name 
 
-- [ ] need a way within nvim to increase/decrease zellij pane width
-
-- [ ] currently there seems to be a bug when g:jukit_output_float=1, where when pressing <leader>os there flashes a floating window very very briefly (like fractions of a second) of what seems like an outhist floating window that might be leftover from an old implementation
-
 - [ ] when user does <leader>ss, it should not just show active sessions and the create new... option, but also a load previous option, which if selected, gives the user a list of sessions for which outputs are saved in .jukit (in a floating window dialog), when the user selects one, the session is named like the selected one and user can show outputs from that session (of course he needs to rerun the cells, but atleast the outputs are present from the old session, maybe display a short message stating this after loading a session)
 
 - [ ] when user does <leader>np to convert .py file to .ipynb and he wants to also copy over outputs to the .ipynb, he should specify from a floating dialog with a list of saved session names which session output should be put in the notebook
 
 - [ ] when user does <leader>np to convert a .ipynb file to a .py file, he should specify a session name under which to save the outputs of the .ipynb file (if it has any) - default to the name _original_outputs_converted_ here
 
-- [ ] if the user uses zellij, we could theoretically preserve sessions even across different nvim sessions. i.e. user closes nvim -> leave zellij sessions running in the background, do not kill them -> user sometime later opens the .py file again -> reconnect and continue with existing zellij sessions, i.e. they immediately show up in <leader>ss again.
+- [ ] if the user uses zellij, we could theoretically preserve sessions even across different nvim sessions. i.e. user closes nvim -> leave zellij sessions running in the background, do not kill them -> user sometime later opens the .py file again -> reconnect and continue with existing zellij sessions, i.e. they immediately show up in <leader>ss again. in that case however, there should be the option to select "kill all sessions" in the <leader>ss dialog, under create new - but make sure the user has to enter yes for confirmation if he selects that option!
 
-- [ ] remove support for überzug, iterm, kitty, tmux, etc. completely. only support zellij, vimterm, nvimterm from now on. this makes the plugin much more maintainable.
+- [ ] remove support for überzug, iterm, kitty, tmux, etc. from the plugin completely. clean up the codebase and remove any reference to these. only support zellij, vimterm, nvimterm from now on. this makes the plugin much more maintainable.
 
+- [ ] not really something to implement, but something i want you to tell me: how can i resize zellij panes? what do i need to put in my zellij config to map it to alt+shift+h/l? write your explanation to zellij_pane_resize_howto.md
