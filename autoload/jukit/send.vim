@@ -146,13 +146,26 @@ fun! jukit#send#selection() abort
 endfun
 
 fun! jukit#send#section(move_next) abort
-    " Sends code of the current section to split-window/ipython shell
-    
+    " Sends code of the current section to split-window/ipython shell.
+    " Markdown branch: on a markdown cell, instead of dumping the raw
+    " md source into the pane as code, delegate to the same render
+    " path <leader>so uses (jukit#splits#show_last_cell_output). That
+    " function handles the md detection + sixel-render inline (gated
+    " to zellij internally; on other backends it falls through to the
+    " "no saved output" message). force=1 bypasses the
+    " same-cell-twice guard so the user can re-render at will.
+
     call jukit#util#md_buffer_vars()
     if !s:output_exists()
         return
     endif
-   
+
+    let cell_id = jukit#util#get_current_cell_id()
+    if cell_id !=# 'NONE' && jukit#util#is_md_cell(cell_id)
+        call jukit#splits#show_last_cell_output(1)
+        return
+    endif
+
     let cmd_count = v:count == 0 ? 1 : v:count
     if cmd_count == 1
         call s:send_single_section(a:move_next)

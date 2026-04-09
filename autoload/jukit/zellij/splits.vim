@@ -373,7 +373,28 @@ fun! jukit#zellij#splits#_create_output_pane(...) abort
     endif
 
     call jukit#zellij#cmd#send_text('output', jukit#splits#_build_shell_cmd())
-    call jukit#util#ipython_info_write({'terminal': 'zellij', 'import_complete': 0})
+    " Also publish the current sixelcat width factor so the python side
+    " can re-read it at runtime (cat.py::_read_runtime_factor). Writing
+    " it here means ``:let g:jukit_sixelcat_width_factor = X`` followed
+    " by ``:call jukit#util#ipython_info_write({'sixelcat_width_factor':
+    " g:jukit_sixelcat_width_factor})`` takes effect on the next render
+    " without a pane restart.
+    "
+    " ``sixelcat_pane_id`` is the bare integer form of the output
+    " pane's id (session.output_pane_id is stored as "terminal_<n>";
+    " we strip the prefix). cat.py::_query_zellij_pane_dims reads it
+    " to filter the ``zellij action list-panes --json`` output down to
+    " our specific pane, which is how the python side gets an
+    " authoritative "is this pane currently tiled or has it been
+    " toggled to hidden-floating" signal -- the pty winsize alone
+    " can't distinguish those states.
+    let l:sixel_pane_id_int = str2nr(matchstr(session.output_pane_id, '\d\+'))
+    call jukit#util#ipython_info_write({
+        \ 'terminal': 'zellij',
+        \ 'import_complete': 0,
+        \ 'sixelcat_width_factor': g:jukit_sixelcat_width_factor,
+        \ 'sixelcat_pane_id': l:sixel_pane_id_int,
+        \ })
     return 1
 endfun
 

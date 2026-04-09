@@ -136,6 +136,25 @@ fun! s:resolve_jukit_dir() abort
     return s:last_src_dir . g:_jukit_ps . '.jukit' . g:_jukit_ps
 endfun
 
+" Update the sixelcat width factor at runtime.
+"
+" Sets the vim-side global AND publishes the value to .jukit_info.json
+" so the python-side ``cat.py::_read_runtime_factor`` picks it up on
+" the next render -- without restarting the IPython pane. Only
+" meaningful on the zellij backend (where the sixelcat matplotlib
+" backend is wired up); a no-op warning on other backends.
+"
+" Usage:
+"   :call jukit#util#set_sixel_width(0.8)
+fun! jukit#util#set_sixel_width(val) abort
+    if g:jukit_terminal !=# 'zellij'
+        echom '[vim-jukit] set_sixel_width only affects the zellij backend'
+        return
+    endif
+    let g:jukit_sixelcat_width_factor = a:val
+    call jukit#util#ipython_info_write({'sixelcat_width_factor': a:val})
+endfun
+
 fun! jukit#util#ipython_info_write(dict) abort
     " TODO: is this check necessary?
     if !g:jukit_ipython
@@ -316,6 +335,61 @@ fun! jukit#util#is_md_cell(cell_id) abort
     let md_cur = search(b:jukit_md_start, 'nbW') > search('|%%--%%| <.*|' . a:cell_id, 'nbW')
     call winrestview(save_view)
     return md_cur
+endfun
+
+" Return the raw markdown source lines for the markdown cell enclosing
+" the cursor as a single newline-joined string. Caller must verify
+" jukit#util#is_md_cell() first and ensure jukit#util#md_buffer_vars()
+" was called so b:jukit_md_start_escaped / b:jukit_md_end_escaped exist.
+"
+" Implementation: bound the inner search to the cell's outer markers
+" (returned by get_adjacent_markers, which is what get_current_cell_id
+" already trusts) and then scan that bounded range for md_start /
+" md_end. This makes the result independent of which line within the
+" cell the cursor lands on -- in particular it fixes the case where
+" the cursor sits on the closing md_end delimiter or the blank line
+" right above it, which used to make the cursor-relative search slide
+" off the end and return empty.
+"
+" The cell_id argument is accepted for API symmetry with is_md_cell()
+" but not used inside.
+fun! jukit#util#get_md_cell_source(cell_id) abort
+    let save_view = winsaveview()
+    try
+        " get_adjacent_markers reads cursor position; call it BEFORE we
+        " move the cursor for the inner searches.
+        let markers = jukit#util#get_adjacent_markers()
+        let cell_top = markers['above']['pos'] > 0
+            \ ? markers['above']['pos'] + 1
+            \ : 1
+        let cell_bot = markers['below']['pos'] > 0
+            \ ? markers['below']['pos'] - 1
+            \ : line('$')
+        if cell_bot < cell_top
+            return ''
+        endif
+
+        " Find md_start. Place the cursor at (cell_top, 1) and scan
+        " forward with the 'c' flag so a match on cell_top itself is
+        " accepted, bounded to cell_bot (inclusive).
+        call cursor(cell_top, 1)
+        let start_lnum = search(b:jukit_md_start_escaped, 'cW', cell_bot)
+        if start_lnum == 0 || start_lnum >= cell_bot
+            return ''
+        endif
+
+        " Find md_end strictly after md_start, also bounded to cell_bot.
+        call cursor(start_lnum + 1, 1)
+        let end_lnum = search(b:jukit_md_end_escaped, 'cW', cell_bot)
+        if end_lnum == 0 || end_lnum <= start_lnum + 1
+            return ''
+        endif
+
+        let lines = getline(start_lnum + 1, end_lnum - 1)
+        return join(lines, "\n")
+    finally
+        call winrestview(save_view)
+    endtry
 endfun
 
 " =====================================================================

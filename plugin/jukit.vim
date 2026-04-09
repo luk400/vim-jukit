@@ -54,7 +54,20 @@ let g:jukit_mpl_style = get(g:, 'jukit_mpl_style', '') "this value is changed fo
 let g:jukit_savefig_dpi = get(g:, 'jukit_savefig_dpi', 150)
 let g:jukit_custom_backend = get(g:, 'jukit_custom_backend', -1)
 let g:jukit_mpl_block = get(g:, 'jukit_mpl_block', 1)
-let g:jukit_sixelcat_width_factor = get(g:, 'jukit_sixelcat_width_factor', 1.8)
+" Fraction of the zellij output pane that a rendered matplotlib figure
+" fills. 1.0 (default) = exact fit preserving aspect ratio; < 1.0 leaves
+" margin; > 1.0 deliberately overshoots (image is cut off by the pane
+" edges). The python side re-reads this from .jukit_info.json on every
+" render, so ``:call jukit#util#ipython_info_write({'sixelcat_width_factor':
+" 0.8})`` takes effect without restarting IPython.
+let g:jukit_sixelcat_width_factor = get(g:, 'jukit_sixelcat_width_factor', 1.0)
+
+" markdown cell rendering (zellij only).
+" When set to 1 (the default), the python side prints a one-line dim
+" message the first time markdown math is rendered without a full
+" LaTeX install (pdflatex + pdftoppm), explaining how to install it
+" or how to silence the message. Set to 0 to silence permanently.
+let g:jukit_show_latex_warning = get(g:, 'jukit_show_latex_warning', 1)
 
 " zellij
 let g:jukit_zellij_output_direction = get(g:, 'jukit_zellij_output_direction', 'right')

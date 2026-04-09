@@ -90,6 +90,26 @@ fun! jukit#splits#show_last_cell_output(force) abort
     endif
     let g:jukit_outhist_last_cell = cell_id
 
+    " Markdown cell branch: only meaningful on zellij, where the
+    " sixelcat backend is available for rasterized math images.
+    " Other backends fall through to the existing path (which prints
+    " "No saved output for this cell" for markdown cells).
+    if g:jukit_terminal ==# 'zellij'
+        " md_buffer_vars must run before is_md_cell: the latter reads
+        " b:jukit_md_start directly with no existence check, and the
+        " splits.vim path historically never populated it.
+        call jukit#util#md_buffer_vars()
+        if jukit#util#is_md_cell(cell_id)
+            let md_source = jukit#util#get_md_cell_source(cell_id)
+            call jukit#util#ipython_info_write({
+                \ 'md_source': md_source,
+                \ 'show_latex_warning': g:jukit_show_latex_warning,
+                \ })
+            call jukit#send#text('%jukit_out_hist ' . cell_id . ' --md')
+            return
+        endif
+    endif
+
     call jukit#send#text('%jukit_out_hist ' . cell_id)
 endfun
 

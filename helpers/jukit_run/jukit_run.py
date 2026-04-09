@@ -2,9 +2,7 @@ from IPython.core.magic import line_magic, cell_magic, magics_class, magics_clas
 from IPython.core.magic_arguments import argument, magic_arguments, parse_argstring
 from IPython.utils.capture import CapturedIO
 from IPython.terminal.magics import TerminalMagics
-from IPython.terminal.prompts import Prompts
 from IPython.lib.pretty import pretty
-from pygments.token import Token
 
 import io, json, re, os, sys
 from matplotlib import pyplot as plt
@@ -58,15 +56,6 @@ class monitor_execution_count(object):
     def __exit__(self, *_):
         if self.execution_count != self.shell.execution_count:
             self.shell.execution_count = self.execution_count
-
-
-class MyPrompt(Prompts):
-    def in_prompt_tokens(self):
-        # NOTE: for some reason, simply returning [] or [(Token.Prompt, "")]
-        # or even [(Token.Prompt, " ")] caused a segmentation fault for
-        # (n)vimterm after specific resize operations of the terminal, while
-        # using two or more spaces did not.
-        return [(Token.Prompt, "  ")]
 
 
 class JukitCaptureOutput(object):
@@ -197,6 +186,17 @@ class JukitRun(TerminalMagics):
 
         self._write_to_info_json("import_complete", 1)
 
+        # Tell sixelcat (if loaded) where to look for runtime config
+        # updates. cat.py re-reads `sixelcat_width_factor` from this
+        # file on every render, so vim-side changes propagated via
+        # ipython_info_write take effect without restarting IPython.
+        # Guarded: sixelcat is only imported on zellij; other backends
+        # don't have the module on sys.modules and we don't want to
+        # force-import it.
+        if "sixelcat" in sys.modules:
+            with suppress(Exception):
+                sys.modules["sixelcat"].configure(info_file=self.info_file)
+
     @magic_arguments()
     @argument("--cell_id", type=str)
     @cell_magic
@@ -287,6 +287,8 @@ class JukitRun(TerminalMagics):
 
     @magic_arguments()
     @argument("cell_id", type=str, help="Cell ID to render saved output for")
+    @argument("--md", action="store_true",
+              help="Render cell as markdown (source read from .jukit_info.json)")
     @monitor_excount_dec
     @line_magic
     def jukit_out_hist(self, line):
@@ -303,31 +305,54 @@ class JukitRun(TerminalMagics):
         # graphical terminals.
         (term,) = self._get_info_json_keys("terminal")
 
-        # Clear the visible screen so the cell render isn't interleaved
-        # with earlier live execution output. %clear only clears the
-        # visible screen, not scrollback -- the user can still scroll up
-        # to find their previous live output.
-        self.shell.prompts = MyPrompt(self.shell)
-        if os.name != "nt":
-            self.shell.run_line_magic("clear", "")
-
-        x, _ = os.get_terminal_size()
-
         if not os.path.isfile(self.outhist_file):
             util.jukit_info(f"File {self.outhist_file} not found")
             return
 
         out_hist = util.catch_load_json(self.outhist_file)
 
-        util.display_cell_id(cell_id, x, min_frame_width=25)
+        # outhist_frame() prints the cyan top frame on entry, swaps
+        # sys.stdout for a LinePrefixWriter that draws `│ ` at column 1
+        # of every body line, and prints the bottom frame on exit. The
+        # markdown branch and the code-output branch both render inside
+        # the with block so the framing is identical for both. The
+        # title differs so the user can tell at a glance which type of
+        # cell they're looking at.
+        title = "Markdown" if args.md else "Last Output"
+        with util.outhist_frame(title=title):
+            # Markdown cell branch: vim sends --md after writing the
+            # cell's raw source to .jukit_info.json under key
+            # 'md_source'. Render inline (rich.Markdown + pdflatex/
+            # mathtext via sixel) instead of looking up stored outputs.
+            # Only reachable on zellij (vim-side gate in
+            # autoload/jukit/splits.vim's show_last_cell_output).
+            if args.md:
+                from .render_markdown import render_markdown_cell
+                md_source, show_latex_warning = self._get_info_json_keys(
+                    "md_source", "show_latex_warning"
+                )
+                if md_source is None:
+                    util.jukit_info("No markdown source in .jukit_info.json",
+                                    color="\u001b[35m")
+                    return
+                # Default to True when vim hasn't written the key yet
+                # (e.g. plugin loaded with an older splits.vim).
+                if show_latex_warning is None:
+                    show_latex_warning = True
+                render_markdown_cell(
+                    md_source,
+                    show_latex_warning=bool(show_latex_warning),
+                )
+                return
 
-        outputs = out_hist.get(cell_id)
+            outputs = out_hist.get(cell_id)
 
-        if outputs is None:
-            util.jukit_info("No saved output for this cell", color="\u001b[35m")
-            return
+            if outputs is None:
+                util.jukit_info("No saved output for this cell",
+                                color="\u001b[35m")
+                return
 
-        self._write_to_info_json("output_complete", 0)
-        plt.close()
-        util.display_outputs(outputs, term, self.shell)
-        self._write_to_info_json("output_complete", 1)
+            self._write_to_info_json("output_complete", 0)
+            plt.close()
+            util.display_outputs(outputs, term, self.shell)
+            self._write_to_info_json("output_complete", 1)
