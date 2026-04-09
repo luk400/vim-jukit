@@ -1,5 +1,11 @@
-let s:markers_nlines = -1
-let s:textcell_nlines = -1
+" `s:markers_nlines` / `s:textcell_nlines` USED to live here as
+" script-local cache variables for "did the buffer line count change
+" since the last refresh?". They were script-local, so opening a new
+" buffer with the same line count as the previous one would short-
+" circuit the refresh and leave the new buffer un-highlighted. They are
+" now buffer-local (`b:jukit_markers_nlines` / `b:jukit_textcell_nlines`)
+" and initialized lazily on first use; see jukit#highlight_markers and
+" jukit#place_markdown_cell_signs below.
 let s:md_start_pattern = '.*' . g:_jukit_md_mark . '$'
 let s:md_end_pattern = '^' . g:_jukit_md_mark . '.*'
 
@@ -115,12 +121,22 @@ fun! s:add_signs_in_region(lnum_end) abort
         let num_end = a:lnum_end
     endif
 
+    " IMPORTANT: `id` MUST be the line number (`v`), NOT the array index
+    " (`l`). vim signs are keyed by (group, id, buffer), and
+    " sign_placelist UPDATES an existing sign with the same key rather
+    " than creating a new one. If we used `l` (which restarts at 0 for
+    " every md cell in the buffer), the second cell's ids 0,1,2,...
+    " would silently move the signs that the first cell just placed at
+    " those same ids -- so cell 1's leading rows would lose their
+    " background highlight while only the last cell would render
+    " correctly. With `v` (the absolute line number), every line gets a
+    " unique id and cells stop trampling each other.
     let lines = range(line('.'), num_end)
     let sign_list = map(lines, {l, v -> {
-        \ 'buffer': bufnr('%', 1), 
-        \ 'group': 'jukit_textcells', 
-        \ 'name': 'jukit_textcells', 
-        \ 'id': l, 
+        \ 'buffer': bufnr('%', 1),
+        \ 'group': 'jukit_textcells',
+        \ 'name': 'jukit_textcells',
+        \ 'id': v,
         \ 'lnum': v,
         \ 'priority': 1}})
     call sign_placelist(sign_list)
@@ -132,10 +148,17 @@ fun! s:highlight_sep_lines(val) abort
 endfun
 
 fun! jukit#place_markdown_cell_signs(force) abort
-    if line('$') == s:textcell_nlines && !a:force
+    " Buffer-local line-count cache. Was previously script-local
+    " (s:textcell_nlines), which short-circuited the refresh whenever
+    " you switched between two buffers that happened to share a line
+    " count -- the new buffer's md backgrounds would never get placed.
+    " b: scopes the cache per buffer so each gets its own first-call
+    " refresh.
+    if exists('b:jukit_textcell_nlines')
+        \ && b:jukit_textcell_nlines == line('$') && !a:force
         return
     endif
-    let s:textcell_nlines = line('$')
+    let b:jukit_textcell_nlines = line('$')
 
     let save_view = winsaveview()
 
@@ -148,10 +171,14 @@ fun! jukit#place_markdown_cell_signs(force) abort
 endfun
 
 fun! jukit#highlight_markers(force) abort
-    if line('$') == s:markers_nlines && !a:force
+    " Buffer-local line-count cache. See the comment in
+    " jukit#place_markdown_cell_signs for why this used to live in a
+    " script-local variable and why it was wrong.
+    if exists('b:jukit_markers_nlines')
+        \ && b:jukit_markers_nlines == line('$') && !a:force
         return
     endif
-    let s:markers_nlines = line('$')
+    let b:jukit_markers_nlines = line('$')
 
     call sign_unplace('jukit_cell_markers', {'buffer': bufnr('%', 1)})
     let lines = getline(1, '$')

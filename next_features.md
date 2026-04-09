@@ -262,7 +262,41 @@ error: [pdflatex render failed: ! Package amsmath Error: Erroneous nesting of eq
      math sixels and matching the visual style of <leader>so /
      <leader><space>.
 
-- [ ] for some reason the background color in markdown cells is scuffed when displaying .py files in nvim. the markdown syntax is all shown correclty with correct syntax highlighting, but the background signs are sometimes not shown at all and sometimes only part way through the markdown cell. see if you find any brittle/erroneous logic for this in the plugin
+- [X] for some reason the background color in markdown cells is scuffed when displaying .py files in nvim. the markdown syntax is all shown correclty with correct syntax highlighting, but the background signs are sometimes not shown at all and sometimes only part way through the markdown cell. see if you find any brittle/erroneous logic for this in the plugin
+  -> root cause #1 (the main one): autoload/jukit.vim's
+     s:add_signs_in_region built its sign list with `id: l`, where
+     `l` is the array INDEX into the per-cell `range(line('.'), num_end)`
+     (so 0, 1, 2, ...). vim signs are keyed by (group, id, buffer),
+     and sign_placelist UPDATES an existing key rather than creating a
+     new sign. With multiple md cells in the buffer, the second cell's
+     ids 0..N-1 silently moved the signs the first cell had just
+     placed at those same ids. With cells of unequal length the first
+     cell would lose its leading rows but keep its trailing ones (the
+     ids that the shorter second cell didn't reach), which is exactly
+     the user's "sometimes only part way through" symptom. Fix: use
+     `id: v` (the absolute line number) so every sign across all
+     cells has a unique id.
+  -> root cause #2 (the cross-buffer one): the line-count cache
+     variables `s:textcell_nlines` / `s:markers_nlines` were
+     SCRIPT-local. Switching from a 100-line buffer to another
+     100-line buffer made the early-return fire (`line('$') ==
+     s:textcell_nlines`), so the new buffer's md backgrounds were
+     never placed. Fix: store the cache as buffer-local
+     `b:jukit_textcell_nlines` / `b:jukit_markers_nlines`, gated on
+     `exists()` for the first call per buffer.
+  -> NOT touched: the early-return on line-count alone misses
+     edits that move content between md cells without changing the
+     total buffer length (e.g. add 2 lines to cell A, remove 2 from
+     cell B). This is rare and the fix would require tracking each
+     cell's range, not just the buffer line count -- left for later.
+  -> verification: traced the bug end-to-end with the example "cell A
+     6 lines, cell B 4 lines": with the old `id: l` code cell A loses
+     ids 0..3 (overwritten by cell B's 4 entries) but keeps ids 4..5
+     pinned to its lines 9..10 -> partial highlight on cell A, full
+     highlight on cell B. With `id: v` every line has a unique id and
+     no overwrite happens. No live nvim was available on the host so
+     the fix is by analysis + matching the user's reported symptom
+     pattern; user should restart nvim and confirm.
 
 - [ ] make it so default session names are not some random uid, but just empty -> the user has to name them explicitely (either when running <leader>os for the first time, or when running <leader>ss and selecting new session), then we just check whether there's already a session with that name activate and display a message for the user to choose a different name 
 
