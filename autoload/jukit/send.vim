@@ -232,6 +232,24 @@ fun! s:send_multiple_sections(count) abort
     call s:send_to_split('%jukit_run_split', code, g:jukit_save_output)
 endfun
 
+" Build the `--md_cell_start=...` (and on zellij `--md_cell_end=...`) suffix
+" used by until_current_section / all to tell %jukit_run_split how to
+" recognize markdown cells. Passing md_cell_end is the "render md cells
+" inline" gate (zellij only -- the only backend with the sixelcat math
+" pipeline). On other backends md_cell_start alone reverts %jukit_run to
+" the old skip-md-cells behavior so we don't dump unrendered sixel bytes
+" into the pane.
+fun! s:md_args() abort
+    let lang_info = jukit#util#get_lang_info()
+    let md_start = escape(lang_info[0], '"')
+    let args = ' --md_cell_start=' . md_start
+    if g:jukit_terminal ==# 'zellij'
+        let md_end = escape(lang_info[1], '"')
+        let args = args . ' --md_cell_end=' . md_end
+    endif
+    return args
+endfun
+
 fun! jukit#send#until_current_section() abort
     " Sends code from the beginning until (and including) the current section
     " to split-window/ipython shell
@@ -258,18 +276,19 @@ fun! jukit#send#until_current_section() abort
 
     let code = join(getline(pos1, pos2), "\n")
 
+    let md_args = s:md_args()
     if g:jukit_save_output
-        let md_start = escape(jukit#util#get_lang_info()[0], '"')
-        let param = g:jukit_ipy_opts . ' -s' . ' --md_cell_start=' . md_start
+        let param = g:jukit_ipy_opts . ' -s' . md_args
         call s:send_to_split('%jukit_run_split', code, 1, param)
     else
-        call s:send_to_split('%jukit_run_split', code, 0)
+        let param = g:jukit_ipy_opts . md_args
+        call s:send_to_split('%jukit_run_split', code, 0, param)
     endif
 endfun
 
 fun! jukit#send#all() abort
     " Sends all code in file to window
-    
+
     if !s:output_exists()
         return
     endif
@@ -282,11 +301,12 @@ fun! jukit#send#all() abort
 
     let code = join(getline(1, '$'), "\n")
 
+    let md_args = s:md_args()
     if g:jukit_save_output
-        let md_start = escape(jukit#util#get_lang_info()[0], '"')
-        let param = g:jukit_ipy_opts . ' -s' . ' --md_cell_start=' . md_start
+        let param = g:jukit_ipy_opts . ' -s' . md_args
         call s:send_to_split('%jukit_run_split', code, 1, param)
     else
-        call s:send_to_split('%jukit_run_split', code, 0)
+        let param = g:jukit_ipy_opts . md_args
+        call s:send_to_split('%jukit_run_split', code, 0, param)
     endif
 endfun

@@ -212,21 +212,71 @@ error: [pdflatex render failed: ! Package amsmath Error: Erroneous nesting of eq
      md cell <leader>so, and md cell <leader><space> all now hide
      their In prompts identically.
 
-- [ ] when i do <leader>all or <leader>cc, the markdown cells are skipped. i'd like to change that s.t. the markdown cells are also rendered, not just the code cells
+- [X] when i do <leader>all or <leader>cc, the markdown cells are skipped. i'd like to change that s.t. the markdown cells are also rendered, not just the code cells
+  -> root cause: helpers/jukit_run/jukit_run.py:jukit_run had
+     `if "md_cell_start" in opts and cmd.strip().startswith(...): return`
+     -- a hard skip for any cell whose source begins with the md
+     marker. The skip was set up by autoload/jukit/send.vim's
+     until_current_section / all, which always passed
+     `--md_cell_start=r"""°°°` so jukit_run_split could iterate over
+     every cell and let jukit_run drop the markdown ones on the
+     floor.
+  -> fix: replace the skip with the same render path that
+     `%jukit_out_hist --md` uses (added in the previous outhist
+     work):
+       1. Added module-level helper `_extract_md_source(cmd, md_start,
+          md_end)` in jukit_run.py that strips the leading
+          `r"""°°°` and trailing `°°°"""` markers from a cell's
+          source. Defensive: returns None if md_start prefix isn't
+          there, returns body as-is if md_end is missing (cell has
+          no closing marker), preserves embedded markers (`r"""°°°`
+          inside body, `°°°"""` not at the end).
+       2. jukit_run now also accepts `md_cell_end=` in
+          parse_options. When the md_cell_start match fires, it
+          extracts the body via _extract_md_source and renders it
+          inside `outhist_frame(title="Markdown")` via the same
+          `render_markdown_cell(...)` call jukit_out_hist's md
+          branch uses, then returns. show_latex_warning is read
+          from .jukit_info.json the same way.
+       3. Gating: `md_cell_end` is the implicit "render md cells"
+          gate. If it's NOT in opts, the old skip behavior runs
+          unchanged. send.vim only attaches it on zellij (the only
+          backend with the sixelcat math pipeline) so other
+          backends don't dump unrendered sixel into the pane.
+       4. send.vim: factored the lang_info / md_args building into
+          a new s:md_args() helper used by both
+          until_current_section and all. The helper conditionally
+          appends `--md_cell_end=` only when g:jukit_terminal ==
+          'zellij'. Both functions also now pass the param dict
+          even in the !g:jukit_save_output branch (previously they
+          dropped it, which was a latent bug -- the existing skip
+          behavior also didn't fire for save_output=0).
+  -> verified _extract_md_source via standalone smoke test (8
+     cases): leading/trailing whitespace, empty cell, embedded
+     start/end markers, missing closing marker, math content,
+     non-md cell returning None, surrounding whitespace. All pass.
+  -> follow-up: <leader>cc and <leader>all on a file containing
+     a mix of code and md cells now produce: green `In` boxes for
+     code cells (existing path) and cyan `Markdown` outhist
+     frames for md cells (new path), with bar prefixes around
+     math sixels and matching the visual style of <leader>so /
+     <leader><space>.
 
 - [ ] for some reason the background color in markdown cells is scuffed when displaying .py files in nvim. the markdown syntax is all shown correclty with correct syntax highlighting, but the background signs are sometimes not shown at all and sometimes only part way through the markdown cell. see if you find any brittle/erroneous logic for this in the plugin
+
+- [ ] make it so default session names are not some random uid, but just empty -> the user has to name them explicitely (either when running <leader>os for the first time, or when running <leader>ss and selecting new session), then we just check whether there's already a session with that name activate and display a message for the user to choose a different name 
 
 - [ ] need a way within nvim to increase/decrease zellij pane width
 
 - [ ] currently there seems to be a bug when g:jukit_output_float=1, where when pressing <leader>os there flashes a floating window very very briefly (like fractions of a second) of what seems like an outhist floating window that might be leftover from an old implementation
-
-- [ ] make it so default session names are not some random uid, but just empty -> the user has to name them explicitely (either when running <leader>os for the first time, or when running <leader>ss and selecting new session), then we just check whether there's already a session with that name activate and display a message for the user to choose a different name 
 
 - [ ] when user does <leader>ss, it should not just show active sessions and the create new... option, but also a load previous option, which if selected, gives the user a list of sessions for which outputs are saved in .jukit (in a floating window dialog), when the user selects one, the session is named like the selected one and user can show outputs from that session (of course he needs to rerun the cells, but atleast the outputs are present from the old session, maybe display a short message stating this after loading a session)
 
 - [ ] when user does <leader>np to convert .py file to .ipynb and he wants to also copy over outputs to the .ipynb, he should specify from a floating dialog with a list of saved session names which session output should be put in the notebook
 
 - [ ] when user does <leader>np to convert a .ipynb file to a .py file, he should specify a session name under which to save the outputs of the .ipynb file (if it has any) - default to the name _original_outputs_converted_ here
+
+- [ ] if the user uses zellij, we could theoretically preserve sessions even across different nvim sessions. i.e. user closes nvim -> leave zellij sessions running in the background, do not kill them -> user sometime later opens the .py file again -> reconnect and continue with existing zellij sessions, i.e. they immediately show up in <leader>ss again.
 
 - [ ] remove support for überzug, iterm, kitty, tmux, etc. completely. only support zellij, vimterm, nvimterm from now on. this makes the plugin much more maintainable.
 

@@ -45,6 +45,34 @@ def monitor_excount_dec(func):
     return monitor_wrapper
 
 
+def _extract_md_source(cmd: str, md_start: str, md_end: str) -> Optional[str]:
+    """Strip the md_start / md_end markers from a markdown cell so the
+    inner markdown source can be passed to render_markdown_cell.
+
+    A markdown cell in a python file looks like:
+        r\"\"\"°°°
+        # heading
+        body
+        °°°\"\"\"
+
+    md_start is `r\"\"\"°°°` (multiline_start + md_mark) and md_end is
+    `°°°\"\"\"` (md_mark + multiline_end), as built by vim's
+    jukit#util#get_lang_info().
+
+    Returns None if the cell text doesn't actually start with md_start
+    (caller should already have checked, but be defensive). Trailing
+    md_end is removed if present; otherwise the body is returned as-is
+    so a cell missing its closing marker still renders something.
+    """
+    text = cmd.strip()
+    if not text.startswith(md_start):
+        return None
+    text = text[len(md_start):]
+    if md_end and text.endswith(md_end):
+        text = text[:-len(md_end)]
+    return text.strip()
+
+
 class monitor_execution_count(object):
     def __init__(self, shell):
         self.shell = shell
@@ -245,15 +273,44 @@ class JukitRun(TerminalMagics):
 
         if cmd_param:
             cmd, param = cmd_param
-            opts, name = self.parse_options(param, "pqs", "cell_id=", "md_cell_start=", mode="string")
+            opts, name = self.parse_options(param, "pqs", "cell_id=", "md_cell_start=", "md_cell_end=", mode="string")
         else:
             param, cmd = self._get_info_json_keys("cmd_opts", "cmd")
-            opts, name = self.parse_options(param, "pqs", "cell_id=", "md_cell_start=", mode="string")
+            opts, name = self.parse_options(param, "pqs", "cell_id=", "md_cell_start=", "md_cell_end=", mode="string")
 
         if "p" not in opts:
             util.hide_prompt(self.shell)
 
         if "md_cell_start" in opts and cmd.strip().startswith(opts.md_cell_start):
+            # Markdown cell branch. Used to be an unconditional `return`
+            # (cell skipped); now we render the cell inline via the same
+            # outhist_frame + render_markdown_cell pipeline that
+            # %jukit_out_hist --md uses for one-off renders. This makes
+            # <leader>all and <leader>cc render every cell, not just code.
+            #
+            # md_cell_end is the gate for "should we render?". Vim only
+            # passes it on zellij (the only backend with the sixelcat
+            # math pipeline). Without it, fall back to the old skip
+            # behavior so other backends don't dump unrendered sixel
+            # bytes into the pane.
+            if "md_cell_end" not in opts:
+                return
+            md_source = _extract_md_source(
+                cmd, opts.md_cell_start, opts.md_cell_end
+            )
+            if md_source is None:
+                return
+            from .render_markdown import render_markdown_cell
+            (show_latex_warning,) = self._get_info_json_keys(
+                "show_latex_warning"
+            )
+            if show_latex_warning is None:
+                show_latex_warning = True
+            with util.outhist_frame(title="Markdown"):
+                render_markdown_cell(
+                    md_source,
+                    show_latex_warning=bool(show_latex_warning),
+                )
             return
 
         if "q" not in opts:
