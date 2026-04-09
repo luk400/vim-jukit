@@ -160,7 +160,7 @@ if i add another mathbf{A} = ... formula afterwards, i get the issue again: at t
      args.md is set, "Last Output" otherwise. Removed the now-unused
      _OUTHIST_TITLE_ROW constant.
 
-- [ ] figure out why the following fails when trying to render in a markdown cell:
+- [X] figure out why the following fails when trying to render in a markdown cell:
 $$
 \begin{align}
 a = \frac{1}{2} && b = \frac{1}{3} && c = \frac{1}{4} \\
@@ -168,10 +168,55 @@ a && b && c
 \end{align}
 $$
 error: [pdflatex render failed: ! Package amsmath Error: Erroneous nesting of equation structures; | (amsmath)                trying to recover with `aligned'. | ]
+  -> root cause: helpers/jukit_run/render_markdown.py:_render_via_pdflatex
+     unconditionally wraps display math in `\Large \[ ... \]`. amsmath
+     environments like `align`, `equation`, `gather`, `multline`,
+     `flalign`, `alignat` (and their starred variants) ALREADY open
+     display math mode by themselves. Wrapping them in `\[ \]` produces
+     `\[ \begin{align} ... \end{align} \]`, which is what amsmath
+     reports as "Erroneous nesting of equation structures; trying to
+     recover with `aligned'".
+  -> fix: added module-level regex `_TOP_LEVEL_MATH_ENV_RE` matching the
+     known top-level display-math environments (align, equation,
+     gather, multline, eqnarray, flalign, alignat, xalignat, xxalignat,
+     displaymath, math; with optional `*` star). When math_src begins
+     with one of those, _render_via_pdflatex now emits `\Large\n` +
+     math_src directly at document top level (no `\[ \]` wrap).
+     Everything else (plain math, `aligned`, `bmatrix`, `cases`,
+     matrix family, etc.) still gets the existing wrapper. \Large is
+     a font-size declaration that propagates into the inner math
+     environment, so the visual size matches other display math.
+     Verified by running pdflatex on a battery of 14 cases (8
+     top-level envs, 3 wrap-required envs, 3 plain regression
+     checks) -- all compile cleanly.
 
-- [ ] need a way within nvim to increase/decrease zellij pane width
+- [X] look at the logic of sending codecells to the pane with <leader><space> -> it hides the "In [x]: ..." prompts after sending code to the pane (s.t. only the most current "In [x]:" is displayed, and the past ones are hidden. this is currently only done for code cells. i want this also done in the same way for when markdown cells are rendered, or when history of either code or markdown cells is shown via <leader>so! (i.e., do for %jukit_out_hist the same hiding logic as is currently done for %jukit_run)
+  -> fix: jukit_run already calls util.hide_prompt(self.shell) in
+     helpers/jukit_run/jukit_run.py (line 254, gated on `-p` opt). It's
+     a tiny ANSI sequence: `\033[A` + spaces + `\033[A` -- erase the
+     `In [N]: %jukit_run ...` echo line and leave the cursor at col 1
+     of that row, ready for the next content. Combined with the
+     `monitor_excount_dec` decorator (which restores execution_count
+     after the call), the In counter never advances and there's only
+     one `In [x]:` visible at the bottom of the pane.
+  -> %jukit_out_hist now does the same thing: added an unconditional
+     `util.hide_prompt(self.shell)` call right after argument parsing
+     and BEFORE the outhist_file existence check. The erased prompt
+     row visually merges with outhist_frame's leading blank line, so
+     the cyan top border lands cleanly without an extra empty row.
+     Both pathways are covered by the single change:
+       - <leader>so          → show_last_cell_output → %jukit_out_hist
+       - <leader><space> on md cell (zellij) → show_last_cell_output
+         → %jukit_out_hist --md
+     so code-cell history, code-cell <leader><space> (already worked),
+     md cell <leader>so, and md cell <leader><space> all now hide
+     their In prompts identically.
+
+- [ ] when i do <leader>all or <leader>cc, the markdown cells are skipped. i'd like to change that s.t. the markdown cells are also rendered, not just the code cells
 
 - [ ] for some reason the background color in markdown cells is scuffed when displaying .py files in nvim. the markdown syntax is all shown correclty with correct syntax highlighting, but the background signs are sometimes not shown at all and sometimes only part way through the markdown cell. see if you find any brittle/erroneous logic for this in the plugin
+
+- [ ] need a way within nvim to increase/decrease zellij pane width
 
 - [ ] currently there seems to be a bug when g:jukit_output_float=1, where when pressing <leader>os there flashes a floating window very very briefly (like fractions of a second) of what seems like an outhist floating window that might be leftover from an old implementation
 

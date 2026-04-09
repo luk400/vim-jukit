@@ -52,6 +52,21 @@ from sixelcat.cat import get_terminal_pixels, get_png_dimensions
 MATH_RE = re.compile(r"(\$\$.+?\$\$|\$.+?\$)", flags=re.DOTALL)
 
 
+# LaTeX environments that themselves OPEN display math mode. Wrapping
+# them in \[ ... \] (or \( ... \)) triggers
+#   ! Package amsmath Error: Erroneous nesting of equation structures;
+# from amsmath. We have to emit them at document top level instead.
+#
+# NOT included on purpose: aligned, gathered, split, cases, the matrix
+# family (matrix, pmatrix, bmatrix, vmatrix, Vmatrix, Bmatrix, smallmatrix),
+# subarray, subequations -- all of those are MEANT to be used inside
+# another math environment, so they still need the wrapper.
+_TOP_LEVEL_MATH_ENV_RE = re.compile(
+    r"^\\begin\{(align|equation|gather|multline|eqnarray|"
+    r"flalign|alignat|xalignat|xxalignat|displaymath|math)\*?\}"
+)
+
+
 # Cached availability check for the full-LaTeX pipeline. None = not yet
 # detected; True/False = detection result. Computed once per process to
 # avoid paying shutil.which() on every render.
@@ -198,10 +213,19 @@ def _render_via_pdflatex(math_src, display_mode):
     # display style with limits above/below, plus \Large to give it the
     # visual weight of a Jupyter display equation. Inline uses \( \).
     #
+    # EXCEPTION: if math_src already opens with a top-level display
+    # math environment (\begin{align}, \begin{equation}, ...), wrapping
+    # it in \[ \] would trigger amsmath's "Erroneous nesting of equation
+    # structures" error. In that case we emit math_src at document top
+    # level. \Large still applies because it's a font-size declaration
+    # that propagates into any subsequent math environment.
+    #
     # We DON'T pass a font-size option to standalone -- standalone
     # inherits from `article` which only accepts 10/11/12pt and warns
     # on anything else. \Large works without that constraint.
-    if display_mode:
+    if _TOP_LEVEL_MATH_ENV_RE.match(math_src):
+        body = "\\Large\n" + math_src
+    elif display_mode:
         body = "\\Large\n\\[\n" + math_src + "\n\\]"
     else:
         body = "\\(" + math_src + "\\)"

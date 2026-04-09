@@ -305,6 +305,16 @@ class JukitRun(TerminalMagics):
         # graphical terminals.
         (term,) = self._get_info_json_keys("terminal")
 
+        # Erase the `In [N]: %jukit_out_hist ...` echo before rendering,
+        # mirroring jukit_run's behavior. Combined with monitor_excount_dec
+        # (which restores the execution count so this magic doesn't bump
+        # the In counter), the effect is that prior `In [x]:` prompts
+        # never accumulate in the output pane -- only the most recent
+        # one is visible. Same call jukit_run uses; cursor lands at col 1
+        # of the now-empty prompt row, ready for outhist_frame's leading
+        # blank line + top border.
+        util.hide_prompt(self.shell)
+
         if not os.path.isfile(self.outhist_file):
             util.jukit_info(f"File {self.outhist_file} not found")
             return
