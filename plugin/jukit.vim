@@ -44,13 +44,8 @@ let g:jukit_show_prompt = get(g:, 'jukit_show_prompt', 0)
 let g:jukit_save_output = get(g:, 'jukit_save_output', g:jukit_ipython)
 let g:jukit_clean_outhist_freq = get(g:, 'jukit_clean_outhist_freq', 60 * 10)
 
-" kitty
-let g:jukit_output_bg_color = get(g:, 'jukit_output_bg_color', '')
-let g:jukit_output_fg_color = get(g:, 'jukit_output_fg_color', '')
-let g:jukit_output_new_os_window = get(g:, 'jukit_output_new_os_window', 0)
-
 " matplotlib
-let g:jukit_mpl_style = get(g:, 'jukit_mpl_style', '') "this value is changed for kitty after version checking below
+let g:jukit_mpl_style = get(g:, 'jukit_mpl_style', '')
 let g:jukit_savefig_dpi = get(g:, 'jukit_savefig_dpi', 150)
 let g:jukit_custom_backend = get(g:, 'jukit_custom_backend', -1)
 let g:jukit_mpl_block = get(g:, 'jukit_mpl_block', 1)
@@ -87,7 +82,6 @@ let g:jukit_enable_textcell_syntax = get(g:, 'jukit_enable_textcell_syntax', 1)
 
 
 " requirements
-let g:jukit_required_kitty_version = [0,22,0]
 let g:jukit_required_vim_version = [8,1,0]
 let g:jukit_required_neovim_version = [0,4,0]
 let g:jukit_required_ipython_version = [7,3,0]
@@ -129,7 +123,10 @@ else
     endif
 endif
 
-let supported_term = ['vimterm', 'nvimterm', 'kitty', 'tmux', 'zellij']
+" Supported backends are limited to zellij + the in-process vim/nvim
+" terminals. The 2026-04 cleanup removed kitty/tmux/ueberzug/iterm
+" support; users on those terminals fall through to vimterm/nvimterm.
+let supported_term = ['vimterm', 'nvimterm', 'zellij']
 if g:jukit_terminal is# ''
     let g:jukit_terminal = jukit#util#get_terminal()
 elseif index(supported_term, g:jukit_terminal) < 0

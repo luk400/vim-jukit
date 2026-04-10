@@ -6,8 +6,9 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 * Structure your code with cell markers and use convenient cell operations
 * Dedicated markdown cells with markdown syntax
 * Seamlessly convert from and to .ipynb notebooks
-* Display plots inside the terminal if you're using kitty terminal or iTerm2+tmux and python's matplotlib
+* Display plots inline (sixel) inside zellij with the bundled sixelcat backend
 * Save outputs of cell executions when using IPython and display saved outputs on demand
+* Per-session output history with cross-restart persistence (zellij)
 
 
 ## Preview
@@ -29,21 +30,9 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 
 ![output_saving_new](https://user-images.githubusercontent.com/57172028/162511959-d2b9393a-21b1-4781-b415-e07213ab8313.gif)
 
-* **Optionally display saved outputs in terminal as images using [überzug](https://github.com/seebye/ueberzug) instead of printing in split window (experimental)**
-
-![überzug_new](https://user-images.githubusercontent.com/57172028/186850822-4ae0768d-bce7-4718-9f97-174774a34be1.gif)
-
 * **Preview file as pdf, html**
 
 ![convert_to_html_pdf_new](https://user-images.githubusercontent.com/57172028/162511885-03675901-c701-4c9e-be41-bb68ef8a2707.gif)
-
-* **For kitty-terminal users: optionally open splits in seperate os-windows** (useful if you have multiple monitors)
-
-![seperate_os_window_new](https://user-images.githubusercontent.com/57172028/162546384-3e4ba886-a6ac-47a3-96e4-5033fd3f8308.gif)
-
-* **For kitty-terminal users (and for iTerm2+tmux users - experimental): in-terminal plotting via matplotlib**
-
-![inline_plotting_new](https://user-images.githubusercontent.com/57172028/162511949-7c521780-a6fb-4a57-b889-7b1e47f5edff.gif)
 
 
 ### Requirements
@@ -63,52 +52,21 @@ This plugin is aimed at users in search for a REPL plugin with lots of additiona
 &emsp;&#x2022;&nbsp; matplotlib version >= 3.4.0
 </p></details>
 
-<details><summary>kitty terminal users</summary><p>
-&emsp;&#x2022;&nbsp; kitty version >= 0.22<br>
-&emsp;&#x2022;&nbsp; remote control needs to be enabled in kitty config (i.e. put `allow_remote_control yes` in your kitty.conf), or alternatively you can also always start kitty using `kitty -o allow_remote_control=yes`<br>
-&emsp;&#x2022;&nbsp; ImageMagick for displaying plots in the terminal must be installed (install using e.g. `sudo apt-get install imagemagick`)<br>
-&emsp;&#x2022;&nbsp; If you're using neovim with kitty, you need to launch kitty with the `--listen-on` option and specify an address to listen on. Furthermore, if you want to have different kitty instances simultaneously using this plugin and sending code to split windows, different addresses will need to be specified. One possible way to do this on linux machines is by simply always starting kitty with e.g. `kitty --listen-on=unix:@"$(date +%s%N)"`, which will make sure different kitty instances are launched with different, abstract sockets to listen on. On MacOS it should work using e.g. `kitty --listen-on=/tmp/kitty_"$(date +%s%N)"`. If you want, you can then simply specify an alias (i.e. put `alias jukit_kitty="kitty --listen-on=unix:@"$(date +%s%N)" -o allow_remote_control=yes"` in your .bashrc/.zshrc) which you can use to always start kitty with the necessary arguments.
-</p></details>
-
-<details><summary>iTerm2+tmux users (experimental)</summary><p>
-&emsp;&#x2022;&nbsp; currently only tested using iTerm2 Build 3.4.15 + tmux version 3.2a<br>
-&emsp;&#x2022;&nbsp; There's a good chance it won't work with a different tmux version. To install the exact version it was tested with, use the following commands:<br>
-&emsp;```<br>
-&emsp;wget https://raw.githubusercontent.com/Homebrew/homebrew-core/e44425df5a8b3c8c24073486fa7e355f3ac19657/Formula/tmux.rb<br>
-&emsp;brew install ./tmux.rb<br>
-&emsp;tmux -V # make sure it says tmux 3.2a<br>
-&emsp;brew pin tmux # prevent unintentional upgrade in the future<br>
-&emsp;```<br>
-&emsp;&#x2022;&nbsp; NOTE: I am not a macOS user myself. I've tried to implement inline plotting for iTerm2+tmux and got it working at one point. In case you have problems, feel free to open an issue but be prepared to rely on yourself or others to solve it, since debugging this as a non macOS-user can be time consuming and I have limited time for my open source projects these days.
-</p></details>
-
 <details><summary>windows users</summary><p>
 &emsp;&#x2022;&nbsp; make sure `python3` - and not just `python` - is a valid command in your terminal, if it's not then set `let g:_jukit_python_os_cmd = 'python'` in your vim config<br>
 &emsp;&#x2022;&nbsp; NOTE: I am not a Windows user myself. I've tried to implement a working version for Windows and got it working at one point. In case you have problems, feel free to open an issue but be prepared to rely on yourself or others to solve it, since debugging this as a non Windows-user can be time consuming and I have limited time for my open source projects these days.
-</p></details>
-
-<details><summary>überzug users</summary><p>
-&emsp;&#x2022;&nbsp; make sure `python3` - and not just `python` - is a valid command in your terminal, if it's not then set `let g:_jukit_python_os_cmd = 'python'` in your vim config<br>
-&emsp;&#x2022;&nbsp; required python packages:<br>
-&emsp;&emsp; pillow<br>
-&emsp;&emsp; beautifulsoup4<br>
-&emsp;&emsp; numpy<br>
-&emsp;&emsp; nbconvert >= 6.4.4<br>
-&emsp;&emsp; ueberzug - NOTE: this package is no longer maintained and available via pip, so it has to be installed manually as follows:<br>
-&emsp;&emsp;&emsp;&emsp;```<br>
-&emsp;&emsp;&emsp;&emsp;git clone --branch 18.1.9 https://github.com/seebye/ueberzug.git<br>
-&emsp;&emsp;&emsp;&emsp;cd ueberzug<br>
-&emsp;&emsp;&emsp;&emsp;python3 setup.py install<br>
-&emsp;&emsp;&emsp;&emsp;```<br>
-&emsp;&#x2022;&nbsp; required CLI tools:<br>
-&emsp;&emsp; imagemagick<br>
-&emsp;&emsp; cutycapt (alternatively you can also use wkhtmltoimage, if you decide to use wkhtmltoimage, `let g:jukit_ueberzug_cutycapt_cmd = '/path/to/wkhtmltoimage'` has to specified in your vim config)
 </p></details>
 
 <details><summary>Zellij with sixelcat</summary><p>
 &emsp;&#x2022;&nbsp; libsixel-bin (for `img2sixel`)<br>
 &emsp;&#x2022;&nbsp; for inline plotting, zellij currently requires a custom build that fixes some issues with sixel support. You can find my own build script in scripts/install_and_patch_zellij.sh (note: personal build helper, Linux/Debian only, may be stale — see the script header)
 </p></details>
+
+> **2026-04 cleanup notice:** support for kitty, tmux+iTerm2, and
+> ueberzug has been removed. Only zellij (with the patched sixelcat
+> backend), vimterm, and nvimterm are now supported. Users on the
+> removed backends will fall through to vimterm/nvimterm with no
+> inline plot rendering.
 
 
 ### Installation
@@ -121,7 +79,7 @@ Plug 'luk400/vim-jukit'
 
 ### Issues
 
-If there are any problems, feel free to open an issue. Be sure to include the operating system you're using, your vim or neovim version, python version, your terminal (kitty terminal or otherwise), and possibly relevant jukit-options you've configured. Be sure to try the plugin with an otherwise empty (neo)vim config and see if your problem persists, to narrow down possible conflicts with other settings/plugins that you're using. 
+If there are any problems, feel free to open an issue. Be sure to include the operating system you're using, your vim or neovim version, python version, your terminal, and possibly relevant jukit-options you've configured. Be sure to try the plugin with an otherwise empty (neo)vim config and see if your problem persists, to narrow down possible conflicts with other settings/plugins that you're using. 
 
 Be aware that I work on this project **for fun** in my free time, so expect that you might not receive any help in a timely manner.
 
@@ -161,7 +119,7 @@ For explanations see the comments underneath each variable. Make sure you set th
 let g:jukit_shell_cmd = 'ipython3'
 "    - Specifies the command used to start a shell in the output split. Can also be an absolute path. Can also be any other shell command, e.g. `R`, `julia`, etc. (note that output saving is only possible for ipython)
 let g:jukit_terminal = ''
-"   - Terminal to use. Can be one of '', 'kitty', 'vimterm', 'nvimterm', 'tmux' or 'zellij'. If '' is given then will try to detect terminal: zellij is detected via `$ZELLIJ`, kitty via window class; otherwise defaults to 'vimterm' or 'nvimterm' (depending on `has("nvim")`).
+"   - Terminal to use. Can be one of '', 'vimterm', 'nvimterm', or 'zellij'. If '' is given then will try to detect terminal: zellij is detected via `$ZELLIJ`; otherwise defaults to 'vimterm' or 'nvimterm' (depending on `has("nvim")`). Support for kitty/tmux+iTerm2/ueberzug was removed in 2026-04.
 let g:jukit_use_tcomment = 0
 "   - Whether to use tcomment plugin (https://github.com/tomtom/tcomment_vim) to comment out cell markers. If not, then cell markers will simply be prepended with `g:jukit_comment_mark`
 let g:jukit_comment_mark = '#'
@@ -192,16 +150,6 @@ let g:jukit_text_syntax_file = $VIMRUNTIME . '/syntax/' . 'markdown.vim'
 "    - Syntax file to use for textcells. If you want to define your own syntax matches inside of text cells, make sure to include `containedin=textcell`.
 let g:jukit_hl_ext_enabled = '*'
 "    - String or list of strings specifying extensions for which the relevant highlighting autocmds regarding marker-highlighting, textcell-highlighting, etc. will be created. For example, `let g:jukit_hl_extensions=['py', 'R']` will enable the defined highlighting options for `.py` and `.R` files. Use `let g:jukit_hl_extensions='*'` to enable them for all files and `let g:jukit_hl_extensions=''` to disable them completely
-```
-
-###### Kitty
-```vim
-let g:jukit_output_bg_color = get(g:, 'jukit_output_bg_color', '')
-"    - Optional custom background color of output split window (i.e. target window of sent code)
-let g:jukit_output_fg_color = get(g:, 'jukit_output_fg_color', '')
-"    - Optional custom foreground color of output split window (i.e. target window of sent code)
-let g:jukit_output_new_os_window = 0
-"    - If set to 1, opens output split in new os-window. Can be used to e.g. write code in one kitty-os-window on your primary monitor while sending code to the shell which is in a seperate kitty-os-window on another monitor.
 ```
 
 ###### Zellij
@@ -245,13 +193,15 @@ The hide/show mechanic uses zellij's native primitives:
  * **Floating mode** (`g:jukit_output_float = 1`): the output pane is created as a **pinned** floating pane (`new-pane --floating --pinned true`) positioned in the half-screen quadrant matching your `g:jukit_zellij_output_direction` (e.g. `right` lands in the right half). Pinning is what lets the float survive clicking back into vim. Hide / show toggles use `hide-floating-panes` / `show-floating-panes`. **Caveat**: those two commands are global to the current tab — if you have unrelated floating panes from other workflows, they get toggled too.
  * **Tiled mode** (default): zellij has no native "hide a tiled pane without closing it" action, so vim-jukit uses a `toggle-pane-embed-or-floating` round-trip. The hide flow converts the tiled pane to floating, then toggles the float layer off. The show flow reverses both steps. The pane's process keeps running with its full state intact.
 
-The session list lives in buffer-local memory only — restarting vim resets it.
+**Session persistence:** since 2026-04, the session list is also persisted to `.jukit/<py_basename>_zellij_sessions.json` on every meaningful change and lazy-loaded on the next BufEnter for that .py file. As long as the same zellij session is still running and the recorded pane ids haven't been closed, the next nvim run reconnects automatically — `<leader>ss` will list the previously-active sessions, and `<leader>so` on a cell with saved output will surface it without needing a re-run. Stale entries (closed panes, mismatched zellij session) are silently dropped on load.
+
+**Per-session output history:** also since 2026-04, each session's outputs go into `.jukit/<py_basename>_<session>_outhist.json` (instead of one shared file). The `<leader>ss` picker has a `Load previous...` entry that lists saved sessions on disk that aren't currently loaded; picking one resurrects that session by name and re-points the new ipython process at the existing outhist file. The `<leader>np` (.py↔.ipynb conversion) commands also surface a session-selection / session-naming dialog so notebook outputs can be embedded from / saved into a specific session.
 
 *Troubleshooting:*
  * **`<enter>` does nothing / code seems to vanish:** the most likely cause is that the output pane was closed from outside vim and `g:jukit_output_title` is stale. Run `:echo jukit#zellij#splits#exists('output')` — if it returns `0`, just `<leader>os` again to recreate the pane.
  * **No plot visible after `<leader>so`:** check that `img2sixel` is installed (`libsixel-bin`) and that your terminal speaks sixel. The same requirements apply to live plots in the output pane.
  * **Sends go to the wrong pane:** this would be a regression — the identity-based targeting in vim-jukit ≥ this commit should make it impossible. Please open an issue with the output of `:echo $ZELLIJ_PANE_ID`, `:echo g:jukit_output_title`, and `:!zellij action dump-layout | grep jukit`.
- * **Leftover jukit panes after vim quit / vim crash:** the `QuitPre`/`BufDelete` autocmd closes every pane in every session for the buffer being torn down, so a clean `:qa` should leave nothing behind. But if vim was killed externally, or you're cleaning up panes accumulated from older builds that didn't have multi-session cleanup, you can sweep them with the snippet below.
+ * **Leftover jukit panes after vim quit / vim crash:** since 2026-04, the `QuitPre`/`BufDelete` autocmd no longer kills panes — they outlive nvim so the next session can reconnect (see "Session persistence" below). If you want to actively kill them, use `<leader>ss` → `Kill all sessions` (with yes/no confirmation), or sweep them manually with the snippet below.
 
 ```sh
 zellij action list-panes --json | python3 -c "
@@ -291,19 +241,16 @@ let g:jukit_mpl_block = 1
 let g:jukit_custom_backend = -1
 "    - Custom matplotlib backend to use
 
-" IF KITTY IS USED:
-let g:jukit_mpl_style = jukit#util#plugin_path() . '/helpers/matplotlib-backend-kitty/backend.mplstyle'
-"    - File specifying matplotlib plot options. This is the default value if kitty terminal is used
-" ELSE:
 let g:jukit_mpl_style = ''
-"    - File specifying matplotlib plot options. This is the default value if kitty terminal is NOT used. If '' is specified, no custom mpl-style is applied.
+"    - File specifying matplotlib plot options. If '' is specified, no custom mpl-style is applied.
 
-" IF KITTY, TMUX OR ZELLIJ IS USED:
+" IF ZELLIJ IS USED (the only backend with inline plotting after the
+" 2026-04 cleanup):
 let g:jukit_inline_plotting = 1
-"    - Enable in-terminal-plotting. Only supported for kitty, tmux+iTerm2, or zellij (the latter requires a sixel-capable terminal AND a zellij build with sixel patches — see the Zellij section below). BE SURE TO SPECIFY THE TERMINAL VIA `g:jukit_terminal`! (see variables in section 'Basic jukit options')
+"    - Enable in-terminal-plotting. Requires a sixel-capable terminal AND a zellij build with sixel patches — see the Zellij section above. BE SURE TO SPECIFY THE TERMINAL VIA `g:jukit_terminal`! (see variables in section 'Basic jukit options')
 " ELSE:
 let g:jukit_inline_plotting = 0
-"    - Disable in-terminal-plotting
+"    - Disable in-terminal-plotting (vimterm/nvimterm have no graphical output channel)
 ```
 
 ###### Split layout
@@ -492,4 +439,4 @@ Already supported:
 
 ### Credit
 
-vim-jukit uses a for this plugin modified version of the module [ipynb_py_convert](https://github.com/kiwi0fruit/ipynb-py-convert) as well as a modified version of [matplotlib-backend-kitty](https://github.com/jktr/matplotlib-backend-kitty), which were the starting point and the initial inspiration for this plugin. It also uses the imgcat script from [python-imgcat](https://github.com/wookayin/python-imgcat) for displaying matplotlib plots in terminal when using tmux+iterm2.
+vim-jukit was originally built on top of modified versions of [ipynb_py_convert](https://github.com/kiwi0fruit/ipynb-py-convert) and [matplotlib-backend-kitty](https://github.com/jktr/matplotlib-backend-kitty); the kitty backend was removed in 2026-04 but the ipynb conversion module still lives on in `helpers/ipynb_convert/`. The current zellij inline-plotting backend lives in `helpers/sixelcat/`.

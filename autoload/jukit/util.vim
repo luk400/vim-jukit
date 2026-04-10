@@ -253,16 +253,11 @@ fun! jukit#util#replace_old_markers() abort
 endfun
 
 fun! jukit#util#get_terminal() abort
-    " Zellij is checked first because a user might run kitty inside zellij,
-    " and zellij is the more relevant container for our purposes.
+    " Zellij is the only multiplexer-style backend after the 2026-04
+    " cleanup; everything else falls through to the in-process
+    " vim/nvim terminal.
     if !empty($ZELLIJ)
         return 'zellij'
-    endif
-    let kitty_detected = system('perl -lpe "s/\0/ /g" /proc/$(xdotool '
-        \. 'getwindowpid $(xdotool getactivewindow))/cmdline') =~? 'kitty'
-        \ || system('echo $TERM') =~? 'kitty'
-    if kitty_detected
-        return 'kitty'
     elseif has('nvim')
         return 'nvimterm'
     else
@@ -589,12 +584,15 @@ fun! s:floating_select_cancel() abort
 endfun
 
 " Prompt the user for a session name. Calls Callback(name) where name is
-" the trimmed input or '' on cancel.
-fun! jukit#util#prompt_session_name(default, Callback) abort
+" the trimmed input or '' on cancel. The optional third arg is a custom
+" dialog title (used by the duplicate-name re-prompt path to surface a
+" "(in use)" hint without an extra echom call).
+fun! jukit#util#prompt_session_name(default, Callback, ...) abort
+    let title = (a:0 >= 1 && !empty(a:1)) ? a:1 : 'Session Name'
     call jukit#util#floating_input(
         \ {'prompt': '[vim-jukit] Session name: ',
         \  'default': a:default,
-        \  'title': 'Session Name'},
+        \  'title': title},
         \ a:Callback)
 endfun
 
@@ -604,4 +602,89 @@ fun! jukit#util#select_session(items, Callback) abort
     call jukit#util#floating_select(
         \ {'items': a:items, 'title': 'Select Session'},
         \ a:Callback)
+endfun
+
+" Return the active session's name for the current buffer, or '' when
+" there is no active session.
+"
+" Backend-agnostic: this is the canonical way for code outside the
+" zellij subdir (cells.vim, send.vim, jukit_init args, etc.) to get the
+" session name without poking at b:jukit_sessions directly. Backends
+" without a session model (vimterm, nvimterm) always return ''.
+fun! jukit#util#get_active_session_name() abort
+    if !exists('b:jukit_sessions') || !exists('b:jukit_active_session')
+        return ''
+    endif
+    if b:jukit_active_session < 0
+        \ || b:jukit_active_session >= len(b:jukit_sessions)
+        return ''
+    endif
+    return b:jukit_sessions[b:jukit_active_session].name
+endfun
+
+" List the names of every saved-output session for the current buffer's
+" .py file. Scans .jukit/<py_basename>_*_outhist.json and extracts the
+" middle part of each filename. The result is a sorted list of session
+" name strings.
+"
+" Used by the "Load previous..." entry in the <leader>ss picker, and by
+" the .py->.ipynb session-selection dialog (task #33). Returns [] when
+" the .jukit/ directory doesn't exist or contains no per-session files.
+"
+" The legacy single-file <basename>_outhist.json (no session name in the
+" middle) is intentionally NOT returned -- it has no associated session
+" name and trying to surface it as a "Load previous" entry would be
+" confusing.
+fun! jukit#util#list_saved_sessions() abort
+    let dir = s:resolve_jukit_dir()
+    if empty(dir) || !isdirectory(dir)
+        return []
+    endif
+    let py_basename = expand('%:p:t:r')
+    if empty(py_basename)
+        return []
+    endif
+    let prefix = py_basename . '_'
+    let suffix = '_outhist.json'
+    let pattern = dir . prefix . '*' . suffix
+    let files = glob(pattern, 0, 1)
+    let names = []
+    for f in files
+        let fname = fnamemodify(f, ':t')
+        " strip the prefix and suffix to recover the session name
+        if fname[:len(prefix)-1] !=# prefix
+            continue
+        endif
+        if fname[-len(suffix):] !=# suffix
+            continue
+        endif
+        let name = fname[len(prefix):-len(suffix)-1]
+        if empty(name)
+            continue  " legacy <basename>_outhist.json has no session name
+        endif
+        call add(names, name)
+    endfor
+    call sort(names)
+    return names
+endfun
+
+" Return the absolute path of the per-session outhist json file for the
+" current buffer's .py file. Defers to the empty-session legacy fallback
+" when no name is given (or when there's no active session at all).
+" Mirrors helpers/ipynb_convert/util.py:session_outhist_filename so the
+" two language sides agree on the file name.
+fun! jukit#util#session_outhist_path(...) abort
+    let dir = s:resolve_jukit_dir()
+    if empty(dir)
+        return ''
+    endif
+    let py_basename = expand('%:p:t:r')
+    if empty(py_basename)
+        return ''
+    endif
+    let session = a:0 >= 1 ? a:1 : jukit#util#get_active_session_name()
+    if empty(session)
+        return dir . py_basename . '_outhist.json'
+    endif
+    return dir . py_basename . '_' . session . '_outhist.json'
 endfun

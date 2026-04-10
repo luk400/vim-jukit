@@ -1,7 +1,7 @@
 " Zellij has no clean absolute-sizing API: the only resize primitive is
 " `zellij action resize increase|decrease <dir>`, which adjusts by an
 " implementation-defined step (~5%). That means we can't honor the
-" proportions in g:jukit_layout the way kitty/tmux/(n)vimterm can.
+" proportions in g:jukit_layout the way the (n)vimterm backends can.
 "
 " Rather than pretend to support layouts, we accept zellij's defaults at
 " pane creation time and expose an increase/decrease helper below for

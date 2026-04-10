@@ -1,4 +1,4 @@
-from IPython.core.magic import line_magic, cell_magic, magics_class, magics_class
+from IPython.core.magic import line_magic, cell_magic, magics_class
 from IPython.core.magic_arguments import argument, magic_arguments, parse_argstring
 from IPython.utils.capture import CapturedIO
 from IPython.terminal.magics import TerminalMagics
@@ -10,7 +10,7 @@ from multiprocessing import Process
 from typing import Optional, Any, TextIO
 from contextlib import suppress
 
-from ipynb_convert import add_to_output_history, HEADER
+from ipynb_convert import add_to_output_history, HEADER, session_outhist_filename
 from . import util
 from .input_styles import display_functions, display_style_2
 
@@ -187,20 +187,33 @@ class JukitRun(TerminalMagics):
     @argument("py_file", type=str, help="Absolute path to current .py file")
     @argument("in_style", type=int, help="Input-display style to use")
     @argument("--max_size", type=int, help="Max size of .ipynb file in MiB", default=20)
+    @argument("--session", type=str, default="",
+              help="Session name; produces a per-session outhist file "
+                   "<basename>_<session>_outhist.json. Empty -> legacy "
+                   "<basename>_outhist.json (used by non-session backends).")
     @line_magic
     def jukit_init(self, param: str):
         args = parse_argstring(self.jukit_init, param)
         py_file = args.py_file.replace("<JUKIT_WS_PH>", " ")
         dir_, fname = os.path.split(py_file)
-        fname_outhist = os.path.splitext(fname)[0] + "_outhist.json"
+        py_basename = os.path.splitext(fname)[0]
 
         self.py_file = py_file
+        self.session = args.session or ""
 
         self.jukit_dir = os.path.join(dir_, ".jukit")
         self.cmd_file = os.path.join(dir_, ".jukit", ".cmd")
 
         self.info_file = os.path.join(self.jukit_dir, ".jukit_info.json")
-        self.outhist_file = os.path.join(self.jukit_dir, fname_outhist)
+        # Per-session outhist file: each ipython process gets its own
+        # output history, keyed by session name. Empty session -> legacy
+        # filename for backward compatibility with non-zellij backends
+        # that don't have a session model. The path is computed via
+        # ipynb_convert.session_outhist_filename so vim and python use
+        # the same convention.
+        self.outhist_file = session_outhist_filename(
+            self.jukit_dir, py_basename, self.session
+        )
         self.display_input = display_functions.get(args.in_style)
         if self.display_input is None:
             self.display_input = display_style_2

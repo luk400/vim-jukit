@@ -10,9 +10,15 @@ from ipynb_convert import util
 from_id = vim.eval('a:from_id')
 to_id = vim.eval('a:to_id')
 
+# Per-session outhist file: we ask vim for the active session name
+# (empty on backends without a session model) and let
+# session_outhist_filename pick the legacy or per-session filename.
 fname = vim.eval("expand('%:p')")
 dir_, f = os.path.split(fname)
-outhist_file = os.path.join(dir_, '.jukit', f'{os.path.splitext(f)[0]}_outhist.json')
+session = vim.eval("jukit#util#get_active_session_name()")
+outhist_file = util.session_outhist_filename(
+    os.path.join(dir_, '.jukit'), os.path.splitext(f)[0], session
+)
 
 util.copy_output(from_id, to_id, outhist_file)
 EOF
@@ -30,7 +36,10 @@ new_id = vim.eval('a:new_id')
 
 fname = vim.eval("expand('%:p')")
 dir_, f = os.path.split(fname)
-outhist_file = os.path.join(dir_, '.jukit', f'{os.path.splitext(f)[0]}_outhist.json')
+session = vim.eval("jukit#util#get_active_session_name()")
+outhist_file = util.session_outhist_filename(
+    os.path.join(dir_, '.jukit'), os.path.splitext(f)[0], session
+)
 
 util.merge_outputs(outhist_file, cell_above, cell_below, new_id)
 EOF
@@ -46,7 +55,10 @@ cell_id = vim.eval('a:cell_id')
 
 fname = vim.eval("expand('%:p')")
 dir_, f = os.path.split(fname)
-outhist_file = os.path.join(dir_, '.jukit', f'{os.path.splitext(f)[0]}_outhist.json')
+session = vim.eval("jukit#util#get_active_session_name()")
+outhist_file = util.session_outhist_filename(
+    os.path.join(dir_, '.jukit'), os.path.splitext(f)[0], session
+)
 
 util.delete_cell_output(outhist_file, cell_id)
 EOF

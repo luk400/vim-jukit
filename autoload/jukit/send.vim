@@ -38,9 +38,14 @@ from ipynb_convert import util
 
 current_ids = vim.eval('all_ids')
 
+# Per-session outhist file: clean the active session's history (or
+# the legacy single-session file when no session is active).
 fname = vim.eval("expand('%:p')")
 dir_, f = os.path.split(fname)
-outhist_file = os.path.join(dir_, '.jukit', f'{os.path.splitext(f)[0]}_outhist.json')
+session = vim.eval("jukit#util#get_active_session_name()")
+outhist_file = util.session_outhist_filename(
+    os.path.join(dir_, '.jukit'), os.path.splitext(f)[0], session
+)
 
 util.clear_obsolete_output(current_ids, outhist_file)
 EOF
@@ -55,9 +60,7 @@ fun! s:output_exists() abort
 endfun
 
 fun! s:send(bufnr, text) abort
-    if g:jukit_terminal == 'kitty'
-        call jukit#kitty#cmd#send_text(g:jukit_output_title, a:text)
-    elseif g:jukit_terminal == 'vimterm'
+    if g:jukit_terminal == 'vimterm'
         if g:_jukit_is_windows
             call term_sendkeys(a:bufnr, a:text)
             exec "sleep " . g:_jukit_send_delay
@@ -75,8 +78,6 @@ fun! s:send(bufnr, text) abort
         endif
         exe bufwinnr(g:jukit_output_buf) . 'wincmd w'
         call feedkeys("G:wincmd p\<cr>", "nxt")
-    elseif g:jukit_terminal == 'tmux'
-        call jukit#tmux#cmd#send_text(g:jukit_output_title, a:text)
     elseif g:jukit_terminal == 'zellij'
         call jukit#zellij#cmd#send_text(g:jukit_output_title, a:text)
     else
@@ -170,7 +171,7 @@ fun! jukit#send#section(move_next) abort
     if cmd_count == 1
         call s:send_single_section(a:move_next)
     else
-        call s:send_multiple_sections(count)
+        call s:send_multiple_sections(cmd_count)
     endif
 endfun
 

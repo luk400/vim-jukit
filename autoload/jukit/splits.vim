@@ -1,22 +1,3 @@
-if g:jukit_terminal == 'kitty'
-    let s:invalid_kitty_version = jukit#kitty#cmd#invalid_version(g:jukit_required_kitty_version)
-    if len(s:invalid_kitty_version) && has('nvim')
-        let g:jukit_terminal = 'nvimterm'
-    elseif len(s:invalid_kitty_version)
-        let g:jukit_terminal = 'vimterm'
-    endif
-
-    if len(s:invalid_kitty_version)
-        echom '[vim-jukit] Insufficient kitty version! (Required version >= ' 
-            \ . join(g:jukit_required_kitty_version, '.') . ' - Current version: '
-            \ . join(s:invalid_kitty_version, '.') . ") -> using " 
-            \ . g:jukit_terminal . ' instead!'
-    elseif g:jukit_mpl_style == ""
-        let g:jukit_mpl_style = jukit#util#plugin_path()
-            \ . g:_jukit_ps . join(['helpers', 'matplotlib-backend-kitty', 'backend.mplstyle'], g:_jukit_ps)
-    endif
-endif
-
 if g:jukit_ipython
     let s:ipython_version = system(g:jukit_shell_cmd . ' --version')
     let s:ipython_version = matchstr(s:ipython_version, '.\{-}\zs[0-9\.]\{1,}')
@@ -28,11 +9,12 @@ if g:jukit_ipython
     endif
 endif
 
-let s:supported_graphical_term = ['kitty', 'tmux', 'zellij']
-let s:inline_plot_psbl = index(s:supported_graphical_term, g:jukit_terminal) >= 0
-if !s:inline_plot_psbl && g:jukit_inline_plotting
-    echom '[vim-jukit] inline plotting only supported for values: [' 
-        \. join(s:supported_graphical_term, ', ') . ']'
+" Zellij is the only backend with inline plotting after the 2026-04
+" cleanup; vimterm/nvimterm have no graphical output channel. Force the
+" inline-plotting flag off on those backends so plt.show() doesn't
+" silently break.
+if g:jukit_terminal !=# 'zellij' && g:jukit_inline_plotting
+    echom '[vim-jukit] inline plotting only supported for value: [zellij]'
     let g:jukit_inline_plotting = 0
 endif
 
@@ -43,13 +25,12 @@ fun! s:create_autocmd_close_splits() abort
 
     augroup jukit_auto_close
         autocmd!
-        " Zellij is multi-session: a single buffer may have several
-        " output panes across different sessions, and the single-active
-        " close path only kills the currently-active one. Use the
-        " cleanup-all entry point so quitting vim doesn't leak ipython
-        " panes from non-active sessions.
         if g:jukit_terminal ==# 'zellij'
-            autocmd QuitPre,BufDelete <buffer> call jukit#zellij#splits#cleanup_all_sessions()
+            " QuitPre: if there are visible sessions, ask the user what
+            " to do. BufDelete: just persist silently (no interactive
+            " prompt on buffer wipe).
+            autocmd QuitPre <buffer> call jukit#zellij#splits#on_quit_pre()
+            autocmd BufDelete <buffer> call jukit#zellij#splits#_persist_state()
         else
             autocmd QuitPre,BufDelete <buffer> call jukit#splits#close_output_split()
         endif
@@ -168,39 +149,22 @@ fun! jukit#splits#_build_shell_cmd() abort
         \. 'sys.path.append("' . jukit#util#plugin_path() . g:_jukit_ps . 'helpers")' . ";"
 
     if g:jukit_custom_backend != -1
-        " User-supplied custom backend wins over inline-plotting hardcoded
-        " choices, so the user can e.g. force imgcat under zellij.
+        " User-supplied custom backend wins over the built-in choices.
         let cmd = cmd
             \. "import matplotlib;"
             \. "import matplotlib.pyplot as plt;"
             \. 'matplotlib.use("module://' . g:jukit_custom_backend . '");'
             \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+        " Zellij is the only supported inline-plotting backend after the
+        " 2026-04 cleanup; the kitty/tmux paths were removed.
     elseif g:jukit_inline_plotting
         let cmd = cmd
                 \. "import matplotlib;"
                 \. "import matplotlib.pyplot as plt;"
-
-        if g:jukit_terminal == 'kitty'
-            let cmd = cmd
-                \. 'matplotlib.use("module://matplotlib-backend-kitty");'
-                \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
-        elseif g:jukit_terminal == 'tmux'
-            let current_pane = matchstr(system('tmux run "echo #{pane_id}"'), '%\d*')
-            let cmd = cmd
-                \. 'matplotlib.use("module://imgcat");'
-                \. 'plt.show.__annotations__["tmux_panes"] = ["'
-                \. current_pane . '", "' . g:jukit_output_title . '"];'
-                \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
-        elseif g:jukit_terminal == 'zellij'
-            let cmd = cmd
                 \. 'import sixelcat;'
                 \. 'sixelcat.configure(max_width_factor=' . g:jukit_sixelcat_width_factor . ');'
                 \. 'matplotlib.use("module://sixelcat");'
                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
-        else
-            echom "[vim-jukit] No inline plotting for `g:jukit_terminal = "
-                \. g:jukit_terminal . "` supported"
-        endif
     else
         let cmd = cmd
             \. "import matplotlib.pyplot as plt;"
@@ -216,13 +180,20 @@ fun! jukit#splits#_build_shell_cmd() abort
     endif
 
     if use_ipy
+        " Session name comes from the active session (zellij only). On
+        " backends without a session model the helper returns '', which
+        " omits the --session flag and falls back to the legacy outhist
+        " filename inside %jukit_init.
+        let session_name = jukit#util#get_active_session_name()
+        let session_arg = empty(session_name) ? '' : (' --session=' . session_name)
         let pyfile_ws_sub = substitute(escape(expand('%:p'), '\'), ' ', '<JUKIT_WS_PH>', 'g')
         let cmd = cmd
             \. "from IPython import get_ipython;"
             \. "__shell = get_ipython();"
             \. '__shell.run_line_magic("load_ext", "jukit_run");'
             \. '__shell.run_line_magic("jukit_init", "' . pyfile_ws_sub . ' '
-            \. g:jukit_in_style . ' --max_size=' . g:jukit_max_size . '");'
+            \. g:jukit_in_style . ' --max_size=' . g:jukit_max_size
+            \. session_arg . '");'
         if !g:jukit_debug && !g:_jukit_is_windows
             let cmd = cmd . '__shell.run_line_magic("clear", "");'
         endif

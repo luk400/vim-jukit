@@ -1,10 +1,36 @@
 import json, sys, os, random, string, re
 import shutil
-from typing import Union
+from typing import Optional, Union
 
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(MODULE_PATH, "..", ".encodings"), "r") as f:
     ENCODING = f.read().strip()
+
+
+def session_outhist_filename(jukit_dir: str, py_basename: str,
+                             session: Optional[str]) -> str:
+    """Return the absolute path to the outhist json file for a given session.
+
+    The session model added in 2026-04 stores per-session output histories
+    so that the new "load previous session" picker can offer the user a
+    list of saved sessions to reconnect to. Each ipython process is told
+    its session at startup via the `--session=<name>` arg to %jukit_init,
+    and writes its captured output to its own file.
+
+    Naming:
+      session given:    <jukit_dir>/<py_basename>_<session>_outhist.json
+      session empty:    <jukit_dir>/<py_basename>_outhist.json   (legacy)
+
+    The legacy fall-through preserves backward compatibility for any code
+    path that hasn't been session-aware yet (notably the cells.vim
+    delete/copy/merge helpers, which transparently use whichever
+    convention applies to the active buffer).
+    """
+    if session:
+        fname = f"{py_basename}_{session}_outhist.json"
+    else:
+        fname = f"{py_basename}_outhist.json"
+    return os.path.join(jukit_dir, fname)
 
 
 def get_nb_and_language(nb, lang_dict):

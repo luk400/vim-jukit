@@ -391,10 +391,11 @@ def display_outputs(outputs: List[dict], term: str, shell: InteractiveShell):
                     )
                     continue
 
-                # zellij is in this list because the sixelcat backend
-                # renders plots inline; the [PLOT] placeholder would be
-                # redundant on top of the actual rendered image.
-                if term not in ["kitty", "tmux", "zellij"]:
+                # On zellij the sixelcat backend renders plots inline,
+                # so the [PLOT] placeholder would be redundant. Other
+                # backends (vimterm, nvimterm) have no graphical output
+                # channel and need the placeholder.
+                if term != "zellij":
                     jukit_info("PLOT", color="\u001b[33m")
 
                 # Open a fresh line and draw the bar on the image's
@@ -411,10 +412,11 @@ def display_outputs(outputs: List[dict], term: str, shell: InteractiveShell):
                 plt.axes([0, 0, 1, 1])
                 plt.axis("off")
                 plt.imshow(im)
-                if plt.get_backend() == "module://matplotlib-backend-kitty":
-                    plt.show(scaling=0.75)
-                else:
-                    plt.show(block=False)
+                # The matplotlib-backend-kitty special-case
+                # (plt.show(scaling=0.75)) was removed with the kitty
+                # backend cleanup in 2026-04. All remaining backends
+                # use the plain non-blocking show.
+                plt.show(block=False)
 
                 # Draw the bar on the remaining image rows. Sixelcat
                 # publishes the cell-row footprint of the most-recently

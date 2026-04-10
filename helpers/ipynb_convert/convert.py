@@ -108,12 +108,27 @@ def script_to_nb(py_str, out_hist, language="python"):
     return nb
 
 
-def convert(in_file, language, jukit_copy, create=True):
+def convert(in_file, language, jukit_copy, create=True, session="",
+            no_outputs=False, session_save=""):
+    """Convert between .py (jukit-formatted) and .ipynb.
+
+    The session/session_save/no_outputs args choose which per-session
+    outhist file (added 2026-04 with the load-previous picker) drives
+    the conversion:
+
+      .py -> .ipynb (this direction): `session` selects which saved
+        outhist to embed into the notebook. Empty string falls back to
+        the legacy <basename>_outhist.json so users with pre-session
+        installs keep working. `no_outputs=True` skips the lookup
+        entirely and produces a clean notebook.
+
+      .ipynb -> .py (with jukit_copy): `session_save` is the session
+        name under which the notebook's per-cell outputs are stored
+        in .jukit/. Empty string defaults to the legacy filename.
+    """
     dir_, fname = os.path.split(in_file)
     name, in_ext = os.path.splitext(fname)
     jukit_dir = os.path.join(dir_, ".jukit")
-
-    outhist_file = os.path.join(jukit_dir, f"{name}_outhist.json")
 
     if in_ext != ".ipynb" and jukit_copy:
         raise ValueError("`jukit_copy` can only be `True` when converting ipynb to py")
@@ -126,6 +141,9 @@ def convert(in_file, language, jukit_copy, create=True):
         if jukit_copy:
             if not os.path.isdir(jukit_dir):
                 os.mkdir(jukit_dir)
+            # session_save names the per-session outhist file the
+            # notebook outputs land in. Empty -> legacy filename.
+            outhist_file = session_outhist_filename(jukit_dir, name, session_save)
             cell_ids = create_output_history(outhist_file, nb)
         else:
             cell_ids = None
@@ -143,12 +161,18 @@ def convert(in_file, language, jukit_copy, create=True):
         with open(in_file, "r", encoding=ENCODING) as f:
             py_str = f.read()
 
-        outhist_file = os.path.join(jukit_dir, f"{name}_outhist.json")
-        if os.path.isfile(outhist_file):
-            with open(outhist_file, "r", encoding=ENCODING) as f:
-                out_hist = json.load(f)
-        else:
+        if no_outputs:
             out_hist = {}
+        else:
+            # session selects which per-session outhist to embed.
+            # Empty -> legacy filename, preserving the pre-session
+            # behavior for old installs.
+            outhist_file = session_outhist_filename(jukit_dir, name, session)
+            if os.path.isfile(outhist_file):
+                with open(outhist_file, "r", encoding=ENCODING) as f:
+                    out_hist = json.load(f)
+            else:
+                out_hist = {}
 
         nb = script_to_nb(py_str, out_hist, language)
 
@@ -171,9 +195,40 @@ def main():
             " Only used when converting ipynb to py."
         ),
     )
+    parser.add_argument(
+        "--session",
+        type=str,
+        default="",
+        help=(
+            "When converting .py->.ipynb: name of the saved session "
+            "whose outhist file should be embedded as cell outputs. "
+            "Empty -> legacy <basename>_outhist.json. Ignored if "
+            "--no-outputs is given."
+        ),
+    )
+    parser.add_argument(
+        "--session-save",
+        type=str,
+        default="",
+        help=(
+            "When converting .ipynb->.py with --jukit-copy: name of "
+            "the session under which the notebook's outputs are saved. "
+            "Empty -> legacy <basename>_outhist.json."
+        ),
+    )
+    parser.add_argument(
+        "--no-outputs",
+        action="store_true",
+        help=(
+            "When converting .py->.ipynb: skip reading any outhist "
+            "file and produce a notebook with no cell outputs."
+        ),
+    )
     args = parser.parse_args()
 
-    print(convert(args.fin, args.lang, args.jukit_copy))
+    print(convert(args.fin, args.lang, args.jukit_copy,
+                  session=args.session, no_outputs=args.no_outputs,
+                  session_save=args.session_save))
 
 
 if __name__ == "__main__":

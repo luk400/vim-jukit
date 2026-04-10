@@ -79,9 +79,8 @@ def show(block=None):
     """Display all open figures using sixel graphics."""
     for manager in Gcf.get_all_fig_managers():
         manager.show()
-        # Pass the manager number, matching the helpers/imgcat sibling.
-        # Gcf.destroy() accepts both num and manager in modern matplotlib
-        # but the num form is the documented API.
+        # Gcf.destroy() accepts both num and manager in modern
+        # matplotlib but the num form is the documented API.
         Gcf.destroy(manager.num)
 
 
