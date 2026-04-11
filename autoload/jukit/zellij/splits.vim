@@ -978,7 +978,10 @@ endfun
 " state. Used by the explicit "Kill all sessions" picker entry, which
 " wraps it in a yes/no confirmation dialog. Persists the now-empty
 " state at the end so the on-disk file is removed.
-fun! jukit#zellij#splits#_kill_all_sessions() abort
+" Optional a:1 = delete_outputs (0 = keep outhist files, 1 = delete them).
+" Defaults to 1 for backward compat.
+fun! jukit#zellij#splits#_kill_all_sessions(...) abort
+    let delete_outputs = a:0 >= 1 ? a:1 : 1
     if !exists('b:jukit_sessions')
         return
     endif
@@ -987,19 +990,22 @@ fun! jukit#zellij#splits#_kill_all_sessions() abort
             call jukit#zellij#cmd#zellij_command(
                 \ 'close-pane', '--pane-id', session.output_pane_id)
         endif
-        " Delete the per-session outhist file.
-        let outhist = jukit#util#session_outhist_path(session.name)
-        if !empty(outhist) && filereadable(outhist)
-            call delete(outhist)
+        if delete_outputs
+            let outhist = jukit#util#session_outhist_path(session.name)
+            if !empty(outhist) && filereadable(outhist)
+                call delete(outhist)
+            endif
         endif
     endfor
-    " Also delete archived (on-disk-only) outhist files.
-    for aname in jukit#util#list_saved_sessions()
-        let outhist = jukit#util#session_outhist_path(aname)
-        if !empty(outhist) && filereadable(outhist)
-            call delete(outhist)
-        endif
-    endfor
+    if delete_outputs
+        " Also delete archived (on-disk-only) outhist files.
+        for aname in jukit#util#list_saved_sessions()
+            let outhist = jukit#util#session_outhist_path(aname)
+            if !empty(outhist) && filereadable(outhist)
+                call delete(outhist)
+            endif
+        endfor
+    endif
     let b:jukit_sessions = []
     let b:jukit_active_session = -1
     call jukit#zellij#splits#_persist_state()
@@ -1055,15 +1061,23 @@ fun! s:after_kill_pick(pick, ctx) abort
     let entry = a:ctx.kill_map[a:pick]
 
     if entry.type ==# 'active'
-        call s:kill_single_active_session(entry.idx)
+        " Ask whether to also delete saved outputs. Default = No.
+        let del_choice = confirm(
+            \ '[vim-jukit] Also delete saved outputs for "' . entry.name . '"?',
+            \ "&No\n&Yes", 1)
+        let delete_outputs = (del_choice == 2) ? 1 : 0
+        call s:kill_single_active_session(entry.idx, delete_outputs)
     elseif entry.type ==# 'archived'
         call s:kill_archived_session(entry.name)
     endif
 endfun
 
-" Kill a single active session: close its zellij pane, delete its
-" outhist file, remove it from b:jukit_sessions, and persist.
-fun! s:kill_single_active_session(idx) abort
+" Kill a single active session: close its zellij pane, optionally
+" delete its outhist file, remove it from b:jukit_sessions, and persist.
+" Optional a:2 = delete_outputs (0 = keep outhist, 1 = delete it).
+" Defaults to 1 for backward compat.
+fun! s:kill_single_active_session(idx, ...) abort
+    let delete_outputs = a:0 >= 1 ? a:1 : 1
     if a:idx < 0 || a:idx >= len(b:jukit_sessions)
         return
     endif
@@ -1076,10 +1090,12 @@ fun! s:kill_single_active_session(idx) abort
             \ 'close-pane', '--pane-id', session.output_pane_id)
     endif
 
-    " Delete the per-session outhist file.
-    let outhist = jukit#util#session_outhist_path(name)
-    if !empty(outhist) && filereadable(outhist)
-        call delete(outhist)
+    " Optionally delete the per-session outhist file.
+    if delete_outputs
+        let outhist = jukit#util#session_outhist_path(name)
+        if !empty(outhist) && filereadable(outhist)
+            call delete(outhist)
+        endif
     endif
 
     " Remove from the session list.
@@ -1095,7 +1111,11 @@ fun! s:kill_single_active_session(idx) abort
 
     call jukit#zellij#splits#_invalidate_cache()
     call jukit#zellij#splits#_persist_state()
-    echom '[vim-jukit] Killed session "' . name . '".'
+    if delete_outputs
+        echom '[vim-jukit] Killed session "' . name . '" and deleted saved outputs.'
+    else
+        echom '[vim-jukit] Killed session "' . name . '" (saved outputs kept).'
+    endif
 endfun
 
 " Kill an archived session: delete its outhist file from disk.
@@ -1125,8 +1145,17 @@ fun! s:after_kill_confirm(reply) abort
         echom '[vim-jukit] kill all cancelled'
         return
     endif
-    call jukit#zellij#splits#_kill_all_sessions()
-    echom '[vim-jukit] All sessions killed and persistence cleared.'
+    " Ask whether to also delete saved outputs. Default = No.
+    let del_choice = confirm(
+        \ '[vim-jukit] Also delete all saved outputs?',
+        \ "&No\n&Yes", 1)
+    let delete_outputs = (del_choice == 2) ? 1 : 0
+    call jukit#zellij#splits#_kill_all_sessions(delete_outputs)
+    if delete_outputs
+        echom '[vim-jukit] All sessions killed and saved outputs deleted.'
+    else
+        echom '[vim-jukit] All sessions killed (saved outputs kept).'
+    endif
 endfun
 
 " QuitPre handler for zellij. If there are active sessions with panes,
@@ -1158,7 +1187,12 @@ fun! jukit#zellij#splits#on_quit_pre() abort
 
     if choice == 1
         " Kill: close all panes, clear state, delete persistence.
-        call jukit#zellij#splits#_kill_all_sessions()
+        " Ask whether to also delete saved outputs. Default = No.
+        let del_choice = confirm(
+            \ '[vim-jukit] Also delete all saved outputs?',
+            \ "&No\n&Yes", 1)
+        let delete_outputs = (del_choice == 2) ? 1 : 0
+        call jukit#zellij#splits#_kill_all_sessions(delete_outputs)
     elseif choice == 2
         " Hide: hide visible panes so they don't clutter the layout,
         " but keep them alive for reconnection on next nvim open.

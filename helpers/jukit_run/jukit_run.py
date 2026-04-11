@@ -385,12 +385,6 @@ class JukitRun(TerminalMagics):
         # blank line + top border.
         util.hide_prompt(self.shell)
 
-        if not os.path.isfile(self.outhist_file):
-            util.jukit_info(f"File {self.outhist_file} not found")
-            return
-
-        out_hist = util.catch_load_json(self.outhist_file)
-
         # outhist_frame() prints the cyan top frame on entry, swaps
         # sys.stdout for a LinePrefixWriter that draws `│ ` at column 1
         # of every body line, and prints the bottom frame on exit. The
@@ -406,6 +400,9 @@ class JukitRun(TerminalMagics):
             # mathtext via sixel) instead of looking up stored outputs.
             # Only reachable on zellij (vim-side gate in
             # autoload/jukit/splits.vim's show_last_cell_output).
+            # Does NOT need the outhist file -- the cell source comes
+            # from .jukit_info.json, so this works even when no code
+            # has been executed yet.
             if args.md:
                 from .render_markdown import render_markdown_cell
                 md_source, show_latex_warning = self._get_info_json_keys(
@@ -425,6 +422,12 @@ class JukitRun(TerminalMagics):
                 )
                 return
 
+            # Code cell output branch -- requires the outhist file.
+            if not os.path.isfile(self.outhist_file):
+                util.jukit_info(f"File {self.outhist_file} not found")
+                return
+
+            out_hist = util.catch_load_json(self.outhist_file)
             outputs = out_hist.get(cell_id)
 
             if outputs is None:

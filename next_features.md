@@ -884,4 +884,41 @@ Press ENTER or type command to continue
      lines (unlet g:jukit_output_title / _invalidate_cache) so
      Cancel doesn't clear session state.
 
-- [ ] error "[vim-jukit] File /workspace/.jukit/refactored_testing_lineformer_outhist.json not found" when trying to render markdown cell in a file that's never been opened before and where no code has been executed before -> should just create it in such a case! 
+- [X] error "[vim-jukit] File /workspace/.jukit/refactored_testing_lineformer_outhist.json not found" when trying to render markdown cell in a file that's never been opened before and where no code has been executed before -> should just create it in such a case! 
+  -> root cause: jukit_out_hist in helpers/jukit_run/jukit_run.py checked
+     for the outhist file's existence and bailed with an error BEFORE
+     branching on `--md`. The markdown rendering path doesn't use the
+     outhist file at all — it reads `md_source` from `.jukit_info.json`.
+  -> fix: moved the outhist file existence check and `catch_load_json`
+     call into the code-cell branch (after the `if args.md: ... return`
+     block). Markdown cells now render without requiring any outhist
+     file to exist, which is the correct behavior since they have no
+     stored outputs to look up.
+
+- [X] let's make it s.t. when the user kills a session, ask him whether to also delete the saved outputs (the outhist file). do this both when the user manually kills a session, and when he is prompted whether to kill/hide/cancel when doing :q and he selects the kill session option. default should be no
+  -> fix: added a `confirm()` prompt "Also delete saved outputs?" with
+     &No/&Yes (default No) at every kill path:
+     1. Single active session kill (s:after_kill_pick): after the user
+        picks an active session from the kill sub-picker, a confirm()
+        dialog asks whether to delete its outhist file. The choice is
+        passed to s:kill_single_active_session as a delete_outputs flag.
+     2. Kill all sessions (s:after_kill_confirm): after the user types
+        "yes" to confirm killing all, a confirm() asks about outputs.
+        The choice is passed to _kill_all_sessions(delete_outputs).
+     3. :q kill path (on_quit_pre): after choosing "Kill sessions" from
+        the quit-time confirm(), a second confirm() asks about outputs
+        before calling _kill_all_sessions(delete_outputs).
+  -> _kill_all_sessions and s:kill_single_active_session now accept an
+     optional delete_outputs argument (0 = keep, 1 = delete). Defaults
+     to 1 for backward compat. Outhist deletion is gated on this flag.
+  -> archived sessions are not affected: they ARE their outhist files,
+     so killing one always deletes the file (no extra prompt — the user
+     already chose to kill it from the picker).
+  -> echo messages now reflect whether outputs were kept or deleted.
+  -> files updated:
+       autoload/jukit/zellij/splits.vim
+         (_kill_all_sessions: optional delete_outputs arg;
+          s:kill_single_active_session: optional delete_outputs arg;
+          s:after_kill_pick: confirm() before active session kill;
+          s:after_kill_confirm: confirm() after "yes" for kill-all;
+          on_quit_pre: confirm() after choosing Kill)
