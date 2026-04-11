@@ -883,3 +883,5 @@ Press ENTER or type command to continue
      as an escape hatch. Also added `return` before the cleanup
      lines (unlet g:jukit_output_title / _invalidate_cache) so
      Cancel doesn't clear session state.
+
+- [ ] error "[vim-jukit] File /workspace/.jukit/refactored_testing_lineformer_outhist.json not found" when trying to render markdown cell in a file that's never been opened before and where no code has been executed before -> should just create it in such a case! 
