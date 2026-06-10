@@ -222,6 +222,13 @@ class JukitRun(TerminalMagics):
 
         if not os.path.isdir(self.jukit_dir):
             os.mkdir(self.jukit_dir)
+        # The info file must be (re)created whenever it's missing, not
+        # only when the whole .jukit dir is new: the dir may already
+        # exist (e.g. created for the zellij session persistence file,
+        # or the info file was cleaned up manually) and the
+        # _write_to_info_json call below would then crash with
+        # FileNotFoundError.
+        if not os.path.isfile(self.info_file):
             with open(self.info_file, "w", encoding=ENCODING) as f:
                 json.dump({}, f)
 

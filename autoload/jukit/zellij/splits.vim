@@ -174,8 +174,16 @@ fun! jukit#zellij#splits#_persist_state() abort
         let active_name = b:jukit_sessions[b:jukit_active_session].name
     endif
 
+    " zellij_session_name is the authoritative identity field: $ZELLIJ
+    " itself is the literal string "0" inside every zellij session, so
+    " it can't distinguish sessions. The name field is also what allows
+    " external tools (scripts/jukit-send) to target the right session
+    " via `zellij --session <name> action ...` from outside zellij.
+    " The legacy zellij_session field is kept so older plugin versions
+    " can still read files written by this one.
     let data = {
         \ 'zellij_session':      $ZELLIJ,
+        \ 'zellij_session_name': $ZELLIJ_SESSION_NAME,
         \ 'active_session_name': active_name,
         \ 'sessions':            sessions_to_save,
         \ }
@@ -221,8 +229,18 @@ fun! jukit#zellij#splits#_lazy_load_state() abort
     endif
 
     " Stale check: a different zellij session means the pane ids are
-    " from a no-longer-running instance. Don't reconnect.
-    if get(data, 'zellij_session', '') !=# $ZELLIJ
+    " from a no-longer-running instance. Don't reconnect. Prefer the
+    " session NAME: $ZELLIJ is the literal string "0" inside every
+    " zellij session, so the legacy comparison below never detects
+    " cross-session staleness on its own (pane-id validation against
+    " list-panes then has to catch it). Files written before the name
+    " field existed fall back to the legacy check.
+    let saved_name = get(data, 'zellij_session_name', '')
+    if !empty(saved_name)
+        if saved_name !=# $ZELLIJ_SESSION_NAME
+            return
+        endif
+    elseif get(data, 'zellij_session', '') !=# $ZELLIJ
         return
     endif
 

@@ -1,0 +1,554 @@
+#!/usr/bin/env bash
+# jukit-send -- send code to a running vim-jukit ipython pane in zellij.
+#
+# Designed for external processes (e.g. an AI agent in another terminal)
+# that want to execute code in the ipython shell vim-jukit started, instead
+# of re-running a whole script in a fresh interpreter.
+#
+# It reuses the plugin's own send protocol: the code is written into
+# .jukit/.jukit_info.json (the "mailbox" the %jukit_run ipython magic reads
+# from) and only the literal string `%jukit_run` is typed into the pane via
+# `zellij action write-chars`. This avoids prompt_toolkit auto-indent
+# mangling of multi-line code and integrates with vim-jukit's saved-output
+# files, which is also how --wait knows when execution finished.
+#
+# Targeting information (zellij session name, pane id, jukit session name)
+# is discovered from .jukit/<py_basename>_zellij_sessions.json, which
+# vim-jukit persists whenever a zellij session is created or changed.
+#
+# CAVEAT (shared mailbox): .jukit/.jukit_info.json holds exactly one pending
+# command. Don't race a send from vim and a send from this script against
+# the same file -- whichever writes last wins. In practice sends are picked
+# up within milliseconds, so this only matters for truly concurrent use.
+
+set -euo pipefail
+
+PYTHON=${JUKIT_SEND_PYTHON:-python3}
+
+die() { printf 'jukit-send: %s\n' "$*" >&2; exit 1; }
+
+# Python programs that consume data on STDIN are passed via -c (a heredoc
+# on stdin would shadow the piped data). read -d '' returns nonzero at
+# EOF, hence the || true.
+
+# stdin: list-panes --json output. argv: pane id. Exit 0 iff pane exists.
+read -r -d '' PY_PANE_EXISTS <<'PYEOF' || true
+import json, sys
+
+pane = sys.argv[1]
+for p in json.load(sys.stdin):
+    pid = ("plugin_" if p.get("is_plugin") else "terminal_") + str(p.get("id"))
+    if pid == pane or (not p.get("is_plugin") and str(p.get("id")) == pane):
+        sys.exit(0)
+sys.exit(1)
+PYEOF
+
+# stdin: the code to run. argv: info file path, cmd_opts string.
+read -r -d '' PY_WRITE_MAILBOX <<'PYEOF' || true
+import json, os, sys
+
+info_file, opts = sys.argv[1], sys.argv[2]
+code = sys.stdin.read()
+data = {}
+if os.path.isfile(info_file):
+    try:
+        with open(info_file) as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+data["cmd"] = code
+data["cmd_opts"] = opts
+with open(info_file, "w") as f:
+    json.dump(data, f)
+PYEOF
+
+# stdin: list-panes --json output ('' if session unreachable).
+# argv: persistence file path, zellij session name ('' if unknown).
+read -r -d '' PY_LIST_FILE <<'PYEOF' || true
+import json, sys
+
+path, zj = sys.argv[1], sys.argv[2]
+raw = sys.stdin.read()
+pane_ids = None
+if raw.strip():
+    try:
+        pane_ids = {
+            ("plugin_" if p.get("is_plugin") else "terminal_") + str(p.get("id"))
+            for p in json.loads(raw)
+        }
+    except Exception:
+        pane_ids = None
+
+try:
+    with open(path) as f:
+        data = json.load(f)
+except Exception as e:
+    print(f"{path}: unreadable ({e})")
+    sys.exit(0)
+
+active = data.get("active_session_name") or ""
+print(path)
+if zj:
+    state = "" if pane_ids is not None else " (not running)"
+    print(f"  zellij session: {zj}{state}")
+else:
+    print("  zellij session: (not recorded -- pre-upgrade file; "
+          "pass --zellij-session or recreate the session in vim)")
+for s in data.get("sessions") or []:
+    name = s.get("name", "?")
+    pane = s.get("output_pane_id") or "(no pane)"
+    mark = " (active)" if name == active else ""
+    alive = ""
+    if pane.startswith(("terminal_", "plugin_")):
+        if pane_ids is None:
+            alive = " [unverified]"
+        else:
+            alive = " [alive]" if pane in pane_ids else " [gone]"
+    print(f"    {name}{mark}: pane={pane}{alive}")
+PYEOF
+
+usage() {
+    cat <<'EOF'
+jukit-send -- execute python code in an ALREADY-RUNNING ipython shell.
+
+================================ WHAT THIS IS ================================
+
+A user is editing a .py file in neovim (vim-jukit plugin) inside a zellij
+terminal session, with an attached ipython shell. That shell already holds
+state: imports are done, data is loaded, models are trained, variables exist.
+
+This tool lets you run code IN that shell, instead of starting a fresh
+`python script.py` run. Use it whenever re-running the whole script would be
+slow or wasteful. Variables persist between sends, like cells in a jupyter
+notebook: something you define in one send can be used in the next.
+
+You do NOT need to be inside zellij. You do NOT need to know pane ids or
+session names; they are auto-discovered from the .jukit/ directory that
+vim-jukit maintains next to the .py file.
+
+================================= QUICKSTART =================================
+
+  cd <directory containing the .py file>      # discovery starts from cwd
+  jukit-send list                              # 1. confirm a shell is reachable
+  jukit-send send --wait 'print(x.shape)'      # 2. run code, get output back
+
+That is the whole workflow. `send --wait` blocks until the code finishes and
+prints everything it produced (stdout, the value of a final bare expression,
+or the full traceback if it raised).
+
+Multi-line code is safe; pass it as ONE quoted argument or on stdin:
+
+  jukit-send send --wait 'total = 0
+  for i in range(5):
+      total += i
+  print(total)'
+
+  jukit-send send --wait - < snippet.py        # '-' or no CODE = read stdin
+
+Long-running code (training, big computations): either raise the timeout, or
+fire-and-forget and collect the result later:
+
+  jukit-send send --wait --timeout 600 'model.fit(X, y)'
+
+  jukit-send send 'model.fit(X, y)'            # prints: cell_id=Ab3dEf9hIj
+  jukit-send output --cell-id Ab3dEf9hIj --timeout 600
+
+================================== COMMANDS ==================================
+
+  list                  Show every reachable shell: its .py file, jukit
+                        session names, pane ids, and whether the pane is
+                        still alive. Run this first if anything is unclear.
+  send [CODE|-]         Execute CODE (or stdin) in the shell.
+  output --cell-id ID   Print the saved output of an earlier send.
+  screen                Dump the visible text of the shell pane (what the
+                        user currently sees). Good for checking shell state
+                        without running anything.
+
+================================== OPTIONS ===================================
+
+Targeting (all commands; only needed when discovery is ambiguous):
+  --file PATH               Target the shell belonging to this .py file.
+                            Required when several .py files in the directory
+                            have shells. Default: auto-discover from ./.jukit/.
+  --session NAME            vim-jukit session name, as shown by `list`.
+                            Default: the session currently active in vim.
+  --zellij-session NAME     The zellij session hosting the pane. Default:
+                            recorded by the plugin; rarely needed.
+  --pane-id ID              Exact pane, e.g. terminal_3. Rarely needed.
+
+send:
+  --wait                    Block until done, print the captured output.
+  --timeout SECONDS         How long --wait blocks (default: 60). On timeout
+                            the code KEEPS RUNNING; the error message tells
+                            you the cell id to fetch the output later.
+  --no-save                 Don't capture output (incompatible with --wait;
+                            output is then only visible in the user's pane).
+  --quiet-input             Don't echo the code into the pane display.
+  --raw                     Type CODE into the pane verbatim, bypassing the
+                            ipython integration. Only for shell (bash) panes
+                            or single python lines: multi-line python sent
+                            raw gets mangled by ipython's auto-indent. With
+                            --pane-id and --zellij-session both given, --raw
+                            needs no .jukit files at all.
+  --code-file PATH          Read code from PATH instead of CODE/stdin.
+
+output:
+  --cell-id ID              The id printed by a previous send (required).
+  --timeout SECONDS         Wait up to SECONDS for the output to appear
+                            (default: 0 = check once).
+
+screen:
+  --full                    Include full scrollback, not just the viewport.
+
+================================= EXIT CODES =================================
+
+  0  success
+  1  error -- explanation on stderr; fix the problem it names, then retry
+  2  not ready -- `send --wait` timed out (code still running) or `output`
+     found nothing yet; retry `output --cell-id ID` later
+
+================================ TROUBLESHOOTING =============================
+
+  "no .jukit directory in ..."
+      You are in the wrong directory. cd to where the .py file lives, or
+      pass --file /path/to/script.py.
+  "multiple files have jukit sessions here"
+      Pass --file to pick one (the error lists the candidates).
+  "jukit session '...' not found" / wrong session
+      Run `jukit-send list`, then pass --session <name from the list>.
+  "pane ... not found in zellij session"
+      The shell pane was closed. Ask the user to reopen it in vim
+      (<leader>os) -- you cannot create it from here.
+  NameError for a variable the script defines
+      The user never ran that part of the script in their shell. Send the
+      defining lines first, or ask the user.
+  Sent code, user's vim send seems lost
+      Don't send at the exact moment vim sends: both share one mailbox
+      file and the last writer wins. Just resend.
+EOF
+}
+
+# ---------------------------------------------------------------------------
+# Discovery
+# ---------------------------------------------------------------------------
+
+# Phase 1: locate the persistence file and resolve the jukit-side context.
+# Sets: JUKIT_DIR, PY_BASE, PERSIST_FILE, SESS_NAME, PANE_ID, ZJ_FROM_FILE,
+#       INFO_FILE, OUTHIST_FILE
+resolve_jukit_context() {
+    if [[ -n $opt_file ]]; then
+        local abs dir base
+        abs=$(realpath -- "$opt_file" 2>/dev/null) || die "file not found: $opt_file"
+        dir=$(dirname -- "$abs")
+        base=$(basename -- "$abs")
+        PY_BASE=${base%.*}
+        JUKIT_DIR="$dir/.jukit"
+        PERSIST_FILE="$JUKIT_DIR/${PY_BASE}_zellij_sessions.json"
+        [[ -f $PERSIST_FILE ]] || die "no vim-jukit zellij state for $opt_file \
+(expected $PERSIST_FILE). Create a session in vim first (<leader>os)."
+    else
+        JUKIT_DIR="$PWD/.jukit"
+        [[ -d $JUKIT_DIR ]] || die "no .jukit directory in $PWD -- run from the \
+directory containing the .py file, or pass --file <script.py>"
+        local candidates=()
+        while IFS= read -r f; do candidates+=("$f"); done \
+            < <(find "$JUKIT_DIR" -maxdepth 1 -name '*_zellij_sessions.json' 2>/dev/null | sort)
+        ((${#candidates[@]} > 0)) || die "no *_zellij_sessions.json in $JUKIT_DIR \
+-- create a session in vim first (<leader>os)"
+        if ((${#candidates[@]} > 1)); then
+            {
+                echo "jukit-send: multiple files have jukit sessions here; pick one with --file:"
+                printf '  %s\n' "${candidates[@]}"
+            } >&2
+            exit 1
+        fi
+        PERSIST_FILE=${candidates[0]}
+        PY_BASE=$(basename -- "$PERSIST_FILE")
+        PY_BASE=${PY_BASE%_zellij_sessions.json}
+    fi
+
+    local vars
+    vars=$("$PYTHON" - "$PERSIST_FILE" "$opt_session" <<'PYEOF'
+import json, shlex, sys
+
+path, want = sys.argv[1], sys.argv[2]
+try:
+    with open(path) as f:
+        data = json.load(f)
+except Exception as e:
+    sys.exit(f"jukit-send: cannot parse {path}: {e}")
+
+sessions = data.get("sessions") or []
+name = want or data.get("active_session_name") or ""
+if not name and len(sessions) == 1:
+    name = sessions[0].get("name", "")
+sess = next((s for s in sessions if s.get("name") == name), None)
+if sess is None:
+    avail = ", ".join(s.get("name", "?") for s in sessions) or "(none)"
+    sys.exit(f"jukit-send: jukit session {name!r} not found in {path}; "
+             f"available: {avail}")
+pane = sess.get("output_pane_id") or ""
+if not pane:
+    sys.exit(f"jukit-send: jukit session {name!r} has no output pane yet "
+             f"(open it in vim with <leader>os)")
+print("SESS_NAME=" + shlex.quote(name))
+print("PANE_ID=" + shlex.quote(pane))
+print("ZJ_FROM_FILE=" + shlex.quote(data.get("zellij_session_name") or ""))
+PYEOF
+    ) || exit 1
+    eval "$vars"
+
+    [[ -n $opt_pane ]] && PANE_ID=$opt_pane
+    INFO_FILE="$JUKIT_DIR/.jukit_info.json"
+    OUTHIST_FILE="$JUKIT_DIR/${PY_BASE}_${SESS_NAME}_outhist.json"
+}
+
+# Phase 2: resolve which zellij session hosts the pane. Sets: ZJ_NAME
+resolve_zellij_session() {
+    command -v zellij >/dev/null || die "zellij not found in PATH"
+    if [[ -n $opt_zj ]]; then
+        ZJ_NAME=$opt_zj
+    elif [[ -n ${ZJ_FROM_FILE:-} ]]; then
+        ZJ_NAME=$ZJ_FROM_FILE
+    elif [[ -n ${ZELLIJ_SESSION_NAME:-} ]]; then
+        ZJ_NAME=$ZELLIJ_SESSION_NAME
+    else
+        local live=()
+        while IFS= read -r s; do [[ -n $s ]] && live+=("$s"); done \
+            < <(zellij list-sessions -n 2>/dev/null | grep -v 'EXITED' | awk '{print $1}')
+        ((${#live[@]} > 0)) || die "no running zellij sessions found"
+        ((${#live[@]} == 1)) || die "multiple zellij sessions running \
+(${live[*]}) and the persistence file predates session-name recording -- \
+pass --zellij-session, or recreate the jukit session in vim once to upgrade \
+the file"
+        ZJ_NAME=${live[0]}
+    fi
+}
+
+# Verify PANE_ID exists in ZJ_NAME before typing into it.
+verify_pane() {
+    local panes_json
+    panes_json=$(zellij --session "$ZJ_NAME" action list-panes --json 2>/dev/null) \
+        || die "cannot query zellij session '$ZJ_NAME' -- is it running? (zellij list-sessions)"
+    if ! printf '%s' "$panes_json" | "$PYTHON" -c "$PY_PANE_EXISTS" "$PANE_ID"; then
+        die "pane $PANE_ID not found in zellij session '$ZJ_NAME' -- the pane \
+may have been closed, or vim runs in a different zellij session \
+(check with: jukit-send list, override with --zellij-session)"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Primitives
+# ---------------------------------------------------------------------------
+
+# Type text into the pane and press Enter, exactly like
+# jukit#zellij#cmd#send_text does from vim.
+type_into_pane() {
+    local text=$1
+    zellij --session "$ZJ_NAME" action write-chars --pane-id "$PANE_ID" -- "$text"
+    zellij --session "$ZJ_NAME" action write --pane-id "$PANE_ID" 13
+}
+
+# Write {cmd, cmd_opts} into the .jukit_info.json mailbox (code on stdin).
+write_mailbox() {
+    local opts=$1
+    "$PYTHON" -c "$PY_WRITE_MAILBOX" "$INFO_FILE" "$opts"
+}
+
+# Poll OUTHIST_FILE for a cell id and print its output. Exit 2 on timeout
+# (timeout 0 = single check).
+fetch_output() {
+    local cell_id=$1 timeout=$2
+    "$PYTHON" - "$OUTHIST_FILE" "$cell_id" "$timeout" <<'PYEOF'
+import json, os, sys, time
+
+outhist, cell_id, timeout = sys.argv[1], sys.argv[2], float(sys.argv[3])
+deadline = time.monotonic() + timeout
+while True:
+    data = None
+    if os.path.isfile(outhist):
+        try:
+            with open(outhist) as f:
+                data = json.load(f)
+        except Exception:
+            data = None  # mid-write; retry
+    if data is not None and cell_id in data:
+        for out in data[cell_id]:
+            kind = out.get("output_type")
+            if kind == "stream":
+                sys.stdout.write(out.get("text", ""))
+            elif kind == "execute_result":
+                text = out.get("data", {}).get("text/plain", "")
+                if text:
+                    sys.stdout.write(text + "\n")
+            elif kind == "display_data":
+                keys = ", ".join(out.get("data", {}).keys())
+                sys.stdout.write(f"[display_data: {keys}]\n")
+        sys.exit(0)
+    if time.monotonic() >= deadline:
+        sys.exit(2)
+    time.sleep(0.2)
+PYEOF
+}
+
+gen_cell_id() {
+    "$PYTHON" -c 'import random, string
+print("".join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=10)))'
+}
+
+get_code() {
+    if [[ -n $opt_code_file ]]; then
+        cat -- "$opt_code_file"
+    elif ((${#positional[@]} > 0)) && [[ ${positional[0]} != '-' ]]; then
+        printf '%s' "${positional[0]}"
+    else
+        cat
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Commands
+# ---------------------------------------------------------------------------
+
+cmd_send() {
+    local code
+    code=$(get_code)
+    [[ -n $code ]] || die "no code given (pass CODE, '-' for stdin, or --code-file)"
+
+    if ((opt_raw)); then
+        if [[ -z $opt_pane || -z $opt_zj ]]; then
+            resolve_jukit_context
+        fi
+        resolve_zellij_session
+        [[ -n $opt_pane ]] && PANE_ID=$opt_pane
+        verify_pane
+        type_into_pane "$code"
+        return 0
+    fi
+
+    ((opt_wait && opt_no_save)) && die "--wait needs saved output; drop --no-save"
+
+    resolve_jukit_context
+    resolve_zellij_session
+    verify_pane
+
+    local cell_id='' opts=''
+    if ((!opt_no_save)); then
+        cell_id=$(gen_cell_id)
+        opts="--cell_id=$cell_id -s"
+    fi
+    ((opt_quiet_input)) && opts="${opts:+$opts }-q"
+
+    printf '%s' "$code" | write_mailbox "$opts"
+    type_into_pane '%jukit_run'
+
+    if ((opt_wait)); then
+        local rc=0
+        fetch_output "$cell_id" "$opt_timeout" || rc=$?
+        if ((rc == 2)); then
+            printf 'jukit-send: timed out after %ss waiting for cell %s -- the code may still be running; fetch later with: jukit-send output --cell-id %s\n' \
+                "$opt_timeout" "$cell_id" "$cell_id" >&2
+            exit 2
+        fi
+        return "$rc"
+    fi
+    [[ -n $cell_id ]] && echo "cell_id=$cell_id"
+    return 0
+}
+
+cmd_output() {
+    [[ -n $opt_cell_id ]] || die "output requires --cell-id (printed by send)"
+    resolve_jukit_context
+    local rc=0
+    fetch_output "$opt_cell_id" "$opt_timeout_explicit" || rc=$?
+    if ((rc == 2)); then
+        printf 'jukit-send: no saved output for cell %s (yet?)\n' "$opt_cell_id" >&2
+        exit 2
+    fi
+    return "$rc"
+}
+
+cmd_screen() {
+    if [[ -z $opt_pane || -z $opt_zj ]]; then
+        resolve_jukit_context
+    fi
+    resolve_zellij_session
+    [[ -n $opt_pane ]] && PANE_ID=$opt_pane
+    verify_pane
+    local args=(dump-screen --pane-id "$PANE_ID")
+    ((opt_full)) && args+=(--full)
+    zellij --session "$ZJ_NAME" action "${args[@]}"
+}
+
+cmd_list() {
+    command -v zellij >/dev/null || die "zellij not found in PATH"
+    local dir
+    if [[ -n $opt_file ]]; then
+        dir=$(dirname -- "$(realpath -- "$opt_file")")/.jukit
+    else
+        dir="$PWD/.jukit"
+    fi
+    [[ -d $dir ]] || die "no .jukit directory at $dir"
+
+    local files=()
+    while IFS= read -r f; do files+=("$f"); done \
+        < <(find "$dir" -maxdepth 1 -name '*_zellij_sessions.json' 2>/dev/null | sort)
+    ((${#files[@]} > 0)) || die "no jukit zellij session files in $dir"
+
+    local f zj panes_json
+    for f in "${files[@]}"; do
+        zj=$("$PYTHON" -c 'import json, sys
+print(json.load(open(sys.argv[1])).get("zellij_session_name") or "")' "$f" 2>/dev/null) || zj=''
+        panes_json=''
+        if [[ -n $zj ]]; then
+            panes_json=$(zellij --session "$zj" action list-panes --json 2>/dev/null) || panes_json=''
+        fi
+        printf '%s' "$panes_json" | "$PYTHON" -c "$PY_LIST_FILE" "$f" "$zj"
+    done
+}
+
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
+
+sub=${1:-}
+case $sub in
+    list|send|output|screen) shift ;;
+    -h|--help|'') usage; exit 0 ;;
+    *) die "unknown command: $sub (see jukit-send --help)" ;;
+esac
+
+opt_file='' opt_session='' opt_zj='' opt_pane='' opt_code_file='' opt_cell_id=''
+opt_raw=0 opt_no_save=0 opt_wait=0 opt_quiet_input=0 opt_full=0
+opt_timeout=60 opt_timeout_explicit=0
+positional=()
+
+need_val() { [[ $# -ge 2 ]] || die "option $1 requires a value"; }
+
+while (($#)); do
+    case $1 in
+        --file)           need_val "$@"; opt_file=$2; shift 2 ;;
+        --session)        need_val "$@"; opt_session=$2; shift 2 ;;
+        --zellij-session) need_val "$@"; opt_zj=$2; shift 2 ;;
+        --pane-id)        need_val "$@"; opt_pane=$2; shift 2 ;;
+        --code-file)      need_val "$@"; opt_code_file=$2; shift 2 ;;
+        --cell-id)        need_val "$@"; opt_cell_id=$2; shift 2 ;;
+        --timeout)        need_val "$@"; opt_timeout=$2; opt_timeout_explicit=$2; shift 2 ;;
+        --raw)            opt_raw=1; shift ;;
+        --no-save)        opt_no_save=1; shift ;;
+        --wait)           opt_wait=1; shift ;;
+        --quiet-input)    opt_quiet_input=1; shift ;;
+        --full)           opt_full=1; shift ;;
+        -h|--help)        usage; exit 0 ;;
+        --)               shift; positional+=("$@"); break ;;
+        -*)               die "unknown option: $1" ;;
+        *)                positional+=("$1"); shift ;;
+    esac
+done
+
+case $sub in
+    list)   cmd_list ;;
+    send)   cmd_send ;;
+    output) cmd_output ;;
+    screen) cmd_screen ;;
+esac
