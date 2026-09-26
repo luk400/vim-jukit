@@ -20,6 +20,7 @@ let g:jukit_mappings_ext_enabled = get(g:, 'jukit_mappings_ext_enabled', '*')
 let g:jukit_shell_cmd = get(g:, 'jukit_shell_cmd', 'ipython3')
 let g:jukit_layout = get(g:, 'jukit_layout', s:default_layout)
 let g:jukit_terminal = get(g:, 'jukit_terminal', '')
+let g:jukit_graphics_backend = get(g:, 'jukit_graphics_backend', '')
 let g:jukit_use_tcomment = get(g:, 'jukit_use_tcomment', 0)
 let g:jukit_comment_mark = get(g:, 'jukit_comment_mark', '#')
 let g:jukit_auto_output_hist = get(g:, 'jukit_auto_output_hist', 0)
@@ -64,6 +65,7 @@ let g:jukit_outhist_new_os_window = get(g:, 'jukit_outhist_new_os_window', 0)
 " matplotlib
 let g:jukit_mpl_style = get(g:, 'jukit_mpl_style', '') "this value is changed for kitty after version checking below
 let g:jukit_savefig_dpi = get(g:, 'jukit_savefig_dpi', 150)
+let g:jukit_kitty_cell_aspect = get(g:, 'jukit_kitty_cell_aspect', 2.0)
 let g:jukit_custom_backend = get(g:, 'jukit_custom_backend', -1)
 let g:jukit_mpl_block = get(g:, 'jukit_mpl_block', 1)
 
@@ -152,8 +154,28 @@ elseif index(supported_term, g:jukit_terminal) < 0
         \ . ' -> Using `' . g:jukit_terminal . '` instead!'
 endif
 
+let supported_graphics_backends = ['none', 'kitty']
+if g:jukit_graphics_backend is# ''
+    let g:jukit_graphics_backend = jukit#util#get_graphics_backend()
+elseif index(supported_graphics_backends, g:jukit_graphics_backend) < 0
+    echom '[vim-jukit] Invalid value for g:jukit_graphics_backend: '
+        \ . g:jukit_graphics_backend . ' -> Using `none` instead!'
+    let g:jukit_graphics_backend = 'none'
+endif
+if g:jukit_graphics_backend ==# 'kitty'
+    if !has('nvim-0.12')
+        echom '[vim-jukit] Kitty-protocol graphics requires Neovim >= 0.12'
+        let g:jukit_graphics_backend = 'none'
+    elseif !&termguicolors
+        echom '[vim-jukit] Kitty-protocol graphics requires `set termguicolors`'
+        let g:jukit_graphics_backend = 'none'
+    endif
+endif
+
 if !exists('g:jukit_inline_plotting')
-    if index(['vimterm', 'nvimterm'], g:jukit_terminal) >= 0
+    let s:kitty_protocol_inline = g:jukit_terminal ==# 'nvimterm'
+        \ && g:jukit_graphics_backend ==# 'kitty'
+    if index(['vimterm', 'nvimterm'], g:jukit_terminal) >= 0 && !s:kitty_protocol_inline
         let g:jukit_inline_plotting = 0
     else
         let g:jukit_inline_plotting = 1

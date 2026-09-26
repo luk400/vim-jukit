@@ -224,6 +224,28 @@ fun! jukit#util#get_terminal() abort
     endif
 endfun
 
+fun! jukit#util#get_graphics_backend() abort
+    " Kitty graphics through nvim_ui_send() targets the outer TUI terminal.
+    " Keep split/window management independent: Ghostty still uses nvimterm.
+    if !has('nvim-0.12') || !&termguicolors
+        return 'none'
+    endif
+    " The existing tmux backend has its own transport. Do not silently send
+    " raw Kitty APC sequences to tmux without passthrough configuration.
+    if !empty($TMUX)
+        return 'none'
+    endif
+    let term_program = tolower($TERM_PROGRAM)
+    let term = tolower($TERM)
+    if term_program =~# 'ghostty\|kitty'
+        \ || term =~# 'ghostty\|kitty'
+        \ || !empty($GHOSTTY_RESOURCES_DIR)
+        \ || !empty($KITTY_WINDOW_ID)
+        return 'kitty'
+    endif
+    return 'none'
+endfun
+
 fun! jukit#util#get_lang_info() abort
 python3 << EOF
 import vim, os, sys, json

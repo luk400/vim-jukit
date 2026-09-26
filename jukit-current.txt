@@ -1,0 +1,1115 @@
+===== plugin/jukit.vim =====
+""""""""""""""""""
+" global variables
+""""""""""""""""""
+
+let s:default_layout = {
+    \'split': 'horizontal',
+    \'p1': 0.6, 
+    \'val': [
+        \'file_content',
+        \{
+            \'split': 'vertical',
+            \'p1': 0.6,
+            \'val': ['output', 'output_history']
+        \}
+    \]
+\}
+
+" jukit 
+let g:jukit_mappings_ext_enabled = get(g:, 'jukit_mappings_ext_enabled', '*')
+let g:jukit_shell_cmd = get(g:, 'jukit_shell_cmd', 'ipython3')
+let g:jukit_layout = get(g:, 'jukit_layout', s:default_layout)
+let g:jukit_terminal = get(g:, 'jukit_terminal', '')
+let g:jukit_use_tcomment = get(g:, 'jukit_use_tcomment', 0)
+let g:jukit_comment_mark = get(g:, 'jukit_comment_mark', '#')
+let g:jukit_auto_output_hist = get(g:, 'jukit_auto_output_hist', 0)
+let g:jukit_mappings = get(g:, 'jukit_mappings', 1)
+let g:jukit_notebook_viewer = get(g:, 'jukit_notebook_viewer', 'jupyter-notebook')
+let g:jukit_venv_in_output_hist = get(g:, 'jukit_venv_in_output_hist', 1)
+let g:_jukit_python_os_cmd = get(g:, 'jukit_python_os_cmd', 'python3')
+let g:_jukit_win_escape_char = get(g:, 'jukit_win_escape_char', '\\')
+
+let g:jukit_html_viewer = get(g:, 'jukit_html_viewer', 'xdg-open')
+let g:jukit_ipython = get(g:, 'jukit_ipython', split(g:jukit_shell_cmd, '/')[-1] =~ 'ipython')
+let g:jukit_debug = get(g:, 'jukit_debug', 0)
+if has('win32')
+    let g:_jukit_is_windows = 1
+    let g:_jukit_python = split(g:jukit_shell_cmd, '\')[-1] =~ 'python'
+else
+    let g:_jukit_is_windows = 0
+    let g:_jukit_python = split(g:jukit_shell_cmd, '/')[-1] =~ 'python'
+endif
+let g:_jukit_md_mark = '°°°'
+let g:jukit_version = 'v1.4.1'
+let g:jukit_convert_overwrite_default = get(g:, 'jukit_convert_overwrite_default', -1)
+let g:jukit_convert_open_default = get(g:, 'jukit_convert_open_default', -1)
+let g:jukit_file_encodings = get(g:, 'jukit_file_encodings', 'utf-8')
+
+" (i)python
+let g:jukit_in_style = get(g:, 'jukit_in_style', 2)
+let g:jukit_max_size = get(g:, 'jukit_max_size', 20)
+let g:jukit_ipy_opts = get(g:, 'jukit_ipy_opts', '')
+let g:jukit_show_prompt = get(g:, 'jukit_show_prompt', 0)
+let g:jukit_save_output = get(g:, 'jukit_save_output', g:jukit_ipython)
+let g:jukit_clean_outhist_freq = get(g:, 'jukit_clean_outhist_freq', 60 * 10)
+
+" kitty
+let g:jukit_output_bg_color = get(g:, 'jukit_output_bg_color', '')
+let g:jukit_output_fg_color = get(g:, 'jukit_output_fg_color', '')
+let g:jukit_outhist_bg_color = get(g:, 'jukit_outhist_bg_color', '#090b1a')
+let g:jukit_outhist_fg_color = get(g:, 'jukit_outhist_fg_color', 'gray')
+let g:jukit_output_new_os_window = get(g:, 'jukit_output_new_os_window', 0)
+let g:jukit_outhist_new_os_window = get(g:, 'jukit_outhist_new_os_window', 0)
+
+" matplotlib
+let g:jukit_mpl_style = get(g:, 'jukit_mpl_style', '') "this value is changed for kitty after version checking below
+let g:jukit_savefig_dpi = get(g:, 'jukit_savefig_dpi', 150)
+let g:jukit_custom_backend = get(g:, 'jukit_custom_backend', -1)
+let g:jukit_mpl_block = get(g:, 'jukit_mpl_block', 1)
+
+" cell highlighting/syntax
+if g:_jukit_is_windows
+    let g:jukit_text_syntax_file = get(g:, 'jukit_text_syntax_file', $VIMRUNTIME . '\syntax\' . 'markdown.vim')
+else
+    let g:jukit_text_syntax_file = get(g:, 'jukit_text_syntax_file', $VIMRUNTIME . '/syntax/' . 'markdown.vim')
+endif
+let g:jukit_hl_ext_enabled = get(g:, 'jukit_hl_ext_enabled', '*')
+let g:jukit_highlight_markers = get(g:, 'jukit_highlight_markers', 1)
+let g:jukit_enable_textcell_bg_hl = get(g:, 'jukit_enable_textcell_bg_hl', 1)
+let g:jukit_enable_textcell_syntax = get(g:, 'jukit_enable_textcell_syntax', 1)
+
+" ueberzug
+let g:jukit_hist_use_ueberzug = get(g:, 'jukit_hist_use_ueberzug', 0)
+let g:jukit_ueberzug_use_cached = get(g:, 'jukit_ueberzug_use_cached', 1)
+let g:jukit_ueberzug_use_cached_md = get(g:, 'jukit_ueberzug_use_cached_md', 1)
+let g:jukit_ueberzug_pos = get(g:, 'jukit_ueberzug_pos', [0.25, 0.25, 0.4, 0.6])
+let g:jukit_ueberzug_pos_noout = get(g:, 'jukit_ueberzug_pos_noout', [0.25, 0.25, 0.4, 0.6])
+let g:jukit_ueberzug_term_hw_ratio = get(g:, 'jukit_ueberzug_term_hw_ratio', -1)
+let g:_jukit_mdnb_timer = get(g:, '_jukit_mdnb_timer', 0.5)
+
+let g:jukit_kill_ueberzug_on_focus_lost = get(g:, 'jukit_kill_ueberzug_on_focus_lost', 1)
+let g:jukit_ueberzug_border_color = get(g:, 'jukit_ueberzug_border_color', 'blue')
+let g:jukit_ueberzug_theme = get(g:, 'jukit_ueberzug_theme', 'dark')
+let g:jukit_ueberzug_python_cmd = get(g:, 'jukit_ueberzug_python_cmd', 'python3')
+let g:jukit_ueberzug_jupyter_cmd = get(g:, 'jukit_ueberzug_jupyter_cmd', 'jupyter')
+let g:jukit_ueberzug_cutycapt_cmd = get(g:, 'jukit_ueberzug_cutycapt_cmd', 'cutycapt')
+let g:jukit_ueberzug_imagemagick_cmd = get(g:, 'jukit_ueberzug_imagemagick_cmd', 'convert')
+
+" requirements
+let g:jukit_required_kitty_version = [0,22,0]
+let g:jukit_required_vim_version = [8,1,0]
+let g:jukit_required_neovim_version = [0,4,0]
+let g:jukit_required_ipython_version = [7,3,0]
+
+
+""""""""""""""""""""""""""""""""""""""""""
+" check requirements and variable validity
+""""""""""""""""""""""""""""""""""""""""""
+
+if !has('python3')
+    echom "[vim-jukit] python3 support missing! (`:echo has('python3')` returned 0)"
+endif
+
+if has('nvim')
+    let s:nvim_version = matchstr(execute('version'), '.\{-}NVIM v\zs[0-9\.]\{1,}')
+    let s:v_split = split(s:nvim_version, '\.')
+    while len(s:v_split) < 3
+        call add(s:v_split, 0)
+    endwhile
+
+    if !jukit#util#is_valid_version(s:v_split, g:jukit_required_neovim_version)
+        echom '[vim-jukit] Insufficient neovim version! (Required version >= '
+            \ . join(g:jukit_required_neovim_version, '.') . ' - Current version: '
+            \ . s:nvim_version . ') -> Please update neovim to use this plugin!'
+    endif
+else
+    let s:vim_version = matchstr(execute('version'), '.\{-}VIM - Vi IMproved \zs[0-9\.]\{1,}')
+    let s:v_split = split(s:vim_version, '\.')
+    while len(s:v_split) < 3
+        call add(s:v_split, 0)
+    endwhile
+
+    let s:valid_vim = jukit#util#is_valid_version(
+        \ s:v_split, g:jukit_required_vim_version) && exists("*sign_unplace")
+    if !s:valid_vim
+        echom '[vim-jukit] Insufficient vim version! (Required version >= '
+            \ . join(g:jukit_required_vim_version, '.') . ' - Current version: '
+            \ . s:vim_version . ') -> Please update vim to use this plugin!'
+    endif
+endif
+
+let supported_term = ['vimterm', 'nvimterm', 'kitty', 'tmux']
+if g:jukit_terminal is# ''
+    let g:jukit_terminal = jukit#util#get_terminal()
+elseif index(supported_term, g:jukit_terminal) < 0
+    let s:invalid_term = g:jukit_terminal
+    if has('nvim')
+        let g:jukit_terminal = 'nvimterm'
+    else
+        let g:jukit_terminal = 'vimterm'
+    endif
+    echom '[vim-jukit] Invalid value for g:jukit_terminal: ' . s:invalid_term
+        \ . ' -> Using `' . g:jukit_terminal . '` instead!'
+endif
+
+if !exists('g:jukit_inline_plotting')
+    if index(['vimterm', 'nvimterm'], g:jukit_terminal) >= 0
+        let g:jukit_inline_plotting = 0
+    else
+        let g:jukit_inline_plotting = 1
+    endif
+endif
+
+if g:_jukit_is_windows
+    let g:_jukit_ps = '\\'
+    let g:_jukit_send_delay = "100m"
+    let g:_jukit_is_windows = 1
+else
+    let g:_jukit_ps = '/'
+    let g:_jukit_is_windows = 0
+endif
+
+" set encodings for readings with python
+call writefile([g:jukit_file_encodings], jukit#util#plugin_path() . '/helpers/.encodings')
+
+""""""""""
+" autocmds 
+""""""""""
+
+if type(g:jukit_hl_ext_enabled) == 1
+    let g:jukit_hl_ext_enabled = [g:jukit_hl_ext_enabled]
+endif
+if index(g:jukit_hl_ext_enabled, '*') >= 0
+    let s:jukit_ext_aupat = '*'
+else
+    let s:jukit_ext_aupat = '*.' . join(g:jukit_hl_ext_enabled, ',*.')
+endif
+call jukit#highlighting_setup(s:jukit_ext_aupat)
+
+if g:jukit_save_output
+    exe 'autocmd TextChanged,InsertLeave *.py call jukit#check_ids()'
+endif
+
+
+""""""""""
+" commands
+""""""""""
+
+command! -nargs=1 JukitOut :call jukit#splits#output(<q-args>)
+command! -nargs=1 JukitOutHist :call jukit#splits#output_and_history(<q-args>)
+
+
+""""""""""
+" Mappings
+""""""""""
+
+fun! s:set_mappings() abort
+    " splits
+    if !hasmapto('jukit#splits#output', 'n')
+        nnoremap <buffer> <leader>os <cmd>call jukit#splits#output()<cr>
+    endif
+    if !hasmapto('jukit#splits#term', 'n')
+        nnoremap <buffer> <leader>ts <cmd>call jukit#splits#term()<cr>
+    endif
+    if !hasmapto('jukit#splits#history', 'n')
+        nnoremap <buffer> <leader>hs <cmd>call jukit#splits#history()<cr>
+    endif
+    if !hasmapto('jukit#splits#output_and_history', 'n')
+        nnoremap <buffer> <leader>ohs <cmd>call jukit#splits#output_and_history()<cr>
+    endif
+    if !hasmapto('jukit#splits#close_history', 'n')
+        nnoremap <buffer> <leader>hd <cmd>call jukit#splits#close_history()<cr>
+    endif
+    if !hasmapto('jukit#splits#close_output_split', 'n')
+        nnoremap <buffer> <leader>od <cmd>call jukit#splits#close_output_split()<cr>
+    endif
+    if !hasmapto('jukit#splits#close_output_and_history', 'n')
+        nnoremap <buffer> <leader>ohd <cmd>call jukit#splits#close_output_and_history(1)<cr>
+    endif
+    if !hasmapto('jukit#splits#out_hist_scroll(1)', 'n')
+        nnoremap <buffer> <leader>j <cmd>call jukit#splits#out_hist_scroll(1)<cr>
+    endif
+    if !hasmapto('jukit#splits#out_hist_scroll(0)', 'n')
+        nnoremap <buffer> <leader>k <cmd>call jukit#splits#out_hist_scroll(0)<cr>
+    endif
+    if !hasmapto('jukit#splits#show_last_cell_output', 'n')
+        nnoremap <buffer> <leader>so <cmd>call jukit#splits#show_last_cell_output(1)<cr>
+    endif
+    if !hasmapto('jukit#ueberzug#set_default_pos', 'n')
+        nnoremap <buffer> <leader>pos <cmd>call jukit#ueberzug#set_default_pos()<cr>
+    endif
+    if !hasmapto('jukit#splits#toggle_auto_hist', 'n')
+        nnoremap <buffer> <leader>ah <cmd>call jukit#splits#toggle_auto_hist()<cr>
+    endif
+    if !hasmapto('jukit#layouts#set_layout', 'n')
+        nnoremap <buffer> <leader>sl <cmd>call jukit#layouts#set_layout()<cr>
+    endif
+
+    " sending code
+    if !hasmapto('jukit#send#line', 'n')
+        nnoremap <buffer> <cr> <cmd>call jukit#send#line()<cr>
+    endif
+    if !hasmapto('jukit#send#selection', 'v')
+        vnoremap <buffer> <cr> <esc><cmd>call jukit#send#selection()<cr>
+    endif
+    if !hasmapto('jukit#send#section', 'n')
+        nnoremap <buffer> <leader><space> <cmd>call jukit#send#section(0)<cr>
+    endif
+    if !hasmapto('jukit#send#until_current_section', 'n')
+        nnoremap <buffer> <leader>cc <cmd>call jukit#send#until_current_section()<cr>
+    endif
+    if !hasmapto('jukit#send#all', 'n')
+        nnoremap <buffer> <leader>all <cmd>call jukit#send#all()<cr>
+    endif
+
+    " cells
+    if !hasmapto('jukit#cells#delete', 'n')
+        nnoremap <buffer> <leader>cd <cmd>call jukit#cells#delete()<cr>
+    endif
+    if !hasmapto('jukit#cells#split', 'n')
+        nnoremap <buffer> <leader>cs <cmd>call jukit#cells#split()<cr>
+    endif
+    if !hasmapto('jukit#cells#create_below(0)', 'n')
+        nnoremap <buffer> <leader>co <cmd>call jukit#cells#create_below(0)<cr>
+    endif
+    if !hasmapto('jukit#cells#create_above(0)', 'n')
+        nnoremap <buffer> <leader>cO <cmd>call jukit#cells#create_above(0)<cr>
+    endif
+    if !hasmapto('jukit#cells#create_below(1)', 'n')
+        nnoremap <buffer> <leader>ct <cmd>call jukit#cells#create_below(1)<cr>
+    endif
+    if !hasmapto('jukit#cells#create_above(1)', 'n')
+        nnoremap <buffer> <leader>cT <cmd>call jukit#cells#create_above(1)<cr>
+    endif
+    if !hasmapto('jukit#cells#merge_above', 'n')
+        nnoremap <buffer> <leader>cM <cmd>call jukit#cells#merge_above()<cr>
+    endif
+    if !hasmapto('jukit#cells#merge_below', 'n')
+        nnoremap <buffer> <leader>cm <cmd>call jukit#cells#merge_below()<cr>
+    endif
+    if !hasmapto('jukit#cells#move_up', 'n')
+        nnoremap <buffer> <leader>ck <cmd>call jukit#cells#move_up()<cr>
+    endif
+    if !hasmapto('jukit#cells#move_down', 'n')
+        nnoremap <buffer> <leader>cj <cmd>call jukit#cells#move_down()<cr>
+    endif
+    if !hasmapto('jukit#cells#delete_outputs(0)', 'n')
+        nnoremap <buffer> <leader>ddo <cmd>call jukit#cells#delete_outputs(0)<cr>
+    endif
+    if !hasmapto('jukit#cells#delete_outputs(1)', 'n')
+        nnoremap <buffer> <leader>dda <cmd>call jukit#cells#delete_outputs(1)<cr>
+    endif
+    if !hasmapto('jukit#cells#jump_to_next_cell', 'n')
+        nnoremap <buffer> <leader>J <cmd>call jukit#cells#jump_to_next_cell()<cr>
+    endif
+    if !hasmapto('jukit#cells#jump_to_previous_cell', 'n')
+        nnoremap <buffer> <leader>K <cmd>call jukit#cells#jump_to_previous_cell()<cr>
+    endif
+
+    " ipynb conversion
+    if !hasmapto('jukit#convert#notebook_convert', 'n')
+        nnoremap <buffer> <leader>np <cmd>call jukit#convert#notebook_convert(g:jukit_notebook_viewer)<cr>
+    endif
+    if !hasmapto("jukit#convert#save_nb_to_file(0,1,'html')", 'n')
+        nnoremap <buffer> <leader>ht <cmd>call jukit#convert#save_nb_to_file(0,1,'html')<cr>
+    endif
+    if !hasmapto("jukit#convert#save_nb_to_file(0,1,'pdf')", 'n')
+        nnoremap <buffer> <leader>pd <cmd>call jukit#convert#save_nb_to_file(0,1,'pdf')<cr>
+    endif
+    if !hasmapto("jukit#convert#save_nb_to_file(1,1,'html')", 'n')
+        nnoremap <buffer> <leader>rht <cmd>call jukit#convert#save_nb_to_file(1,1,'html')<cr>
+    endif
+    if !hasmapto("jukit#convert#save_nb_to_file(1,1,'pdf')", 'n')
+        nnoremap <buffer> <leader>rpd <cmd>call jukit#convert#save_nb_to_file(1,1,'pdf')<cr>
+    endif
+endfun
+
+if type(g:jukit_mappings_ext_enabled) == 1
+    let g:jukit_mappings_ext_enabled = [g:jukit_mappings_ext_enabled]
+endif
+if index(g:jukit_mappings_ext_enabled, '*') >= 0
+    let s:jukit_mappings_ext_aupat = '*'
+else
+    let s:jukit_mappings_ext_aupat = '*.' . join(g:jukit_mappings_ext_enabled, ',*.')
+endif
+
+if g:jukit_mappings == 1
+    exe "autocmd BufEnter " . s:jukit_mappings_ext_aupat . " call s:set_mappings()"
+endif
+===== autoload/jukit/util.vim =====
+let s:script_path = expand("<sfile>:p:h")
+
+fun! s:map_extract_ids(v, l) abort
+    let id1 = matchstr(a:v, '|%%--%%|.*<\zs.*\ze|.*>')
+    let id2 = matchstr(a:v, '|%%--%%|.*<.*|\zs.*\ze>')
+    call add(s:ids1, id1)
+    call add(s:ids2, id2)
+    call add(s:pos, a:l+1)
+endfun
+
+fun! jukit#util#catch_load_json(file, ntries_left, time_between) abort
+    "in case file is trying to be loaded while it is being written to by
+    "another process. if it still can't be loaded after `ntries_left` then
+    "it is assumed that it is corrupted and replaced with empty json
+    let f_content = readfile(a:file)
+    try
+        if has('nvim')
+            let json = json_decode(f_content)
+        else
+            let json = json_decode(join(f_content, ''))
+        endif
+    catch
+        echom "[vim-jukit] could not decode json, number of tries left: " . a:ntries_left
+        if a:ntries_left > 0
+            exe "sleep " . a:time_between . "m"
+            let json = jukit#util#catch_load_json(a:file, a:ntries_left - 1, a:time_between)
+            let g:ntries = a:ntries_left
+        else
+            echom "[vim-jukit] json file not readable, replacing with empty json..."
+            let json = {}
+            call writefile([json_encode(json)], a:file, 'b')
+        endif
+    endtry
+
+    return json
+endfun
+
+fun! jukit#util#get_all_ids() abort
+    let lines = getline(1, line('$'))
+    let s:ids1 = []
+    let s:ids2 = []
+    let s:pos = []
+    call map(copy(lines), {l, v -> v =~ '|%%--%%|' ? s:map_extract_ids(v, l) : 0})
+    return {1: s:ids1, 2: s:ids2, 'pos': s:pos}
+endfun
+
+fun! jukit#util#get_unique_id() abort
+    let ids = jukit#util#get_all_ids()
+    if len(ids[1])
+        let existing_ids = [ids[1][0]] + ids[2]
+    else
+        let existing_ids = []
+    endif
+python3 << EOF
+import random, string, vim
+
+alphabet = string.ascii_uppercase + string.ascii_lowercase + string.digits
+existing_ids = vim.eval('existing_ids')
+
+id_exists = True
+while id_exists:
+    id = ''.join(random.choices(alphabet, k=10))
+    id_exists = id in existing_ids
+
+vim.command(f"let id='{id}'")
+EOF
+    return id
+endfun
+
+fun! jukit#util#get_marker_above() abort
+    let marker_pos_above = search('|%%--%%|', 'nbW')
+    if marker_pos_above
+        let id1 = matchstr(getline(marker_pos_above), '|%%--%%|.*<\zs.*\ze|.*>')
+        let id2 = matchstr(getline(marker_pos_above), '|%%--%%|.*<.*|\zs.*\ze>')
+        let ids = [id1, id2]
+    else
+        let id_above = -1
+        let ids = []
+    endif
+    return {'ids': ids, 'pos': marker_pos_above}
+endfun
+
+fun! jukit#util#get_marker_below() abort
+    let marker_pos_below = search('|%%--%%|', 'nW')
+    if marker_pos_below
+        let id1 = matchstr(getline(marker_pos_below), '|%%--%%|.*<\zs.*\ze|.*>')
+        let id2 = matchstr(getline(marker_pos_below), '|%%--%%|.*<.*|\zs.*\ze>')
+        let ids = [id1, id2]
+    else
+        let ids = []
+    endif
+    return {'ids': ids, 'pos': marker_pos_below}
+endfun
+
+fun! jukit#util#get_adjacent_markers() abort
+    let ids_below = jukit#util#get_marker_below()
+    let ids_above = jukit#util#get_marker_above()
+    return {'below': ids_below, 'above': ids_above}
+endfun
+
+fun! jukit#util#get_current_cell_id() abort
+    let ids = jukit#util#get_adjacent_markers()
+    if ids['above']['pos'] != 0
+        let cell_id = ids['above']['ids'][1]
+    elseif ids['below']['pos'] != 0
+        let cell_id = ids['below']['ids'][0]
+    else
+        let cell_id = 'NONE'
+    endif
+
+    return cell_id
+endfun
+
+fun! jukit#util#plugin_path() abort
+    " Gets absolute path to the vim-jukit/ folder
+    let plugin_path = split(s:script_path, g:_jukit_ps)[:-3]
+    if g:_jukit_is_windows
+        return join(plugin_path, g:_jukit_ps)
+    else
+        return g:_jukit_ps . join(plugin_path, g:_jukit_ps)
+    endif
+endfun
+
+fun! jukit#util#ipython_info_write(dict) abort
+    " TODO: is this check necessary?
+    if !g:jukit_ipython
+        return
+    endif
+
+    let dir = expand('%:p:h') . g:_jukit_ps . '.jukit' . g:_jukit_ps
+    let file = dir . '.jukit_info.json'
+    if !isdirectory(dir)
+        call mkdir(dir)
+    endif
+
+    if !empty(glob(file))
+        let json = jukit#util#catch_load_json(file, 5, 500)
+    else
+        let json = {}
+    endif
+
+    call extend(json, a:dict, "force")
+    call writefile([json_encode(json)], file, 'b')
+endfun
+
+fun! s:get_key(json, key, quiet) abort
+    if has_key(a:json, a:key)
+        return a:json[a:key]
+    elseif !a:quiet
+        echom '[vim-jukit] Key "' . a:key . '" not found!'
+    endif
+    return v:null
+endfun
+
+fun! jukit#util#ipython_info_get(keys, ...) abort
+    if a:0 > 0
+        let quiet = a:1
+    else
+        let quiet = 0
+    endif
+
+    let dir = expand('%:p:h') . g:_jukit_ps . '.jukit' . g:_jukit_ps
+    let file = dir . '.jukit_info.json'
+    if (empty(glob(file)) || !isdirectory(dir)) && !quiet
+        echom '[vim-jukit] File ' . file . ' not found!'
+        return v:null
+    endif
+
+    if !empty(glob(file))
+        let json = jukit#util#catch_load_json(file, 5, 500)
+    else
+        let json = {}
+    endif
+
+    if type(a:keys) == 3
+        let vals = []
+        call map(a:keys, {k,v -> add(vals, s:get_key(json, v, quiet))})
+        return vals
+    else
+        return s:get_key(json, a:keys, quiet)
+    endif
+endfun
+
+fun! jukit#util#get_visual_selection() abort
+    " Credit for this function: 
+    " https://stackoverflow.com/questions/1533565/how-to-get-visually-selected-text-in-vimscript/6271254#6271254
+    let [line_start, column_start] = getpos("'<")[1:2]
+    let [line_end, column_end] = getpos("'>")[1:2]
+    let lines = getline(line_start, line_end)
+    if len(lines) == 0
+        return ''
+    endif
+    let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
+    let lines[0] = lines[0][column_start - 1:]
+    return join(lines, "\n")
+endfunction
+
+fun! jukit#util#replace_old_markers() abort
+    let id_before = jukit#util#get_unique_id()
+    fun s:replace() closure
+        let new_id = jukit#util#get_unique_id()
+        let ids_str =  ' <' . id_before . '|' . new_id . '>'
+        let repl = substitute(getline('.'), '|%%--%%|\zs.*\ze', ids_str, 'g')
+        call setline(line('.'), repl)
+        let id_before = new_id
+    endfun
+
+    let id = 1
+    let save_view = winsaveview()
+    g/|%%--%%|/call s:replace()
+    call winrestview(save_view)
+endfun
+
+fun! jukit#util#get_terminal() abort
+    let kitty_detected = system('perl -lpe "s/\0/ /g" /proc/$(xdotool '
+        \. 'getwindowpid $(xdotool getactivewindow))/cmdline') =~? 'kitty'
+        \ || system('echo $TERM') =~? 'kitty'
+    if kitty_detected
+        return 'kitty'
+    elseif has('nvim')
+        return 'nvimterm'
+    else
+        return 'vimterm'
+    endif
+endfun
+
+fun! jukit#util#get_lang_info() abort
+python3 << EOF
+import vim, os, sys, json
+sys.path.append(vim.eval('jukit#util#plugin_path() . g:_jukit_ps . "helpers"'))
+from ipynb_convert import languages
+
+vim.command(f"let json='{json.dumps(languages)}'")
+EOF
+    let json = json_decode(json)
+    if has_key(json, tolower(&ft))
+        let ft_json = json[tolower(&ft)]
+        let md_start = ft_json['multiline_start'] . g:_jukit_md_mark
+        let md_end = g:_jukit_md_mark . ft_json['multiline_end']
+        let cchar = ft_json['cchar']
+        let ext = ft_json['ext']
+        let success = 1
+    else
+        let md_start = "r\"\"\"" . g:_jukit_md_mark
+        let md_end = g:_jukit_md_mark . "\"\"\""
+        let cchar = "#"
+        let ext = 'py'
+        let success = 0
+    endif
+    return [md_start, md_end, cchar, ext, success]
+endfun
+
+fun! jukit#util#md_buffer_vars() abort
+    " TODO: this function shouldn't be unnecessarily called so often (even if
+    " it doesn't take much time) as it is now, it's ugly. just init the buffer
+    " variables in plugin/init.vim instead of everytime a buffer variable is
+    " needed! then i can drop the exists() check below
+    if exists('b:jukit_md_start')
+        return
+    endif
+    let md_info = jukit#util#get_lang_info()
+    let b:jukit_md_start = md_info[0]
+    let b:jukit_md_end =  md_info[1]
+    let b:jukit_cchar =  md_info[2]
+    let b:jukit_md_start_escaped = escape(b:jukit_md_start, '/*')
+    let b:jukit_md_end_escaped =  escape(b:jukit_md_end, '/*')
+endfun
+
+fun! jukit#util#is_valid_version(vcur, vreq) abort
+    " expects lists of length 3 according to semantic versioning convention
+
+    if len(a:vcur)!=3 || len(a:vreq)!=3
+        echom '[vim-jukit] invalid version number encountered:'
+        echom a:vcur
+        echom a:vreq
+        return 1 " by default give benefit of the doubt if a version number not in the expected format
+    endif
+
+    let valid1 = a:vcur[0] >= a:vreq[0]
+    let valid2 = a:vcur[0] > a:vreq[0] || valid1 && a:vcur[1] >= a:vreq[1]
+    let valid3 = a:vcur[0] > a:vreq[0] || a:vcur[1] > a:vreq[1] || valid1 && valid2 && a:vcur[2] >= a:vreq[2]
+
+    return (valid1 && valid2 && valid3)
+endfun
+
+fun! jukit#util#is_md_cell(cell_id) abort
+    let save_view = winsaveview()
+    call cursor(line('.')+1, '$')
+    let md_cur = search(b:jukit_md_start, 'nbW') > search('|%%--%%| <.*|' . a:cell_id, 'nbW')
+    call winrestview(save_view)
+    return md_cur
+endfun
+===== autoload/jukit/splits.vim =====
+if g:jukit_terminal == 'kitty'
+    let s:invalid_kitty_version = jukit#kitty#cmd#invalid_version(g:jukit_required_kitty_version)
+    if len(s:invalid_kitty_version) && has('nvim')
+        let g:jukit_terminal = 'nvimterm'
+    elseif len(s:invalid_kitty_version)
+        let g:jukit_terminal = 'vimterm'
+    endif
+
+    if len(s:invalid_kitty_version)
+        echom '[vim-jukit] Insufficient kitty version! (Required version >= ' 
+            \ . join(g:jukit_required_kitty_version, '.') . ' - Current version: '
+            \ . join(s:invalid_kitty_version, '.') . ") -> using " 
+            \ . g:jukit_terminal . ' instead!'
+    elseif g:jukit_mpl_style == ""
+        let g:jukit_mpl_style = jukit#util#plugin_path()
+            \ . g:_jukit_ps . join(['helpers', 'matplotlib-backend-kitty', 'backend.mplstyle'], g:_jukit_ps)
+    endif
+endif
+
+if g:jukit_ipython
+    let s:ipython_version = system(g:jukit_shell_cmd . ' --version')
+    let s:ipython_version = matchstr(s:ipython_version, '.\{-}\zs[0-9\.]\{1,}')
+    let s:v_split = split(s:ipython_version, '\.')
+    if !jukit#util#is_valid_version(s:v_split, g:jukit_required_ipython_version)
+        echom '[vim-jukit] Insufficient ipython version! (Required version >= '
+            \ . join(g:jukit_required_ipython_version, '.') . ' - Current version: '
+            \ . s:ipython_version . ') -> Please update ipython!'
+    endif
+endif
+
+let s:supported_graphical_term = ['kitty', 'tmux']
+let s:inline_plot_psbl = index(s:supported_graphical_term, g:jukit_terminal) >= 0
+if !s:inline_plot_psbl && g:jukit_inline_plotting
+    echom '[vim-jukit] inline plotting only supported for values: [' 
+        \. join(s:supported_graphical_term, ', ') . ']'
+    let g:jukit_inline_plotting = 0
+endif
+
+fun! s:create_autocmd_close_splits() abort
+    if exists('#jukit_auto_close#QuitPre#<buffer=' . bufnr('%', 1) . '>')
+        return
+    endif
+
+    augroup jukit_auto_close
+        autocmd!
+        autocmd QuitPre,BufDelete <buffer> call jukit#splits#close_output_and_history(0)
+    augroup END
+endfun
+
+fun! jukit#splits#split_exists(...) abort
+    exe 'return call("jukit#' . g:jukit_terminal . '#splits#exists", a:000)'
+endfun
+
+fun! jukit#splits#out_hist_scroll(down) abort
+    if !g:jukit_hist_use_ueberzug
+        exe 'call jukit#' . g:jukit_terminal . '#splits#out_hist_scroll(a:down)'
+    else
+        call jukit#ueberzug#scroll(a:down)
+    endif
+endfun
+
+fun! jukit#splits#show_last_cell_output(force) abort
+    if !jukit#splits#split_exists('outhist') && !g:jukit_hist_use_ueberzug
+        echom '[vim-jukit] Output-history split not found. Please create if first.'
+        return
+    endif
+
+    if !g:jukit_hist_use_ueberzug
+        exe 'call jukit#' . g:jukit_terminal . '#splits#show_last_cell_output(a:force)'
+    else
+        exe 'call jukit#ueberzug#show_last_cell_output(a:force)'
+    endif
+endfun
+
+fun! jukit#splits#close_history() abort
+    exe 'call jukit#' . g:jukit_terminal . '#splits#close_history()'
+endfun
+
+fun! jukit#splits#close_output_split() abort
+    exe 'call jukit#' . g:jukit_terminal . '#splits#close_output_split()'
+endfun
+
+fun! jukit#splits#output(...) abort
+    if jukit#splits#split_exists('output')
+        echom "[vim-jukit] Output split already exists. Close it before "
+            \. "creating a new one!"
+        return
+    endif
+    call s:create_autocmd_close_splits()
+
+    exe 'call call("jukit#' . g:jukit_terminal . '#splits#output", a:000)'
+    call jukit#layouts#set_layout()
+endfun
+
+fun! jukit#splits#term() abort
+    if jukit#splits#split_exists('output')
+        echom "[vim-jukit] Output split already exists. Close it before "
+            \. "creating a new one!"
+        return
+    endif
+    call s:create_autocmd_close_splits()
+
+    exe 'call jukit#' . g:jukit_terminal . '#splits#term()'
+    call jukit#layouts#set_layout()
+endfun
+
+fun! jukit#splits#history(...) abort
+    if jukit#splits#split_exists('outhist')
+        echom "[vim-jukit] Output-history split already exists. Close it "
+            \. "before creating a new one!"
+        return
+    endif
+
+    if g:jukit_hist_use_ueberzug
+        echom "[vim-jukit] No output-history split possible when using"
+            \. "`g:jukit_hist_use_ueberzug = 1`"
+        return
+    endif
+
+    call s:create_autocmd_close_splits()
+
+    exe 'call call("jukit#' . g:jukit_terminal . '#splits#history", a:000)'
+    call jukit#layouts#set_layout()
+    call jukit#splits#show_last_cell_output(1)
+endfun
+
+fun! jukit#splits#close_output_and_history(confirm) abort
+    exe 'let outhist_exists = jukit#' . g:jukit_terminal . '#splits#exists("outhist")'
+    exe 'let output_exists = jukit#' . g:jukit_terminal . '#splits#exists("output")'
+
+    if a:confirm && (outhist_exists || output_exists)
+        let answer = confirm("[vim-jukit] Do you want to close split windows?", "&Yes\n&No", 1)
+        if answer == 0 || answer == 2
+            return
+        endif
+    endif
+
+    if outhist_exists
+        exe 'call jukit#' . g:jukit_terminal . '#splits#close_history()'
+    endif
+
+    if output_exists
+        exe 'call jukit#' . g:jukit_terminal . '#splits#close_output_split()'
+    endif
+    redraw!
+endfun
+
+fun! jukit#splits#toggle_auto_hist(...) abort
+    let au_exists = exists('#jukit_auto_output#CursorHold')
+    let enable_au = a:0 > 0 ? a:1 : !au_exists
+
+    if !au_exists && enable_au
+	echom "[vim-jukit] Enabled auto output history! (CursorHold updatetime: " . &updatetime . ")"
+        augroup jukit_auto_output
+            autocmd!
+            autocmd CursorHold <buffer> call jukit#splits#show_last_cell_output(0)
+        augroup END
+    elseif au_exists && !enable_au
+	echom "[vim-jukit] Disabled auto output history!"
+        augroup jukit_auto_output
+            autocmd!
+        augroup END
+    endif
+endfun
+
+fun! jukit#splits#output_and_history(...) abort
+    if a:0 > 0
+        call jukit#splits#output(a:1)
+        if g:jukit_venv_in_output_hist
+            call jukit#splits#history(a:1)
+        else
+            call jukit#splits#history()
+        endif
+    else
+        call jukit#splits#output()
+        call jukit#splits#history()
+    endif
+endfun
+
+fun! jukit#splits#_build_shell_cmd(...) abort
+    let mpl_style = jukit#splits#_get_mpl_style_file()
+    let is_outhist = a:0 > 0 && a:1 == 'outhist'
+
+    if !is_outhist
+        if g:_jukit_is_windows
+            let g:_jukit_python = stridx(split(g:jukit_shell_cmd, '/')[-1], 'python') >= 0
+            let g:jukit_ipython = stridx(split(g:jukit_shell_cmd, '/')[-1], 'ipython') >= 0
+        else
+            let g:_jukit_python = stridx(split(g:jukit_shell_cmd, '\')[-1], 'python') >= 0
+            let g:jukit_ipython = stridx(split(g:jukit_shell_cmd, '\')[-1], 'ipython') >= 0
+        endif
+        let use_py = g:_jukit_python
+        let use_ipy = g:jukit_ipython
+        let shell_cmd = g:jukit_shell_cmd
+    else
+        let use_py = 1
+        let use_ipy = 1
+        let shell_cmd = 'ipython3'
+    endif
+
+    if !use_py
+        return g:jukit_shell_cmd
+    endif
+
+    let cmd = "import sys;"
+        \. 'sys.path.append("' . jukit#util#plugin_path() . g:_jukit_ps . 'helpers")' . ";"
+
+    if g:jukit_inline_plotting
+        let cmd = cmd
+                \. "import matplotlib;"
+                \. "import matplotlib.pyplot as plt;"
+
+        if g:jukit_terminal == 'kitty'
+            let cmd = cmd
+                \. 'matplotlib.use("module://matplotlib-backend-kitty");'
+                \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+        elseif g:jukit_terminal == 'tmux'
+            let current_pane = matchstr(system('tmux run "echo #{pane_id}"'), '%\d*')
+            if is_outhist
+                let target_pane = g:jukit_outhist_title
+            else
+                let target_pane = g:jukit_output_title
+            endif
+            let cmd = cmd
+                \. 'matplotlib.use("module://imgcat");'
+                \. 'plt.show.__annotations__["tmux_panes"] = ["' 
+                \. current_pane . '", "' . target_pane . '"];'
+                \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+        else
+            echom "[vim-jukit] No inline plotting for `g:jukit_terminal = "
+                \ . g:jukit_terminal . "` supported"
+        endif
+    elseif g:jukit_custom_backend != -1
+        let cmd = cmd
+            \. 'matplotlib.use("module://' . g:jukit_custom_backend . '");'
+            \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+
+    elseif !is_outhist
+        let cmd = cmd
+            \. "import matplotlib.pyplot as plt;"
+            \. "from matplotlib_show_wrapper import show_wrapper;"
+            \. "plt.show = show_wrapper(plt.show, " . g:jukit_mpl_block . ");"
+            \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+    endif
+
+    if type(mpl_style) != 7
+        let cmd = cmd
+            \. "import matplotlib.pyplot as plt;"
+            \. 'plt.style.use("' . mpl_style . '")' . ";"
+    endif
+
+    let ueberzug_opt = ""
+    if g:jukit_hist_use_ueberzug
+        let ueberzug_opt = " --ueberzug_opt="
+            \. g:jukit_ueberzug_border_color . ","
+            \. g:jukit_ueberzug_theme . ","
+            \. g:jukit_ueberzug_python_cmd . ","
+            \. g:jukit_ueberzug_jupyter_cmd . ","
+            \. g:jukit_ueberzug_cutycapt_cmd . ","
+            \. g:jukit_ueberzug_imagemagick_cmd
+    endif
+
+    if use_ipy
+        let pyfile_ws_sub = substitute(escape(expand('%:p'), '\'), ' ', '<JUKIT_WS_PH>', 'g')
+        let store_png = g:jukit_hist_use_ueberzug ? ' --store_png' : ''
+        let cmd = cmd
+            \. "from IPython import get_ipython;"
+            \. "__shell = get_ipython();"
+            \. '__shell.run_line_magic("load_ext", "jukit_run");'
+            \. '__shell.run_line_magic("jukit_init", "' . pyfile_ws_sub . ' '
+            \. g:jukit_in_style . ' --max_size=' . g:jukit_max_size . store_png
+            \. ueberzug_opt . '");'
+        if !g:jukit_debug && !g:_jukit_is_windows
+            let cmd = cmd . '__shell.run_line_magic("clear", "");'
+        endif
+    endif
+
+    if g:_jukit_is_windows
+        let cmd = shell_cmd . " -i -c \"" . substitute(cmd, '"', g:_jukit_win_escape_char . '"', 'g') . "\""
+        return cmd
+    else
+        let cmd = shell_cmd . " -i -c '" . cmd . "'"
+        return cmd
+    endif
+endfun
+
+fun! jukit#splits#_get_mpl_style_file() abort
+    if g:jukit_mpl_style == ''
+        return v:null
+    elseif glob(g:jukit_mpl_style) == ''
+        echom "[vim-jukit] Matplotlib style '" . g:jukit_mpl_style . "' not found!"
+        return v:null
+    endif
+    return g:jukit_mpl_style
+endfun
+===== helpers/jukit_run/util.py =====
+import io, json, base64, re, os, sys, math, time
+from matplotlib import pyplot as plt
+import matplotlib.image as mpimg
+from typing import List
+from IPython.core.interactiveshell import InteractiveShell
+
+MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(MODULE_PATH, "..", ".encodings"), "r") as f:
+    ENCODING = f.read().strip()
+
+
+KiB = 2 ** 10
+MiB = 2 ** 20
+
+
+def jukit_info(text: str, color: str = "\u001b[31m"):
+    print(color + "[vim-jukit] " + text + "\u001b[0m")
+
+
+def catch_load_json(
+    file: str, ntries_left: int = 10, time_between: float = 0.5
+) -> dict:
+    """in case file is trying to be loaded while it is being written to by
+    another process. if it still can't be loaded after `ntries_left` then
+    it is assumed that it is corrupted and replaced with empty json"""
+
+    try:
+        with open(file, "r", encoding=ENCODING) as f:
+            info = json.load(f)
+    except json.JSONDecodeError:
+        jukit_info(f"JSONDecodeError, number of tries left: {ntries_left}")
+        if ntries_left > 0:
+            time.sleep(time_between)
+            info = catch_load_json(file, ntries_left=ntries_left - 1)
+        else:
+            jukit_info("JSON file not readable, replacing with empty json!")
+            info = {}
+            with open(file, "w+", encoding=ENCODING) as f:
+                json.dump(info, f)
+
+    return info
+
+
+def hide_prompt(shell: InteractiveShell):
+    x, _ = os.get_terminal_size()
+    sys.stdout.write("\033[A" + " " * x + "\033[A")
+
+
+def _add_ws(x: int, str_: str, offset: int = 0, center: bool = True) -> str:
+    if center:
+        space_before = " " * math.floor((x - len(str_) - offset) / 2)
+        space_after = " " * math.ceil((x - len(str_) - offset) / 2)
+    else:
+        space_before = ""
+        space_after = " " * math.ceil(x - len(str_) - offset)
+
+    return f"{space_before}{str_}{space_after}"
+
+
+def display_cell_id(cell_id: str, term_width: int, min_frame_width: int = 25):
+    if term_width < 5:
+        return
+
+    jukit_id_str = f"Cell ID: {cell_id}"
+    w_frame = len(jukit_id_str) + 4
+
+    center = term_width is not None
+    if not term_width:
+        term_width = w_frame
+
+    wide_enough = term_width > min_frame_width
+    if wide_enough:
+        top = f'{"╭" + "─" * (w_frame-2) + "╮"}'
+        print(f"\n\u001b[36m{_add_ws(term_width, top, center=center)}")
+
+    str_ = "Last Outputs"
+
+    if wide_enough:
+        str_ = f"│{_add_ws(w_frame, str_, 2, center=True)}│"
+    else:
+        str_ = f"\n\u001b[36m{_add_ws(w_frame, str_, 0, center=False)}"
+
+    print(_add_ws(term_width, str_, center=center))
+    while len(jukit_id_str):
+        if wide_enough:
+            s = jukit_id_str[: (term_width - 4)]
+            s = f"│{_add_ws(w_frame, s, 2, center=True)}│"
+        else:
+            s = jukit_id_str[: (term_width - 2)]
+            s = f"{_add_ws(w_frame, s, 0, center=False)}\u001b[0m"
+        print(_add_ws(term_width, s, center=center))
+        jukit_id_str = jukit_id_str[(term_width - 4) :]
+
+    if wide_enough:
+        bottom = f'{"╰" + "─" * (w_frame-2) + "╯"}'
+        print(f"{_add_ws(term_width, bottom, center=center)}\u001b[0m\n")
+
+
+def display_outputs(outputs: List[dict], term: str, shell: InteractiveShell):
+    try:
+        for out in outputs:
+            if out["output_type"] == "stream":
+                print("".join(out["text"]))
+            elif out["output_type"] == "display_data":
+                if "image/png" in out["data"].keys():
+                    data = out["data"]["image/png"]
+                elif "text/html" in out["data"].keys():
+                    data = out["data"]["text/html"][0]
+                    data = re.findall(r"(?<=base64,)\S*(?=\")", data)[0]
+                else:
+                    jukit_info("Not able to get (all of) the display_data")
+                    jukit_info(
+                        f"Keys in output dict: {list(out['data'].keys())}"
+                        ";\nSupported Keys: ['image/png', 'text/html']\n"
+                    )
+                    continue
+
+                if term not in ["kitty", "tmux"]:
+                    jukit_info("PLOT", color="\u001b[33m")
+
+                im = base64.b64decode(data)
+                im = mpimg.imread(io.BytesIO(im), format="png")
+                plt.figure()
+                plt.axes([0, 0, 1, 1])
+                plt.axis("off")
+                plt.imshow(im)
+                if plt.get_backend() == "module://matplotlib-backend-kitty":
+                    plt.show(scaling=0.75)
+                else:
+                    plt.show(block=False)
+            elif out["output_type"] == "execute_result":
+                out_prompt = f"\u001b[31mOut[\u001b[32m{out['execution_count']}\u001b[31m]: \u001b[0m"
+                txt = out["data"]["text/plain"]
+                is_str_multi_line = isinstance(txt, str) and len(txt.split("\n")) > 1
+                is_iter_multi = not isinstance(txt, str) and len(txt) > 1
+                is_iter_str_multi = (
+                    not isinstance(txt, str) and len(txt[0].split("\n")) > 1
+                )
+                if is_str_multi_line or is_iter_multi or is_iter_str_multi:
+                    out_prompt += "\n"
+                print(out_prompt + "".join(out["data"]["text/plain"]))
+            elif out["output_type"] == "error":
+                print("".join(out["traceback"]))
+            else:
+                jukit_info(f"Output type `{out['output_type']}` could not be displayed")
+    except KeyboardInterrupt:
+        if os.name != "nt":
+            shell.run_line_magic("clear", "")
+    except BufferError:
+        if os.name != "nt":
+            shell.run_line_magic("clear", "")
+
+
+def check_output_size(captured_out: str, outhist_file: str, max_bytes: int) -> str:
+    if len(sys.stdout.jukit_plots):
+        plots_size = sys.stdout.jukit_plots_size
+    else:
+        plots_size = 0
+
+    out_text_size = sys.getsizeof(captured_out)
+    out_size = out_text_size + plots_size
+    ipynb_size = (
+        0 if not os.path.isfile(outhist_file) else os.path.getsize(outhist_file)
+    )
+    out_size = out_text_size + plots_size
+
+    if ipynb_size > max_bytes and out_size > 10 * KiB:
+        jukit_info(
+            f"Output not saved! Size of '{outhist_file}' already over max size of "
+            f"{max_bytes/MiB:.1f}MiB! (currently {ipynb_size/MiB:.1f}MiB)\nOutputs requiring "
+            "more than 10KiB will not be saved. Delete or increase max size. "
+            "Large max size may lead to performance issues!"
+        )
+        return "\u001b[31m\n[vim-jukit] Output not saved (output-json was over max size)\n\u001b[0m"
+
+    elif ipynb_size + out_size > max_bytes and out_size > 10 * KiB:
+        jukit_info(
+            f"Size of '{outhist_file}' has surpassed "
+            f"max size of {max_bytes/MiB:.1f}MiB! (now at {(ipynb_size+out_size)/MiB:.1f}MiB)\n"
+            "Any further outputs requiring "
+            "more than 10KiB will not be saved. Delete large cell "
+            "outputs to reduce file size or increase max size."
+            "Large max size output history may lead to performance issues!"
+        )
+
+    return captured_out

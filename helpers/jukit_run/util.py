@@ -115,7 +115,12 @@ def display_outputs(outputs: List[dict], term: str, shell: InteractiveShell):
                     )
                     continue
 
-                if term not in ["kitty", "tmux"]:
+                backend = plt.get_backend()
+                kitty_inline_backends = {
+                    "module://matplotlib-backend-kitty",
+                    "module://matplotlib-backend-kitty-protocol",
+                }
+                if term not in ["kitty", "tmux"] and backend not in kitty_inline_backends:
                     jukit_info("PLOT", color="\u001b[33m")
 
                 im = base64.b64decode(data)
@@ -124,7 +129,7 @@ def display_outputs(outputs: List[dict], term: str, shell: InteractiveShell):
                 plt.axes([0, 0, 1, 1])
                 plt.axis("off")
                 plt.imshow(im)
-                if plt.get_backend() == "module://matplotlib-backend-kitty":
+                if backend in kitty_inline_backends:
                     plt.show(scaling=0.75)
                 else:
                     plt.show(block=False)
