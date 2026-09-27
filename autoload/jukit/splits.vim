@@ -11,10 +11,14 @@ if g:jukit_terminal == 'kitty'
             \ . join(g:jukit_required_kitty_version, '.') . ' - Current version: '
             \ . join(s:invalid_kitty_version, '.') . ") -> using " 
             \ . g:jukit_terminal . ' instead!'
-    elseif g:jukit_mpl_style == ""
-        let g:jukit_mpl_style = jukit#util#plugin_path()
-            \ . g:_jukit_ps . join(['helpers', 'matplotlib-backend-kitty', 'backend.mplstyle'], g:_jukit_ps)
     endif
+endif
+
+let s:kitty_protocol_graphics = g:jukit_terminal ==# 'nvimterm'
+    \ && g:jukit_graphics_backend ==# 'kitty'
+if (g:jukit_terminal ==# 'kitty' || s:kitty_protocol_graphics) && g:jukit_mpl_style ==# ''
+    let g:jukit_mpl_style = jukit#util#plugin_path()
+        \ . g:_jukit_ps . join(['helpers', 'matplotlib-backend-kitty', 'backend.mplstyle'], g:_jukit_ps)
 endif
 
 if g:jukit_ipython
@@ -30,9 +34,9 @@ endif
 
 let s:supported_graphical_term = ['kitty', 'tmux']
 let s:inline_plot_psbl = index(s:supported_graphical_term, g:jukit_terminal) >= 0
+    \ || s:kitty_protocol_graphics
 if !s:inline_plot_psbl && g:jukit_inline_plotting
-    echom '[vim-jukit] inline plotting only supported for values: [' 
-        \. join(s:supported_graphical_term, ', ') . ']'
+    echom '[vim-jukit] inline plotting requires kitty, tmux, or nvimterm with Kitty-protocol graphics'
     let g:jukit_inline_plotting = 0
 endif
 
@@ -214,6 +218,11 @@ fun! jukit#splits#_build_shell_cmd(...) abort
             let cmd = cmd
                 \. 'matplotlib.use("module://matplotlib-backend-kitty");'
                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+        elseif g:jukit_terminal ==# 'nvimterm' && g:jukit_graphics_backend ==# 'kitty'
+            let cmd = cmd
+                \. 'matplotlib.use("module://matplotlib-backend-kitty-protocol");'
+                \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
+                \. 'plt.show.__annotations__["cell_aspect"] = ' . g:jukit_kitty_cell_aspect . ";"
         elseif g:jukit_terminal == 'tmux'
             let current_pane = matchstr(system('tmux run "echo #{pane_id}"'), '%\d*')
             if is_outhist

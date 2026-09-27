@@ -1,0 +1,466 @@
+diff --git a/autoload/jukit/graphics.vim b/autoload/jukit/graphics.vim
+new file mode 100644
+index 0000000..a28f74a
+--- /dev/null
++++ b/autoload/jukit/graphics.vim
+@@ -0,0 +1,6 @@
++fun! jukit#graphics#kitty_upload(path, image_id, cols, rows) abort
++    if !has('nvim-0.12')
++        throw '[vim-jukit] Kitty-protocol graphics requires Neovim >= 0.12'
++    endif
++    return luaeval("require('jukit.kitty_graphics').upload(_A[1], _A[2], _A[3], _A[4])", [a:path, a:image_id, a:cols, a:rows])
++endfun
+diff --git a/autoload/jukit/splits.vim b/autoload/jukit/splits.vim
+index b1c3a9d..6c5b787 100644
+--- a/autoload/jukit/splits.vim
++++ b/autoload/jukit/splits.vim
+@@ -11,12 +11,16 @@ if g:jukit_terminal == 'kitty'
+             \ . join(g:jukit_required_kitty_version, '.') . ' - Current version: '
+             \ . join(s:invalid_kitty_version, '.') . ") -> using " 
+             \ . g:jukit_terminal . ' instead!'
+-    elseif g:jukit_mpl_style == ""
+-        let g:jukit_mpl_style = jukit#util#plugin_path()
+-            \ . g:_jukit_ps . join(['helpers', 'matplotlib-backend-kitty', 'backend.mplstyle'], g:_jukit_ps)
+     endif
+ endif
+ 
++let s:kitty_protocol_graphics = g:jukit_terminal ==# 'nvimterm'
++    \ && g:jukit_graphics_backend ==# 'kitty'
++if (g:jukit_terminal ==# 'kitty' || s:kitty_protocol_graphics) && g:jukit_mpl_style ==# ''
++    let g:jukit_mpl_style = jukit#util#plugin_path()
++        \ . g:_jukit_ps . join(['helpers', 'matplotlib-backend-kitty', 'backend.mplstyle'], g:_jukit_ps)
++endif
++
+ if g:jukit_ipython
+     let s:ipython_version = system(g:jukit_shell_cmd . ' --version')
+     let s:ipython_version = matchstr(s:ipython_version, '.\{-}\zs[0-9\.]\{1,}')
+@@ -30,9 +34,9 @@ endif
+ 
+ let s:supported_graphical_term = ['kitty', 'tmux']
+ let s:inline_plot_psbl = index(s:supported_graphical_term, g:jukit_terminal) >= 0
++    \ || s:kitty_protocol_graphics
+ if !s:inline_plot_psbl && g:jukit_inline_plotting
+-    echom '[vim-jukit] inline plotting only supported for values: [' 
+-        \. join(s:supported_graphical_term, ', ') . ']'
++    echom '[vim-jukit] inline plotting requires kitty, tmux, or nvimterm with Kitty-protocol graphics'
+     let g:jukit_inline_plotting = 0
+ endif
+ 
+@@ -214,6 +218,11 @@ fun! jukit#splits#_build_shell_cmd(...) abort
+             let cmd = cmd
+                 \. 'matplotlib.use("module://matplotlib-backend-kitty");'
+                 \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
++        elseif g:jukit_terminal ==# 'nvimterm' && g:jukit_graphics_backend ==# 'kitty'
++            let cmd = cmd
++                \. 'matplotlib.use("module://matplotlib-backend-kitty-protocol");'
++                \. 'plt.show.__annotations__["save_dpi"] = ' . g:jukit_savefig_dpi . ";"
++                \. 'plt.show.__annotations__["cell_aspect"] = ' . g:jukit_kitty_cell_aspect . ";"
+         elseif g:jukit_terminal == 'tmux'
+             let current_pane = matchstr(system('tmux run "echo #{pane_id}"'), '%\d*')
+             if is_outhist
+diff --git a/autoload/jukit/util.vim b/autoload/jukit/util.vim
+index 0b8d3ee..d956dc3 100644
+--- a/autoload/jukit/util.vim
++++ b/autoload/jukit/util.vim
+@@ -224,6 +224,28 @@ fun! jukit#util#get_terminal() abort
+     endif
+ endfun
+ 
++fun! jukit#util#get_graphics_backend() abort
++    " Kitty graphics through nvim_ui_send() targets the outer TUI terminal.
++    " Keep split/window management independent: Ghostty still uses nvimterm.
++    if !has('nvim-0.12') || !&termguicolors
++        return 'none'
++    endif
++    " The existing tmux backend has its own transport. Do not silently send
++    " raw Kitty APC sequences to tmux without passthrough configuration.
++    if !empty($TMUX)
++        return 'none'
++    endif
++    let term_program = tolower($TERM_PROGRAM)
++    let term = tolower($TERM)
++    if term_program =~# 'ghostty\|kitty'
++        \ || term =~# 'ghostty\|kitty'
++        \ || !empty($GHOSTTY_RESOURCES_DIR)
++        \ || !empty($KITTY_WINDOW_ID)
++        return 'kitty'
++    endif
++    return 'none'
++endfun
++
+ fun! jukit#util#get_lang_info() abort
+ python3 << EOF
+ import vim, os, sys, json
+diff --git a/helpers/jukit_run/util.py b/helpers/jukit_run/util.py
+index f7ac44d..91d3f3b 100644
+--- a/helpers/jukit_run/util.py
++++ b/helpers/jukit_run/util.py
+@@ -115,7 +115,12 @@ def display_outputs(outputs: List[dict], term: str, shell: InteractiveShell):
+                     )
+                     continue
+ 
+-                if term not in ["kitty", "tmux"]:
++                backend = plt.get_backend()
++                kitty_inline_backends = {
++                    "module://matplotlib-backend-kitty",
++                    "module://matplotlib-backend-kitty-protocol",
++                }
++                if term not in ["kitty", "tmux"] and backend not in kitty_inline_backends:
+                     jukit_info("PLOT", color="\u001b[33m")
+ 
+                 im = base64.b64decode(data)
+@@ -124,7 +129,7 @@ def display_outputs(outputs: List[dict], term: str, shell: InteractiveShell):
+                 plt.axes([0, 0, 1, 1])
+                 plt.axis("off")
+                 plt.imshow(im)
+-                if plt.get_backend() == "module://matplotlib-backend-kitty":
++                if backend in kitty_inline_backends:
+                     plt.show(scaling=0.75)
+                 else:
+                     plt.show(block=False)
+diff --git a/helpers/matplotlib-backend-kitty-protocol/__init__.py b/helpers/matplotlib-backend-kitty-protocol/__init__.py
+new file mode 100644
+index 0000000..3ca55f1
+--- /dev/null
++++ b/helpers/matplotlib-backend-kitty-protocol/__init__.py
+@@ -0,0 +1,208 @@
++# SPDX-License-Identifier: CC0-1.0
++
++import base64
++import io
++import math
++import os
++import secrets
++import shutil
++import subprocess
++import sys
++import tempfile
++
++from matplotlib.backend_bases import _Backend, FigureCanvasBase, FigureManagerBase, Gcf
++import matplotlib.pyplot as plt
++
++
++# First 64 entries from kitty's stable rowcolumn-diacritics.txt table. Jukit
++# only needs row diacritics because columns can inherit left-to-right. This
++# keeps placeholders compact while still allowing full terminal-width plots.
++_ROW_DIACRITICS = tuple(
++    chr(int(cp, 16))
++    for cp in (
++        "0305 030D 030E 0310 0312 033D 033E 033F 0346 034A 034B 034C 0350 0351 0352 0357 "
++        "035B 0363 0364 0365 0366 0367 0368 0369 036A 036B 036C 036D 036E 036F 0483 0484 "
++        "0485 0486 0487 0592 0593 0594 0595 0597 0598 0599 059C 059D 059E 059F 05A0 05A1 "
++        "05A8 05A9 05AB 05AC 05AF 05C4 0610 0611 0612 0613 0614 0615 0616 0617 0657 0658"
++    ).split()
++)
++_PLACEHOLDER = "\U0010EEEE"
++
++
++def _store_img_for_ipynb(png_bytes):
++    if sys.stdout.jukit_plots_size > sys.stdout.max_plots_size:
++        sys.stdout._wrapped_stdout.write(
++            "\u001b[31m------------------------------------\n"
++            " [vim-jukit] -- PLACEHOLDER -- PLOT NOT SAVED: MAX SIZE ("
++            f"{sys.stdout.max_plots_size/2**20:.1f}MiB) REACHED\n"
++            "------------------------------------\n\u001b[0m"
++        )
++        return
++    b64 = base64.b64encode(png_bytes).decode("ascii")
++    sys.stdout._wrapped_stdout.write("<-- JUKIT_PLOT_PLACEHOLDER -->\n")
++    sys.stdout.add_jukit_plot(b64)
++
++
++def _real_stdout():
++    # Jukit captures normal stdout in StringIOWrapper. Graphics placeholder
++    # text must reach the PTY but must not become part of captured cell text.
++    return getattr(sys.stdout, "_sys_stdout", sys.stdout)
++
++
++def _new_image_id():
++    # Unicode placeholders can carry 24 bits through truecolor foreground.
++    # Keep IDs non-zero. Random IDs minimize collisions in the terminal-wide
++    # image namespace without requiring terminal replies.
++    return secrets.randbelow(0xFFFFFF) + 1
++
++
++def _grid_size(figure, scaling, cell_aspect):
++    term_cols, term_rows = shutil.get_terminal_size((80, 24))
++    term_cols = max(1, term_cols)
++    term_rows = max(1, term_rows)
++    cell_aspect = max(float(cell_aspect), 0.1)
++    scaling = max(min(float(scaling), 1.0), 0.05)
++
++    width_in, height_in = figure.get_size_inches()
++    fig_aspect = (height_in / width_in) if width_in else 1.0
++
++    # Approximate kitty icat's pixel-size behavior without querying a Kitty
++    # process. One text cell is treated as cell_aspect times taller than wide.
++    max_width_cells = min(term_cols, term_rows * cell_aspect)
++    cols = max(1, min(term_cols, int(math.floor(max_width_cells * scaling))))
++    rows = max(1, int(math.ceil(cols * fig_aspect / cell_aspect)))
++
++    max_rows = min(term_rows, len(_ROW_DIACRITICS))
++    if rows > max_rows:
++        rows = max_rows
++        cols = max(1, min(term_cols, int(math.floor(rows * cell_aspect / fig_aspect))))
++
++    return cols, rows, term_cols
++
++
++def _upload_to_parent_nvim(png_bytes, image_id, cols, rows):
++    server = os.environ.get("NVIM")
++    if not server:
++        raise RuntimeError(
++            "vim-jukit Kitty-protocol graphics must run inside a Neovim :terminal"
++        )
++
++    nvim = shutil.which("nvim")
++    if not nvim:
++        raise RuntimeError("nvim executable not found in PATH")
++
++    path = None
++    try:
++        with tempfile.NamedTemporaryFile(
++            prefix="jukit-tty-graphics-", suffix=".png", delete=False
++        ) as tmp:
++            tmp.write(png_bytes)
++            path = tmp.name
++
++        # NamedTemporaryFile paths contain no Vimscript-significant characters
++        # on normal POSIX/Windows temp directories. fnameescape() is not useful
++        # here because the value is an expression string, not an Ex argument.
++        path_expr = path.replace("\\", "\\\\").replace('"', '\\"')
++        expr = (
++            'jukit#graphics#kitty_upload("'
++            + path_expr
++            + f'", {int(image_id)}, {int(cols)}, {int(rows)})'
++        )
++        proc = subprocess.run(
++            [nvim, "--server", server, "--remote-expr", expr],
++            capture_output=True,
++            text=True,
++            timeout=10,
++        )
++        if proc.returncode != 0:
++            detail = (proc.stderr or proc.stdout).strip()
++            raise RuntimeError(
++                "failed to send Kitty graphics data through parent Neovim"
++                + (f": {detail}" if detail else "")
++            )
++    finally:
++        if path:
++            try:
++                os.unlink(path)
++            except FileNotFoundError:
++                pass
++
++
++def _write_placeholders(image_id, cols, rows, term_cols, align):
++    red = (image_id >> 16) & 0xFF
++    green = (image_id >> 8) & 0xFF
++    blue = image_id & 0xFF
++    foreground = f"\x1b[38;2;{red};{green};{blue}m"
++
++    if align == "right":
++        padding = max(0, term_cols - cols)
++    elif align == "left":
++        padding = 0
++    else:
++        padding = max(0, (term_cols - cols) // 2)
++
++    out = _real_stdout()
++    prefix = " " * padding
++    for row in range(rows):
++        # Kitty protocol inheritance: with the row diacritic on the first cell,
++        # following placeholder cells inherit the row and increment columns.
++        line = prefix + _PLACEHOLDER + _ROW_DIACRITICS[row]
++        if cols > 1:
++            line += _PLACEHOLDER * (cols - 1)
++        out.write("\r" + foreground + line + "\x1b[39m\r\n")
++    out.flush()
++
++
++class JukitFigureManager(FigureManagerBase):
++    def jukit_show(self, scaling=0.75, align="center"):
++        save_dpi = plt.show.__annotations__.get("save_dpi", 150)
++        cell_aspect = plt.show.__annotations__.get("cell_aspect", 2.0)
++        cols, rows, term_cols = _grid_size(self.canvas.figure, scaling, cell_aspect)
++
++        with io.BytesIO() as buf:
++            self.canvas.figure.savefig(buf, format="png")
++            png_bytes = buf.getvalue()
++
++        if hasattr(sys.stdout, "add_jukit_plot"):
++            with io.BytesIO() as save_buf:
++                self.canvas.figure.savefig(save_buf, format="png", dpi=save_dpi)
++                _store_img_for_ipynb(save_buf.getvalue())
++
++        image_id = _new_image_id()
++        _upload_to_parent_nvim(png_bytes, image_id, cols, rows)
++        _write_placeholders(image_id, cols, rows, term_cols, align)
++
++    def show(self, *_, **kwargs):
++        scaling = kwargs.get("scaling", 0.9)
++        align = kwargs.get("align", "center")
++        self.jukit_show(scaling, align)
++        self.canvas.setVisible(True)
++        Gcf.destroy_all()
++
++
++class JukitCanvas(FigureCanvasBase):
++    visible = False
++    manager_class = JukitFigureManager
++
++    def isVisible(self):
++        return self.visible
++
++    def setVisible(self, visible):
++        self.visible = visible
++
++
++@_Backend.export
++class JukitBackend(_Backend):
++    FigureCanvas = JukitCanvas
++    FigureManager = JukitFigureManager
++    mainloop = lambda: None
++
++    @classmethod
++    def show(cls, *_, **kwargs):
++        managers = Gcf.get_all_fig_managers()
++        if not managers:
++            return
++        for manager in managers:
++            scaling = kwargs.get("scaling", 0.9)
++            align = kwargs.get("align", "center")
++            manager.show(scaling=scaling, align=align)
+diff --git a/lua/jukit/kitty_graphics.lua b/lua/jukit/kitty_graphics.lua
+new file mode 100644
+index 0000000..0d7bd2f
+--- /dev/null
++++ b/lua/jukit/kitty_graphics.lua
+@@ -0,0 +1,76 @@
++local M = {}
++
++local ESC = string.char(27)
++local ST = ESC .. "\\"
++local CHUNK_SIZE = 4096
++
++local function command(control, payload)
++  local keys = {}
++  for key, _ in pairs(control) do
++    keys[#keys + 1] = key
++  end
++  table.sort(keys)
++
++  local parts = {}
++  for _, key in ipairs(keys) do
++    parts[#parts + 1] = string.format("%s=%s", key, tostring(control[key]))
++  end
++
++  return ESC .. "_G" .. table.concat(parts, ",") .. ";" .. (payload or "") .. ST
++end
++
++local function send(content)
++  if not vim.api.nvim_ui_send then
++    error("vim-jukit Kitty-protocol graphics requires Neovim >= 0.12")
++  end
++  vim.api.nvim_ui_send(content)
++end
++
++function M.upload(path, image_id, cols, rows)
++  image_id = assert(tonumber(image_id), "invalid Kitty image id")
++  cols = assert(tonumber(cols), "invalid Kitty image width")
++  rows = assert(tonumber(rows), "invalid Kitty image height")
++
++  local file = assert(io.open(path, "rb"))
++  local bytes = file:read("*a")
++  file:close()
++
++  if #bytes == 0 then
++    error("cannot upload an empty PNG")
++  end
++
++  local encoded = vim.base64.encode(bytes)
++  local offset = 1
++  local first = true
++  while offset <= #encoded do
++    local last = math.min(offset + CHUNK_SIZE - 1, #encoded)
++    local chunk = encoded:sub(offset, last)
++    local more = last < #encoded and 1 or 0
++    local control = { m = more }
++
++    if first then
++      control.a = "t"
++      control.f = 100
++      control.t = "d"
++      control.i = image_id
++      control.q = 2
++      first = false
++    end
++
++    send(command(control, chunk))
++    offset = last + 1
++  end
++
++  send(command({
++    a = "p",
++    U = 1,
++    i = image_id,
++    c = cols,
++    r = rows,
++    q = 2,
++  }))
++
++  return 1
++end
++
++return M
+diff --git a/plugin/jukit.vim b/plugin/jukit.vim
+index 62bebd2..c866982 100644
+--- a/plugin/jukit.vim
++++ b/plugin/jukit.vim
+@@ -20,6 +20,7 @@ let g:jukit_mappings_ext_enabled = get(g:, 'jukit_mappings_ext_enabled', '*')
+ let g:jukit_shell_cmd = get(g:, 'jukit_shell_cmd', 'ipython3')
+ let g:jukit_layout = get(g:, 'jukit_layout', s:default_layout)
+ let g:jukit_terminal = get(g:, 'jukit_terminal', '')
++let g:jukit_graphics_backend = get(g:, 'jukit_graphics_backend', '')
+ let g:jukit_use_tcomment = get(g:, 'jukit_use_tcomment', 0)
+ let g:jukit_comment_mark = get(g:, 'jukit_comment_mark', '#')
+ let g:jukit_auto_output_hist = get(g:, 'jukit_auto_output_hist', 0)
+@@ -64,6 +65,7 @@ let g:jukit_outhist_new_os_window = get(g:, 'jukit_outhist_new_os_window', 0)
+ " matplotlib
+ let g:jukit_mpl_style = get(g:, 'jukit_mpl_style', '') "this value is changed for kitty after version checking below
+ let g:jukit_savefig_dpi = get(g:, 'jukit_savefig_dpi', 150)
++let g:jukit_kitty_cell_aspect = get(g:, 'jukit_kitty_cell_aspect', 2.0)
+ let g:jukit_custom_backend = get(g:, 'jukit_custom_backend', -1)
+ let g:jukit_mpl_block = get(g:, 'jukit_mpl_block', 1)
+ 
+@@ -152,8 +154,28 @@ elseif index(supported_term, g:jukit_terminal) < 0
+         \ . ' -> Using `' . g:jukit_terminal . '` instead!'
+ endif
+ 
++let supported_graphics_backends = ['none', 'kitty']
++if g:jukit_graphics_backend is# ''
++    let g:jukit_graphics_backend = jukit#util#get_graphics_backend()
++elseif index(supported_graphics_backends, g:jukit_graphics_backend) < 0
++    echom '[vim-jukit] Invalid value for g:jukit_graphics_backend: '
++        \ . g:jukit_graphics_backend . ' -> Using `none` instead!'
++    let g:jukit_graphics_backend = 'none'
++endif
++if g:jukit_graphics_backend ==# 'kitty'
++    if !has('nvim-0.12')
++        echom '[vim-jukit] Kitty-protocol graphics requires Neovim >= 0.12'
++        let g:jukit_graphics_backend = 'none'
++    elseif !&termguicolors
++        echom '[vim-jukit] Kitty-protocol graphics requires `set termguicolors`'
++        let g:jukit_graphics_backend = 'none'
++    endif
++endif
++
+ if !exists('g:jukit_inline_plotting')
+-    if index(['vimterm', 'nvimterm'], g:jukit_terminal) >= 0
++    let s:kitty_protocol_inline = g:jukit_terminal ==# 'nvimterm'
++        \ && g:jukit_graphics_backend ==# 'kitty'
++    if index(['vimterm', 'nvimterm'], g:jukit_terminal) >= 0 && !s:kitty_protocol_inline
+         let g:jukit_inline_plotting = 0
+     else
+         let g:jukit_inline_plotting = 1
